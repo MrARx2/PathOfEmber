@@ -1,0 +1,73 @@
+# Normalize text files to LF in repo, convert to CRLF on Windows checkout
+* text=auto eol=lf
+# Explicitly mark common text types (Unity meta and source)
+*.cs text diff=csharp
+*.shader text
+*.compute text
+*.cginc text
+*.hlsl text
+*.glsl text
+*.uxml text
+*.uss text
+*.json text
+*.xml text
+*.yaml text
+*.yml text
+*.asmdef text
+*.asmref text
+*.rsp text
+*.txt text
+*.md text
+*.meta text
+# Binary files (no diff)
+*.png filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.jpeg binary
+*.tga binary
+*.psd binary
+*.tif binary
+*.tiff binary
+*.exr binary
+*.hdr binary
+*.gif binary
+*.bmp binary
+*.ico binary
+*.fbx binary
+*.obj binary
+*.blend binary
+*.dae binary
+*.3ds binary
+*.max binary
+*.c4d binary
+*.mp3 filter=lfs diff=lfs merge=lfs -text
+*.ogg binary
+*.wav binary
+*.flac binary
+*.aiff binary
+*.aif binary
+*.mp4 binary
+*.mov binary
+*.avi binary
+*.webm binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.unity binary
+*.prefab binary
+*.anim binary
+*.controller binary
+*.mat binary
+*.asset binary
+*.cubemap binary
+*.rendertexture binary
+*.terrainlayer binary
+# Optional: route common large binaries to Git LFS if enabled on the machine/repo
+# (GitHub Desktop can enable LFS; these patterns will be picked up automatically.)
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.fbx filter=lfs diff=lfs merge=lfs -text
+*.wav filter=lfs diff=lfs merge=lfs -text
+*.tif filter=lfs diff=lfs merge=lfs -text
+*.tiff filter=lfs diff=lfs merge=lfs -text
+*.exr filter=lfs diff=lfs merge=lfs -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text
