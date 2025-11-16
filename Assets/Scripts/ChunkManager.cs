@@ -6,15 +6,20 @@ public class ChunkManager : MonoBehaviour
     [Header("References")]
     public Transform player;
     public GameObject firstChunkPrefab;
-    public GameObject chunkPrefab;
-    
+    public GameObject lastChunkPrefab;
+
+    [Header("Biome Prefabs")]
+    public GameObject[] lavaBiomePrefabs;
+    public GameObject[] grassBiomePrefabs;
+    public GameObject[] mudBiomePrefabs;
+
     [Header("Chunk Settings")]
     [Tooltip("Length of each chunk on the Z-axis (forward direction)")]
     public float chunkLength = 10f;
-    
+
     [Tooltip("Gap distance between chunks")]
     public float chunkGap = 0f;
-    
+
     [Tooltip("How many chunks to keep loaded ahead and behind the player")]
     public int chunksAhead = 3;
     public int chunksBehind = 1;
@@ -22,6 +27,61 @@ public class ChunkManager : MonoBehaviour
     private Dictionary<int, GameObject> activeChunks = new Dictionary<int, GameObject>();
     private int currentChunkIndex = 0;
     private Vector3 firstChunkPosition;
+    private readonly List<GameObject> chunkSequence = new List<GameObject>();
+
+    private void BuildChunkSequence()
+    {
+        chunkSequence.Clear();
+
+        if (firstChunkPrefab == null)
+        {
+            Debug.LogError("ChunkManager: First chunk prefab is not assigned.");
+        }
+        else
+        {
+            // Index 0: starting chunk
+            chunkSequence.Add(firstChunkPrefab);
+        }
+
+        AddBiomePrefabs(lavaBiomePrefabs, "Lava biome");
+        AddBiomePrefabs(grassBiomePrefabs, "Grass biome");
+        AddBiomePrefabs(mudBiomePrefabs, "Mud biome");
+
+        if (lastChunkPrefab == null)
+        {
+            Debug.LogWarning("ChunkManager: Last chunk prefab is not assigned; no final boss chunk will be spawned.");
+        }
+        else
+        {
+            chunkSequence.Add(lastChunkPrefab);
+        }
+    }
+
+    private void AddBiomePrefabs(GameObject[] prefabs, string biomeName)
+    {
+        if (prefabs == null || prefabs.Length == 0)
+        {
+            Debug.LogError($"ChunkManager: No prefabs assigned for {biomeName}.");
+            return;
+        }
+
+        if (prefabs.Length != 4)
+        {
+            Debug.LogWarning($"ChunkManager: {biomeName} should have exactly 4 prefabs (1-4). Currently has {prefabs.Length}.");
+        }
+
+        for (int i = 0; i < prefabs.Length; i++)
+        {
+            GameObject prefab = prefabs[i];
+            if (prefab == null)
+            {
+                Debug.LogError($"ChunkManager: Prefab at index {i} in {biomeName} is null.");
+                continue;
+            }
+
+            chunkSequence.Add(prefab);
+        }
+    }
 
     private void Start()
     {
@@ -31,21 +91,17 @@ public class ChunkManager : MonoBehaviour
             return;
         }
 
-        if (chunkPrefab == null)
+        BuildChunkSequence();
+
+        if (chunkSequence.Count == 0)
         {
-            Debug.LogError("ChunkManager: Chunk prefab not assigned!");
+            Debug.LogError("ChunkManager: No chunk prefabs configured in sequence.");
             return;
         }
 
         // Store the first chunk's position as reference
-        if (firstChunkPrefab != null)
-        {
-            firstChunkPosition = firstChunkPrefab.transform.position;
-        }
-        else
-        {
-            firstChunkPosition = Vector3.zero;
-        }
+        // Use this manager's transform as the origin so all chunks align consistently
+        firstChunkPosition = transform.position;
 
         // Load initial chunks
         UpdateChunks();
@@ -54,11 +110,14 @@ public class ChunkManager : MonoBehaviour
     private void Update()
     {
         if (player == null) return;
+        if (chunkSequence.Count == 0) return;
 
         // Check which chunk the player is in (relative to first chunk position)
         float relativeZ = player.position.z - firstChunkPosition.z;
         int playerChunkIndex = Mathf.FloorToInt(relativeZ / (chunkLength + chunkGap));
-        
+        int maxIndex = chunkSequence.Count - 1;
+        playerChunkIndex = Mathf.Clamp(playerChunkIndex, 0, maxIndex);
+
         // Update chunks if player moved to a new chunk
         if (playerChunkIndex != currentChunkIndex)
         {
@@ -69,10 +128,17 @@ public class ChunkManager : MonoBehaviour
 
     private void UpdateChunks()
     {
+        if (chunkSequence.Count == 0)
+        {
+            return;
+        }
+
+        int maxIndex = chunkSequence.Count - 1;
+
         // Determine which chunks should be active
         // Start from chunk 0 (first chunk) and go forward
         int startChunk = Mathf.Max(0, currentChunkIndex - chunksBehind);
-        int endChunk = currentChunkIndex + chunksAhead;
+        int endChunk = Mathf.Min(currentChunkIndex + chunksAhead, maxIndex);
 
         // Load new chunks
         for (int i = startChunk; i <= endChunk; i++)
@@ -101,8 +167,13 @@ public class ChunkManager : MonoBehaviour
 
     private void LoadChunk(int chunkIndex)
     {
+        if (chunkIndex < 0 || chunkIndex >= chunkSequence.Count)
+        {
+            return;
+        }
+
         // Use first chunk prefab for chunk 0, otherwise use regular prefab
-        GameObject prefabToUse = (chunkIndex == 0 && firstChunkPrefab != null) ? firstChunkPrefab : chunkPrefab;
+        GameObject prefabToUse = chunkSequence[chunkIndex];
 
         // Calculate position along Z-axis, starting from first chunk position
         // Each chunk is placed at: firstChunkPosition + (chunkIndex * (chunkLength + chunkGap))
@@ -113,42 +184,13 @@ public class ChunkManager : MonoBehaviour
         GameObject chunk = Instantiate(prefabToUse, position, prefabToUse.transform.rotation, transform);
         chunk.name = $"Chunk_{chunkIndex}";
 
-        // Add debug color to each chunk (different color per chunk)
-        AddDebugColor(chunk, chunkIndex);
+        // Keep original materials; no debug coloring
+        Debug.Log($"ChunkManager: Loaded chunk index={chunkIndex}, name={prefabToUse.name}, posZ={position.z}");
 
         activeChunks[chunkIndex] = chunk;
     }
 
-    private void AddDebugColor(GameObject chunk, int chunkIndex)
-    {
-        // Get all renderers in the chunk
-        Renderer[] renderers = chunk.GetComponentsInChildren<Renderer>();
-        
-        if (renderers.Length == 0) return;
-
-        // Generate a unique color based on chunk index
-        Color debugColor = GetDebugColor(chunkIndex);
-
-        // Apply color to all renderers
-        foreach (Renderer renderer in renderers)
-        {
-            // Create a new material instance to avoid modifying the prefab
-            Material[] materials = renderer.materials;
-            for (int i = 0; i < materials.Length; i++)
-            {
-                materials[i].color = debugColor;
-            }
-            renderer.materials = materials;
-        }
-    }
-
-    private Color GetDebugColor(int chunkIndex)
-    {
-        // Generate different colors for each chunk
-        // Use HSV to get evenly distributed colors
-        float hue = (chunkIndex * 0.1f) % 1f; // Different hue for each chunk
-        return Color.HSVToRGB(hue, 0.7f, 0.9f);
-    }
+    
 
     private void UnloadChunk(int chunkIndex)
     {
