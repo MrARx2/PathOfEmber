@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 7210684021513065733}
   m_Layer: 0
   m_Name: Box Volume
-  m_TagString: Untagged
+  m_TagString: Colider
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 7284001746485049119}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -3.667, y: 0, z: 0.18218625}
+  m_LocalPosition: {x: -3.75, y: 0, z: 0.18218625}
   m_LocalScale: {x: 6.7999578, y: 1.6599187, z: 2.8375585}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -84,7 +84,7 @@ GameObject:
   - component: {fileID: 1348642619974688469}
   m_Layer: 0
   m_Name: Box Volume (1)
-  m_TagString: Untagged
+  m_TagString: Colider
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -98,7 +98,7 @@ Transform:
   m_GameObject: {fileID: 7544682475869056741}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 3.636, y: 0, z: 0.18218625}
+  m_LocalPosition: {x: 3.75, y: 0, z: 0.18218625}
   m_LocalScale: {x: 6.7999578, y: 1.6599187, z: 2.8375585}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -164,15 +164,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: beae60a87641a8b49984372331fbcb6a, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.4471612
+      value: -7.07
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: beae60a87641a8b49984372331fbcb6a, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -0.42999935
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: beae60a87641a8b49984372331fbcb6a, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 6.7391205
+      value: 5.7186203
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: beae60a87641a8b49984372331fbcb6a, type: 3}
       propertyPath: m_LocalRotation.w
@@ -205,6 +205,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: beae60a87641a8b49984372331fbcb6a, type: 3}
       propertyPath: m_Name
       value: StoneBridge
+      objectReference: {fileID: 0}
+    - target: {fileID: 5535485162913529875, guid: beae60a87641a8b49984372331fbcb6a, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.35
       objectReference: {fileID: 0}
     - target: {fileID: 6167861048528681363, guid: beae60a87641a8b49984372331fbcb6a, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
