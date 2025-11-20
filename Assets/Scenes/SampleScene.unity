@@ -149,7 +149,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChunkManager
   player: {fileID: 617443746}
-  firstChunkPrefab: {fileID: 1807240350}
+  firstChunkPrefab: {fileID: 3536092818659910809, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
   lastChunkPrefab: {fileID: 1326567443434101612, guid: b4a00a99239c12840ab85d62277efe58, type: 3}
   lavaBiomePrefabs:
   - {fileID: 1910626726864035821, guid: 51a83ec5cdff049419d467c827e5a222, type: 3}
@@ -1205,63 +1205,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 435301968}
   m_CullTransparentMesh: 1
---- !u!1001 &594357683
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 2340490034748524242, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2340490034748524242, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2340490034748524242, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2340490034748524242, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2340490034748524242, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2340490034748524242, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2340490034748524242, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2340490034748524242, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2340490034748524242, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2340490034748524242, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3536092818659910809, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
-      propertyPath: m_Name
-      value: FinalMud4 (1)
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
 --- !u!1 &617443741
 GameObject:
   m_ObjectHideFlags: 0
@@ -1295,7 +1238,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae3fea9361bd07e40b3807ae60da4552, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  moveSpeed: 2
+  moveSpeed: 20
   accelerationTime: 0.08
   decelerationTime: 0.06
   xBoundary: 4.87
@@ -1679,11 +1622,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1807240350 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3536092818659910809, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
-  m_PrefabInstance: {fileID: 594357683}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &393914280727212352
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1753,5 +1691,4 @@ SceneRoots:
   - {fileID: 118729509}
   - {fileID: 754336041}
   - {fileID: 735265273}
-  - {fileID: 594357683}
   - {fileID: 393914280727212352}
