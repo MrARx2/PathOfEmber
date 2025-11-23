@@ -60,7 +60,7 @@ public class PlayerMovement : MonoBehaviour
         float t = 1f - Mathf.Exp(-dt / accel);
         currentVelocity = Vector3.Lerp(currentVelocity, desiredVelocity, t);
 
-        // Prevent walking over tagged "Colider" by sweep testing and sliding along surfaces
+        // Prevent walking over tagged "Collider" by sweep testing and sliding along surfaces
         Vector3 velocityStep = currentVelocity * dt;
         if (velocityStep.sqrMagnitude > 1e-6f)
         {
@@ -69,7 +69,7 @@ public class PlayerMovement : MonoBehaviour
             // Ignore triggers (e.g., projectiles) and only respond to solid obstacles
             if (rb.SweepTest(moveDir, out RaycastHit hit, moveDist, QueryTriggerInteraction.Ignore))
             {
-                if (hit.collider != null && hit.collider.CompareTag("Colider"))
+                if (hit.collider != null && hit.collider.CompareTag("Collider"))
                 {
                     // Project velocity onto plane to slide along obstacle
                     Vector3 slid = Vector3.ProjectOnPlane(currentVelocity, hit.normal);
@@ -77,7 +77,7 @@ public class PlayerMovement : MonoBehaviour
                     Vector3 slidStep = slid * dt;
                     if (slidStep.sqrMagnitude > 1e-6f)
                     {
-                        if (rb.SweepTest(slidStep.normalized, out RaycastHit hit2, slidStep.magnitude, QueryTriggerInteraction.Ignore) && hit2.collider != null && hit2.collider.CompareTag("Colider"))
+                        if (rb.SweepTest(slidStep.normalized, out RaycastHit hit2, slidStep.magnitude, QueryTriggerInteraction.Ignore) && hit2.collider != null && hit2.collider.CompareTag("Collider"))
                         {
                             slid = Vector3.zero; // blocked
                         }
