@@ -15,6 +15,7 @@ public class PlayerShooting : MonoBehaviour
     [Header("Targeting")] 
     [SerializeField, Tooltip("Tag used to identify enemies")] private string enemyTag = "Enemy";
     [SerializeField, Tooltip("How often (seconds) to refresh nearest target")] private float targetRefreshInterval = 0.2f;
+    [SerializeField, Tooltip("How quickly the visual (rotateTarget) turns toward the current enemy while idle")] private float aimRotationLerpSpeed = 18f;
 
     [Header("Layers (Optional)")]
     [SerializeField, Tooltip("Name of the Player layer to ignore vs projectile")] private string playerLayerName = "Player";
@@ -55,6 +56,13 @@ public class PlayerShooting : MonoBehaviour
             return;
         }
 
+        if (currentTarget != null && rotateTarget != null)
+        {
+            Vector3 aimDir = currentTarget.position - rotateTarget.position;
+            aimDir.y = 0f;
+            RotateVisualTowards(aimDir);
+        }
+
         // If we have a target and are in range, attempt to fire
         if (currentTarget != null)
         {
@@ -84,7 +92,7 @@ public class PlayerShooting : MonoBehaviour
             // Face target by rotating visual-only transform to avoid affecting physics body
             if (rotateTarget != null)
             {
-                rotateTarget.forward = dir;
+                RotateVisualTowards(dir);
             }
             // If rotateTarget is not set, we intentionally do NOT rotate the root to avoid physics depenetration nudges
         }
@@ -161,6 +169,17 @@ public class PlayerShooting : MonoBehaviour
             }
         }
         return nearest;
+    }
+
+    private void RotateVisualTowards(Vector3 direction)
+    {
+        if (rotateTarget == null) return;
+        if (direction.sqrMagnitude <= 1e-6f) return;
+        direction.y = 0f;
+        direction.Normalize();
+        Quaternion targetRot = Quaternion.LookRotation(direction, Vector3.up);
+        float lerpFactor = aimRotationLerpSpeed <= 0f ? 1f : aimRotationLerpSpeed * Time.deltaTime;
+        rotateTarget.rotation = Quaternion.Slerp(rotateTarget.rotation, targetRot, Mathf.Clamp01(lerpFactor));
     }
 
     private void SetLayerRecursive(Transform root, int layer)
