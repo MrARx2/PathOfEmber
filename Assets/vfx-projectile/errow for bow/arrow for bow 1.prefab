@@ -152,8 +152,31 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 26f12725e9bbeee44aef610fdfaa45c8, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1761329885713085125}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 26f12725e9bbeee44aef610fdfaa45c8, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -2621347793586711967}
   m_SourcePrefab: {fileID: 100100000, guid: 26f12725e9bbeee44aef610fdfaa45c8, type: 3}
+--- !u!1 &2342183619598123401 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 26f12725e9bbeee44aef610fdfaa45c8, type: 3}
+  m_PrefabInstance: {fileID: 3188674182509477080}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &-2621347793586711967
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2342183619598123401}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd840fc6714f0ae418edad2d247bb3e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Projectile
+  speed: 12
+  lifetime: 2
+  destroyOnHit: 1
 --- !u!4 &3155557943967144755 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 26f12725e9bbeee44aef610fdfaa45c8, type: 3}

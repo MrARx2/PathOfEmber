@@ -20,6 +20,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private bool debugAnimation;
     [SerializeField] private float rotationLerpSpeed = 15f;
+    [SerializeField, Tooltip("Yaw offset (degrees) applied to the visual relative to movement direction (for sideways bow poses etc.)")] private float visualYawOffsetDegrees = 0f;
 
     private Rigidbody rb;
     private Keyboard keyboard;
@@ -30,7 +31,8 @@ public class PlayerMovement : MonoBehaviour
 
     public float PlayerSpeed { get; private set; }
     public bool IsMoving { get; private set; }
-    
+    public float VisualYawOffsetDegrees => visualYawOffsetDegrees;
+
     private const float WalkAnimPortion = 0.5f;
     private static readonly int AnimSpeed = Animator.StringToHash("Speed");
 
@@ -228,6 +230,10 @@ public class PlayerMovement : MonoBehaviour
             if (lookDir.sqrMagnitude > 1e-4f)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(lookDir, Vector3.up);
+                if (Mathf.Abs(visualYawOffsetDegrees) > 0.001f)
+                {
+                    targetRotation *= Quaternion.Euler(0f, visualYawOffsetDegrees, 0f);
+                }
                 float lerpFactor = rotationLerpSpeed <= 0f ? 1f : rotationLerpSpeed * Time.deltaTime;
                 playerVisual.rotation = Quaternion.Slerp(playerVisual.rotation, targetRotation, Mathf.Clamp01(lerpFactor));
             }

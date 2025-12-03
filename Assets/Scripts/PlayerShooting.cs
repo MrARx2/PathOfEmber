@@ -17,6 +17,30 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField, Tooltip("How often (seconds) to refresh nearest target")] private float targetRefreshInterval = 0.2f;
     [SerializeField, Tooltip("How quickly the visual (rotateTarget) turns toward the current enemy while idle")] private float aimRotationLerpSpeed = 18f;
 
+    [Header("Head Look")]
+    [SerializeField] private Transform headLookTarget;
+    [SerializeField] private float headLookLerpSpeed = 10f;
+    [SerializeField, Tooltip("If true, LookAt snaps exactly to enemy position; if false, it smoothly follows using headLookLerpSpeed")] private bool headLookSnapToTarget = true;
+
+    [Header("Animation")]
+    [SerializeField] private Animator animator;
+    [SerializeField] private string isShootingBoolName = "IsShooting";
+    [SerializeField] private Animator bowAnimator;
+    [SerializeField] private string bowShootBoolName = "BowShoot";
+    [Space]
+    [SerializeField, Tooltip("If enabled, this script will drive the weight of an upper-body layer mask based on isShooting")] private bool controlUpperLayer = true;
+    [SerializeField, Tooltip("Animator layer name for upper-body masked layer")] private string upperLayerName = "UpperLayer";
+    [SerializeField, Tooltip("Fallback layer index if name is empty or not found (-1 disables)")] private int upperLayerIndex = -1;
+    [SerializeField, Tooltip("Speed to blend Animator layer weight (units/sec) between 0 and 1")] private float upperLayerBlendSpeed = 10f;
+
+    [Header("Shooting State")]
+    [SerializeField] private float shootAfterStopDelay = 0.2f;
+
+    [Header("Tempo")]
+    [SerializeField, Tooltip("Global shooting tempo multiplier that scales fire rate and draw animation speeds")] private float shootTempo = 1f;
+    [SerializeField, Tooltip("Float parameter on main Animator used to scale standing draw arrow animation speed (optional)")] private string characterDrawSpeedParam = "";
+    [SerializeField, Tooltip("Float parameter on bow Animator used to scale DrawingBow animation speed (optional)")] private string bowDrawSpeedParam = "";
+
     [Header("Layers (Optional)")]
     [SerializeField, Tooltip("Name of the Player layer to ignore vs projectile")] private string playerLayerName = "Player";
     [SerializeField, Tooltip("Name of the Projectile layer")] private string projectileLayerName = "Projectile";
@@ -25,10 +49,62 @@ public class PlayerShooting : MonoBehaviour
     private float fireCooldown;
     private float targetRefreshTimer;
     private Transform currentTarget;
+    private Vector3 headLookInitialLocalPos;
+    private float stationaryTime;
+    private int isShootingHash;
+    private int bowShootHash;
+    private int characterDrawSpeedHash;
+    private int bowDrawSpeedHash;
+    private bool isShooting;
+    private int resolvedUpperLayerIndex = -1;
 
     private void Awake()
     {
         movement = GetComponent<PlayerMovement>();
+
+        if (headLookTarget != null)
+        {
+            headLookInitialLocalPos = transform.InverseTransformPoint(headLookTarget.position);
+        }
+
+        if (animator != null && !string.IsNullOrEmpty(isShootingBoolName))
+        {
+            isShootingHash = Animator.StringToHash(isShootingBoolName);
+        }
+
+        if (bowAnimator != null && !string.IsNullOrEmpty(bowShootBoolName))
+        {
+            bowShootHash = Animator.StringToHash(bowShootBoolName);
+        }
+
+        if (animator != null && !string.IsNullOrEmpty(characterDrawSpeedParam))
+        {
+            characterDrawSpeedHash = Animator.StringToHash(characterDrawSpeedParam);
+        }
+
+        if (bowAnimator != null && !string.IsNullOrEmpty(bowDrawSpeedParam))
+        {
+            bowDrawSpeedHash = Animator.StringToHash(bowDrawSpeedParam);
+        }
+
+        // Resolve and initialize upper layer weight
+        if (animator != null && controlUpperLayer)
+        {
+            int idx = -1;
+            if (!string.IsNullOrEmpty(upperLayerName))
+            {
+                idx = animator.GetLayerIndex(upperLayerName);
+            }
+            if (idx < 0 && upperLayerIndex >= 0 && upperLayerIndex < animator.layerCount)
+            {
+                idx = upperLayerIndex;
+            }
+            resolvedUpperLayerIndex = idx;
+            if (resolvedUpperLayerIndex >= 0)
+            {
+                animator.SetLayerWeight(resolvedUpperLayerIndex, 0f);
+            }
+        }
 
         // Optional global layer ignore to harden against matrix misconfig
         int pLayer = LayerMask.NameToLayer(playerLayerName);
@@ -49,12 +125,25 @@ public class PlayerShooting : MonoBehaviour
             currentTarget = FindNearestEnemyInRange();
         }
 
-        // Stop-to-shoot: only fire while stationary
-        if (movement != null && movement.IsMoving)
+        bool isMoving = movement != null && movement.IsMoving;
+
+        if (isMoving)
         {
-            fireCooldown = Mathf.Max(fireCooldown - Time.deltaTime, 0f);
+            stationaryTime = 0f;
+            if (fireCooldown > 0f)
+                fireCooldown -= Time.deltaTime;
+            UpdateHeadLook(currentTarget);
+            SetShootingState(false);
+            UpdateAnimatorLayers();
+            UpdateAnimationTempo();
             return;
         }
+
+        stationaryTime += Time.deltaTime;
+
+        UpdateHeadLook(currentTarget);
+
+        bool canShoot = stationaryTime >= shootAfterStopDelay;
 
         if (currentTarget != null && rotateTarget != null)
         {
@@ -63,18 +152,25 @@ public class PlayerShooting : MonoBehaviour
             RotateVisualTowards(aimDir);
         }
 
-        // If we have a target and are in range, attempt to fire
+        bool hasTargetInRange = false;
+
         if (currentTarget != null)
         {
             float distSqr = (currentTarget.position - transform.position).sqrMagnitude;
-            if (distSqr <= attackRange * attackRange)
+            hasTargetInRange = distSqr <= attackRange * attackRange;
+            if (canShoot && hasTargetInRange)
             {
                 TryFireAt(currentTarget.position);
             }
         }
 
+        SetShootingState(canShoot && hasTargetInRange);
+
         if (fireCooldown > 0f)
             fireCooldown -= Time.deltaTime;
+
+        UpdateAnimatorLayers();
+        UpdateAnimationTempo();
     }
 
     private void TryFireAt(Vector3 targetPos)
@@ -109,8 +205,12 @@ public class PlayerShooting : MonoBehaviour
             SetLayerRecursive(proj.transform, projLayer);
         }
 
-        // Initialize projectile direction (if component present)
+        // Initialize projectile direction (if component present on root or children)
         var projectile = proj.GetComponent<Projectile>();
+        if (projectile == null)
+        {
+            projectile = proj.GetComponentInChildren<Projectile>();
+        }
         if (projectile != null)
         {
             projectile.SetDirection(spawnRot * Vector3.forward);
@@ -134,8 +234,9 @@ public class PlayerShooting : MonoBehaviour
             }
         }
 
-        // Reset cooldown
-        fireCooldown = fireRate > 0f ? (1f / fireRate) : 0f;
+        // Reset cooldown, scaled by global shoot tempo (fireRate is base shots/sec at tempo=1)
+        float effectiveRate = fireRate * Mathf.Max(0.01f, shootTempo);
+        fireCooldown = effectiveRate > 0f ? (1f / effectiveRate) : 0f;
     }
 
     private Transform FindNearestEnemyInRange()
@@ -171,6 +272,71 @@ public class PlayerShooting : MonoBehaviour
         return nearest;
     }
 
+    private void UpdateHeadLook(Transform target)
+    {
+        if (headLookTarget == null) return;
+        float t = headLookLerpSpeed <= 0f ? 1f : Mathf.Clamp01(headLookLerpSpeed * Time.deltaTime);
+        Vector3 defaultPos = transform.TransformPoint(headLookInitialLocalPos);
+        if (target != null)
+        {
+            if (headLookSnapToTarget)
+            {
+                headLookTarget.position = target.position;
+            }
+            else
+            {
+                headLookTarget.position = Vector3.Lerp(headLookTarget.position, target.position, t);
+            }
+        }
+        else
+        {
+            headLookTarget.position = Vector3.Lerp(headLookTarget.position, defaultPos, t);
+        }
+    }
+
+    private void SetShootingState(bool value)
+    {
+        if (isShooting == value) return;
+        isShooting = value;
+        if (animator != null && isShootingHash != 0)
+        {
+            animator.SetBool(isShootingHash, value);
+        }
+
+        if (bowAnimator != null && bowShootHash != 0)
+        {
+            bowAnimator.SetBool(bowShootHash, value);
+        }
+    }
+
+    private void UpdateAnimatorLayers()
+    {
+        if (!controlUpperLayer) return;
+        if (animator == null) return;
+        if (resolvedUpperLayerIndex < 0 || resolvedUpperLayerIndex >= animator.layerCount) return;
+
+        float current = animator.GetLayerWeight(resolvedUpperLayerIndex);
+        float target = isShooting ? 1f : 0f;
+        if (Mathf.Approximately(current, target)) return;
+        float next = Mathf.MoveTowards(current, target, Mathf.Max(0f, upperLayerBlendSpeed) * Time.deltaTime);
+        animator.SetLayerWeight(resolvedUpperLayerIndex, next);
+    }
+
+    private void UpdateAnimationTempo()
+    {
+        float tempo = shootTempo;
+
+        if (animator != null && characterDrawSpeedHash != 0)
+        {
+            animator.SetFloat(characterDrawSpeedHash, tempo);
+        }
+
+        if (bowAnimator != null && bowDrawSpeedHash != 0)
+        {
+            bowAnimator.SetFloat(bowDrawSpeedHash, tempo);
+        }
+    }
+
     private void RotateVisualTowards(Vector3 direction)
     {
         if (rotateTarget == null) return;
@@ -178,6 +344,14 @@ public class PlayerShooting : MonoBehaviour
         direction.y = 0f;
         direction.Normalize();
         Quaternion targetRot = Quaternion.LookRotation(direction, Vector3.up);
+        if (movement != null)
+        {
+            float yawOffset = movement.VisualYawOffsetDegrees;
+            if (Mathf.Abs(yawOffset) > 0.001f)
+            {
+                targetRot *= Quaternion.Euler(0f, yawOffset, 0f);
+            }
+        }
         float lerpFactor = aimRotationLerpSpeed <= 0f ? 1f : aimRotationLerpSpeed * Time.deltaTime;
         rotateTarget.rotation = Quaternion.Slerp(rotateTarget.rotation, targetRot, Mathf.Clamp01(lerpFactor));
     }
