@@ -37,9 +37,8 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private float shootAfterStopDelay = 0.2f;
 
     [Header("Tempo")]
-    [SerializeField, Tooltip("Global shooting tempo multiplier that scales fire rate and draw animation speeds")] private float shootTempo = 1f;
-    [SerializeField, Tooltip("Float parameter on main Animator used to scale standing draw arrow animation speed (optional)")] private string characterDrawSpeedParam = "";
-    [SerializeField, Tooltip("Float parameter on bow Animator used to scale DrawingBow animation speed (optional)")] private string bowDrawSpeedParam = "";
+    [SerializeField, Tooltip("Global shooting tempo controlling both bow and character shooting animations")] private float shootingTempo = 1f;
+    [SerializeField, Tooltip("Float parameter name used on both Animators to scale shooting speed (optional)")] private string shootingTempoParam = "ShootingTempo";
 
     [Header("Layers (Optional)")]
     [SerializeField, Tooltip("Name of the Player layer to ignore vs projectile")] private string playerLayerName = "Player";
@@ -53,14 +52,52 @@ public class PlayerShooting : MonoBehaviour
     private float stationaryTime;
     private int isShootingHash;
     private int bowShootHash;
-    private int characterDrawSpeedHash;
-    private int bowDrawSpeedHash;
+    private int characterShootingTempoHash;
+    private int bowShootingTempoHash;
     private bool isShooting;
     private int resolvedUpperLayerIndex = -1;
+    private bool awaitingRelease;
+    private Vector3 preparedTargetPos;
 
     private void Awake()
     {
         movement = GetComponent<PlayerMovement>();
+        if (animator == null)
+        {
+            Animator[] animators = GetComponentsInChildren<Animator>(true);
+            Animator best = null;
+            int bestDepth = int.MaxValue;
+            for (int i = 0; i < animators.Length; i++)
+            {
+                var a = animators[i];
+                if (a == null) continue;
+                if (bowAnimator != null && a == bowAnimator) continue;
+                if (bowAnimator != null && a.transform.IsChildOf(bowAnimator.transform)) continue;
+                // Prefer the animator closest to this component in the hierarchy (smallest depth)
+                int depth = 0;
+                Transform t = a.transform;
+                while (t != null && t != transform)
+                {
+                    t = t.parent;
+                    depth++;
+                }
+                if (t == transform && depth < bestDepth)
+                {
+                    best = a;
+                    bestDepth = depth;
+                }
+            }
+            if (best == null && animators.Length > 0)
+            {
+                // Fallback: first animator if we couldn't disambiguate
+                best = animators[0];
+            }
+            animator = best;
+        }
+        if (rotateTarget == null && animator != null)
+        {
+            rotateTarget = animator.transform;
+        }
 
         if (headLookTarget != null)
         {
@@ -77,14 +114,17 @@ public class PlayerShooting : MonoBehaviour
             bowShootHash = Animator.StringToHash(bowShootBoolName);
         }
 
-        if (animator != null && !string.IsNullOrEmpty(characterDrawSpeedParam))
+        if (!string.IsNullOrEmpty(shootingTempoParam))
         {
-            characterDrawSpeedHash = Animator.StringToHash(characterDrawSpeedParam);
-        }
-
-        if (bowAnimator != null && !string.IsNullOrEmpty(bowDrawSpeedParam))
-        {
-            bowDrawSpeedHash = Animator.StringToHash(bowDrawSpeedParam);
+            int hash = Animator.StringToHash(shootingTempoParam);
+            if (animator != null)
+            {
+                characterShootingTempoHash = HasFloatParameter(animator, hash) ? hash : 0;
+            }
+            if (bowAnimator != null)
+            {
+                bowShootingTempoHash = HasFloatParameter(bowAnimator, hash) ? hash : 0;
+            }
         }
 
         // Resolve and initialize upper layer weight
@@ -133,6 +173,7 @@ public class PlayerShooting : MonoBehaviour
             if (fireCooldown > 0f)
                 fireCooldown -= Time.deltaTime;
             UpdateHeadLook(currentTarget);
+            awaitingRelease = false;
             SetShootingState(false);
             UpdateAnimatorLayers();
             UpdateAnimationTempo();
@@ -145,9 +186,10 @@ public class PlayerShooting : MonoBehaviour
 
         bool canShoot = stationaryTime >= shootAfterStopDelay;
 
-        if (currentTarget != null && rotateTarget != null)
+        var visTarget = GetEffectiveRotateTarget();
+        if (currentTarget != null && visTarget != null)
         {
-            Vector3 aimDir = currentTarget.position - rotateTarget.position;
+            Vector3 aimDir = currentTarget.position - visTarget.position;
             aimDir.y = 0f;
             RotateVisualTowards(aimDir);
         }
@@ -158,19 +200,35 @@ public class PlayerShooting : MonoBehaviour
         {
             float distSqr = (currentTarget.position - transform.position).sqrMagnitude;
             hasTargetInRange = distSqr <= attackRange * attackRange;
-            if (canShoot && hasTargetInRange)
+            if (canShoot && hasTargetInRange && fireCooldown <= 0f && !awaitingRelease)
             {
-                TryFireAt(currentTarget.position);
+                preparedTargetPos = currentTarget.position;
+                awaitingRelease = true;
             }
         }
 
-        SetShootingState(canShoot && hasTargetInRange);
+        SetShootingState((canShoot && hasTargetInRange) || awaitingRelease);
 
         if (fireCooldown > 0f)
             fireCooldown -= Time.deltaTime;
 
         UpdateAnimatorLayers();
         UpdateAnimationTempo();
+    }
+
+    private void LateUpdate()
+    {
+        // Apply visual aim after Animator updates to ensure rotation sticks
+        if (movement != null && movement.IsMoving) return;
+        var vis = GetEffectiveRotateTarget();
+        if (vis == null) return;
+        if (currentTarget == null) return;
+        Vector3 aimDir = currentTarget.position - vis.position;
+        aimDir.y = 0f;
+        if (aimDir.sqrMagnitude > 1e-6f)
+        {
+            RotateVisualTowards(aimDir);
+        }
     }
 
     private void TryFireAt(Vector3 targetPos)
@@ -186,7 +244,7 @@ public class PlayerShooting : MonoBehaviour
         {
             dir.Normalize();
             // Face target by rotating visual-only transform to avoid affecting physics body
-            if (rotateTarget != null)
+            if (GetEffectiveRotateTarget() != null)
             {
                 RotateVisualTowards(dir);
             }
@@ -235,8 +293,95 @@ public class PlayerShooting : MonoBehaviour
         }
 
         // Reset cooldown, scaled by global shoot tempo (fireRate is base shots/sec at tempo=1)
-        float effectiveRate = fireRate * Mathf.Max(0.01f, shootTempo);
+        float effectiveRate = fireRate * Mathf.Max(0.01f, shootingTempo);
         fireCooldown = effectiveRate > 0f ? (1f / effectiveRate) : 0f;
+    }
+
+    public void ReleaseArrow()
+    {
+        ReleasePreparedShot();
+    }
+
+    public void AnimationEvent_Fire()
+    {
+        ReleasePreparedShot();
+    }
+
+    public void AE_Fire()
+    {
+        ReleasePreparedShot();
+    }
+
+    public void ShootArrow()
+    {
+        ReleasePreparedShot();
+    }
+
+    private void ReleasePreparedShot()
+    {
+        if (!awaitingRelease) return;
+        if (projectilePrefab == null) { awaitingRelease = false; return; }
+
+        Vector3 origin = firePoint != null ? firePoint.position : transform.position;
+        Vector3 targetPos = currentTarget != null ? currentTarget.position : preparedTargetPos;
+        Vector3 dir = targetPos - origin;
+        dir.y = 0f;
+        if (dir.sqrMagnitude <= 1e-6f)
+        {
+            var vis = GetEffectiveRotateTarget();
+            dir = vis != null ? vis.forward : transform.forward;
+        }
+        else
+        {
+            dir.Normalize();
+        }
+
+        if (GetEffectiveRotateTarget() != null && dir.sqrMagnitude > 1e-6f)
+        {
+            RotateVisualTowards(dir);
+        }
+
+        Vector3 spawnPos = origin + (dir.sqrMagnitude > 1e-6f ? dir : transform.forward) * Mathf.Max(0f, muzzleOffset);
+        Quaternion spawnRot = Quaternion.LookRotation(dir.sqrMagnitude > 1e-6f ? dir : transform.forward, Vector3.up);
+        GameObject proj = Instantiate(projectilePrefab, spawnPos, spawnRot);
+
+        int projLayer = LayerMask.NameToLayer(projectileLayerName);
+        if (projLayer >= 0)
+        {
+            SetLayerRecursive(proj.transform, projLayer);
+        }
+
+        var projectile = proj.GetComponent<Projectile>();
+        if (projectile == null)
+        {
+            projectile = proj.GetComponentInChildren<Projectile>();
+        }
+        if (projectile != null)
+        {
+            projectile.SetDirection(spawnRot * Vector3.forward);
+            projectile.SetSpeed(projectileSpeed);
+        }
+
+        var projCols = proj.GetComponentsInChildren<Collider>();
+        if (projCols != null && projCols.Length > 0)
+        {
+            var playerCols = GetComponentsInChildren<Collider>();
+            for (int p = 0; p < projCols.Length; p++)
+            {
+                var pc = projCols[p];
+                if (pc == null) continue;
+                for (int i = 0; i < playerCols.Length; i++)
+                {
+                    if (playerCols[i] != null)
+                        Physics.IgnoreCollision(pc, playerCols[i], true);
+                }
+            }
+        }
+
+        float effectiveRate = fireRate * Mathf.Max(0.01f, shootingTempo);
+        fireCooldown = effectiveRate > 0f ? (1f / effectiveRate) : 0f;
+        awaitingRelease = false;
+        SetShootingState(false);
     }
 
     private Transform FindNearestEnemyInRange()
@@ -254,7 +399,6 @@ public class PlayerShooting : MonoBehaviour
         Transform nearest = null;
         float bestSqr = float.MaxValue;
         Vector3 p = transform.position;
-        float rangeSqr = attackRange * attackRange;
 
         for (int i = 0; i < enemies.Length; i++)
         {
@@ -263,7 +407,7 @@ public class PlayerShooting : MonoBehaviour
             Vector3 d = e.transform.position - p;
             d.y = 0f;
             float s = d.sqrMagnitude;
-            if (s < bestSqr && s <= rangeSqr)
+            if (s < bestSqr)
             {
                 bestSqr = s;
                 nearest = e.transform;
@@ -279,14 +423,8 @@ public class PlayerShooting : MonoBehaviour
         Vector3 defaultPos = transform.TransformPoint(headLookInitialLocalPos);
         if (target != null)
         {
-            if (headLookSnapToTarget)
-            {
-                headLookTarget.position = target.position;
-            }
-            else
-            {
-                headLookTarget.position = Vector3.Lerp(headLookTarget.position, target.position, t);
-            }
+            // Always smoothly follow the enemy position for intuitive head motion
+            headLookTarget.position = Vector3.Lerp(headLookTarget.position, target.position, t);
         }
         else
         {
@@ -322,24 +460,49 @@ public class PlayerShooting : MonoBehaviour
         animator.SetLayerWeight(resolvedUpperLayerIndex, next);
     }
 
+    private bool RotateTargetConflictsWithAnimator()
+    {
+        if (rotateTarget == null) return false;
+        if (bowAnimator != null)
+        {
+            var bowRoot = bowAnimator.transform;
+            if (rotateTarget != bowRoot && rotateTarget.IsChildOf(bowRoot)) return true;
+        }
+        return false;
+    }
+
     private void UpdateAnimationTempo()
     {
-        float tempo = shootTempo;
+        float tempo = shootingTempo;
 
-        if (animator != null && characterDrawSpeedHash != 0)
+        if (animator != null && characterShootingTempoHash != 0)
         {
-            animator.SetFloat(characterDrawSpeedHash, tempo);
+            animator.SetFloat(characterShootingTempoHash, tempo);
         }
 
-        if (bowAnimator != null && bowDrawSpeedHash != 0)
+        if (bowAnimator != null && bowShootingTempoHash != 0)
         {
-            bowAnimator.SetFloat(bowDrawSpeedHash, tempo);
+            bowAnimator.SetFloat(bowShootingTempoHash, tempo);
         }
+    }
+
+    private bool HasFloatParameter(Animator targetAnimator, int hash)
+    {
+        if (targetAnimator == null || hash == 0) return false;
+        var parameters = targetAnimator.parameters;
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            var p = parameters[i];
+            if (p.type != AnimatorControllerParameterType.Float) continue;
+            if (p.nameHash == hash) return true;
+        }
+        return false;
     }
 
     private void RotateVisualTowards(Vector3 direction)
     {
-        if (rotateTarget == null) return;
+        Transform target = GetEffectiveRotateTarget();
+        if (target == null) return;
         if (direction.sqrMagnitude <= 1e-6f) return;
         direction.y = 0f;
         direction.Normalize();
@@ -353,7 +516,25 @@ public class PlayerShooting : MonoBehaviour
             }
         }
         float lerpFactor = aimRotationLerpSpeed <= 0f ? 1f : aimRotationLerpSpeed * Time.deltaTime;
-        rotateTarget.rotation = Quaternion.Slerp(rotateTarget.rotation, targetRot, Mathf.Clamp01(lerpFactor));
+        target.rotation = Quaternion.Slerp(target.rotation, targetRot, Mathf.Clamp01(lerpFactor));
+    }
+
+    private Transform GetEffectiveRotateTarget()
+    {
+        if (rotateTarget == null)
+        {
+            if (animator != null) return animator.transform;
+            return null;
+        }
+        if (bowAnimator != null)
+        {
+            var bowRoot = bowAnimator.transform;
+            if (rotateTarget != bowRoot && rotateTarget.IsChildOf(bowRoot))
+            {
+                if (animator != null) return animator.transform;
+            }
+        }
+        return rotateTarget;
     }
 
     private void SetLayerRecursive(Transform root, int layer)

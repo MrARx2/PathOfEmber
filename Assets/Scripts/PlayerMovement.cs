@@ -48,7 +48,7 @@ public class PlayerMovement : MonoBehaviour
         // Auto-wire joystick if not set in Inspector
         if (joystick == null)
         {
-            joystick = FindObjectOfType<FloatingJoystick>();
+            joystick = FindFirstObjectByType<FloatingJoystick>();
         }
 
         // Auto-assign visual and animator if missing
