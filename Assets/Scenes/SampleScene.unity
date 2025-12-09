@@ -433,6 +433,9 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       insertIndex: -1
+      addedObject: {fileID: 1896781734}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      insertIndex: -1
       addedObject: {fileID: 1896781733}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       insertIndex: -1
@@ -1584,6 +1587,11 @@ MonoBehaviour:
   upperLayerIndex: -1
   upperLayerBlendSpeed: 10
   shootAfterStopDelay: 0
+  characterShootStateName: 
+  characterShootLayer: 1
+  bowShootStateName: 
+  bowShootLayer: 0
+  shootCrossFadeDuration: 0.05
   shootingTempo: 1
   shootingTempoParam: ShootingTempo
   playerLayerName: Player
@@ -2113,14 +2121,6 @@ MonoBehaviour:
   m_RigLayers:
   - m_Rig: {fileID: 2062911610}
     m_Active: 1
-  - m_Rig: {fileID: 0}
-    m_Active: 1
-  - m_Rig: {fileID: 0}
-    m_Active: 1
-  - m_Rig: {fileID: 663593537}
-    m_Active: 1
-  - m_Rig: {fileID: 333634269}
-    m_Active: 1
   m_Effectors:
   - m_Transform: {fileID: 0}
     m_Style:
@@ -2191,6 +2191,19 @@ MonoBehaviour:
   - {fileID: 986515199}
   - {fileID: 425829319}
   - {fileID: 666719642}
+--- !u!114 &1896781734
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1896781731}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c30615f0be6c1014da15b8ca6f83eb26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BowAnimationEventRelay
+  target: {fileID: 617443749}
 --- !u!4 &2004643389 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 366175167995203695, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
@@ -2661,7 +2674,6 @@ GameObject:
   m_Component:
   - component: {fileID: 543450652272603567}
   - component: {fileID: 5866666020585106389}
-  - component: {fileID: 5866666020585106390}
   m_Layer: 0
   m_Name: Bow
   m_TagString: Untagged
@@ -2716,7 +2728,7 @@ Transform:
   m_Children:
   - {fileID: 7840269452327927969}
   m_Father: {fileID: 4793503763057647908}
-  m_LocalEulerAnglesHint: {x: -0.00022932551, y: -72.65113, z: -179.99973}
+  m_LocalEulerAnglesHint: {x: -0.00028639514, y: -69.07082, z: -179.99974}
 --- !u!1 &1507767882687892676
 GameObject:
   m_ObjectHideFlags: 0
@@ -2781,7 +2793,7 @@ Transform:
   m_Children:
   - {fileID: 3536602340083089673}
   m_Father: {fileID: 7490359390087514298}
-  m_LocalEulerAnglesHint: {x: 0.00014725317, y: -73.56964, z: -0.00016637021}
+  m_LocalEulerAnglesHint: {x: 0.00016807264, y: -70.03619, z: -0.00016414921}
 --- !u!4 &3536602340083089673
 Transform:
   m_ObjectHideFlags: 0
@@ -2844,7 +2856,7 @@ Transform:
   m_Children:
   - {fileID: 1270227513603892496}
   m_Father: {fileID: 7818166775233618663}
-  m_LocalEulerAnglesHint: {x: -0.00033984572, y: -16.230236, z: 0.0001200553}
+  m_LocalEulerAnglesHint: {x: -0.00038402935, y: -15.269846, z: 0.00013253276}
 --- !u!4 &5220279180553957374
 Transform:
   m_ObjectHideFlags: 0
@@ -2882,19 +2894,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &5866666020585106390
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 919132148334193429}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c30615f0be6c1014da15b8ca6f83eb26, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BowAnimationEventRelay
-  target: {fileID: 617443749}
 --- !u!1 &6377535699293425899
 GameObject:
   m_ObjectHideFlags: 0
@@ -2926,7 +2925,7 @@ Transform:
   m_Children:
   - {fileID: 7490359390087514298}
   m_Father: {fileID: 7975539721654290213}
-  m_LocalEulerAnglesHint: {x: 0.00041426098, y: -60.376156, z: 0.0004422727}
+  m_LocalEulerAnglesHint: {x: 0.0004920189, y: -62.787525, z: 0.00040218938}
 --- !u!4 &7231161016764338952
 Transform:
   m_ObjectHideFlags: 0
@@ -2957,7 +2956,7 @@ Transform:
   m_Children:
   - {fileID: 3336761200946965821}
   m_Father: {fileID: 6557392325388968089}
-  m_LocalEulerAnglesHint: {x: -0.00009934602, y: -15.834513, z: 0.00052968215}
+  m_LocalEulerAnglesHint: {x: -0.00012121309, y: -14.835725, z: 0.00057623495}
 --- !u!4 &7818166775233618663
 Transform:
   m_ObjectHideFlags: 0
@@ -2973,7 +2972,7 @@ Transform:
   m_Children:
   - {fileID: 4793503763057647908}
   m_Father: {fileID: 7975539721654290213}
-  m_LocalEulerAnglesHint: {x: 0.0005433377, y: -119.34439, z: 179.99765}
+  m_LocalEulerAnglesHint: {x: 0.00063836196, y: -116.91919, z: 179.99773}
 --- !u!4 &7840269452327927969
 Transform:
   m_ObjectHideFlags: 0

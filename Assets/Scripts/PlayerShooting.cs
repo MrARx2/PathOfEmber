@@ -36,6 +36,13 @@ public class PlayerShooting : MonoBehaviour
     [Header("Shooting State")]
     [SerializeField] private float shootAfterStopDelay = 0.2f;
 
+    [Header("Shooting Sync")]
+    [SerializeField] private string characterShootStateName;
+    [SerializeField] private int characterShootLayer;
+    [SerializeField] private string bowShootStateName;
+    [SerializeField] private int bowShootLayer;
+    [SerializeField] private float shootCrossFadeDuration = 0.05f;
+
     [Header("Tempo")]
     [SerializeField, Tooltip("Global shooting tempo controlling both bow and character shooting animations")] private float shootingTempo = 1f;
     [SerializeField, Tooltip("Float parameter name used on both Animators to scale shooting speed (optional)")] private string shootingTempoParam = "ShootingTempo";
@@ -203,7 +210,7 @@ public class PlayerShooting : MonoBehaviour
             if (canShoot && hasTargetInRange && fireCooldown <= 0f && !awaitingRelease)
             {
                 preparedTargetPos = currentTarget.position;
-                awaitingRelease = true;
+                StartSynchronizedShot();
             }
         }
 
@@ -544,6 +551,17 @@ public class PlayerShooting : MonoBehaviour
         for (int i = 0; i < root.childCount; i++)
         {
             SetLayerRecursive(root.GetChild(i), layer);
+        }
+    }
+
+    private void StartSynchronizedShot()
+    {
+        awaitingRelease = true;
+
+        if (animator != null && !string.IsNullOrEmpty(characterShootStateName) && animator.layerCount > 0)
+        {
+            int layerIndex = Mathf.Clamp(characterShootLayer, 0, animator.layerCount - 1);
+            animator.CrossFadeInFixedTime(characterShootStateName, shootCrossFadeDuration, layerIndex, 0f);
         }
     }
 }

@@ -47,11 +47,7 @@ public class ChunkManager : MonoBehaviour
         AddBiomePrefabs(grassBiomePrefabs, "Grass biome");
         AddBiomePrefabs(mudBiomePrefabs, "Mud biome");
 
-        if (lastChunkPrefab == null)
-        {
-            Debug.LogWarning("ChunkManager: Last chunk prefab is not assigned; no final boss chunk will be spawned.");
-        }
-        else
+        if (lastChunkPrefab != null)
         {
             chunkSequence.Add(lastChunkPrefab);
         }
@@ -61,13 +57,7 @@ public class ChunkManager : MonoBehaviour
     {
         if (prefabs == null || prefabs.Length == 0)
         {
-            Debug.LogError($"ChunkManager: No prefabs assigned for {biomeName}.");
             return;
-        }
-
-        if (prefabs.Length != 4)
-        {
-            Debug.LogWarning($"ChunkManager: {biomeName} should have exactly 4 prefabs (1-4). Currently has {prefabs.Length}.");
         }
 
         for (int i = 0; i < prefabs.Length; i++)
@@ -75,7 +65,6 @@ public class ChunkManager : MonoBehaviour
             GameObject prefab = prefabs[i];
             if (prefab == null)
             {
-                Debug.LogError($"ChunkManager: Prefab at index {i} in {biomeName} is null.");
                 continue;
             }
 
@@ -185,7 +174,6 @@ public class ChunkManager : MonoBehaviour
         chunk.name = $"Chunk_{chunkIndex}";
 
         // Keep original materials; no debug coloring
-        Debug.Log($"ChunkManager: Loaded chunk index={chunkIndex}, name={prefabToUse.name}, posZ={position.z}");
 
         activeChunks[chunkIndex] = chunk;
     }
