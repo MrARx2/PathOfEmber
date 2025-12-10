@@ -1431,6 +1431,7 @@ GameObject:
   - component: {fileID: 617443748}
   - component: {fileID: 617443742}
   - component: {fileID: 617443749}
+  - component: {fileID: 617443750}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -1596,6 +1597,32 @@ MonoBehaviour:
   shootingTempoParam: ShootingTempo
   playerLayerName: Player
   projectileLayerName: Projectile
+--- !u!114 &617443750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 617443741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd4f5b2cbd0d13143a6669302a460661, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Health
+  maxHealth: 1000
+  currentHealth: 1000
+  OnDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHeal:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDeath:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &641520292
 GameObject:
   m_ObjectHideFlags: 0
