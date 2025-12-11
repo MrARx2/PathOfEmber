@@ -36,12 +36,6 @@ public class PlayerShooting : MonoBehaviour
     [Header("Shooting State")]
     [SerializeField] private float shootAfterStopDelay = 0.2f;
 
-    [Header("Shooting Sync")]
-    [SerializeField] private string characterShootStateName;
-    [SerializeField] private int characterShootLayer;
-    [SerializeField] private string bowShootStateName;
-    [SerializeField] private int bowShootLayer;
-    [SerializeField] private float shootCrossFadeDuration = 0.05f;
 
     [Header("Tempo")]
     [SerializeField, Tooltip("Global shooting tempo controlling both bow and character shooting animations")] private float shootingTempo = 1f;
@@ -271,10 +265,10 @@ public class PlayerShooting : MonoBehaviour
         }
 
         // Initialize projectile direction (if component present on root or children)
-        var projectile = proj.GetComponent<Projectile>();
+        var projectile = proj.GetComponent<ArrowProjectile>();
         if (projectile == null)
         {
-            projectile = proj.GetComponentInChildren<Projectile>();
+            projectile = proj.GetComponentInChildren<ArrowProjectile>();
         }
         if (projectile != null)
         {
@@ -358,10 +352,10 @@ public class PlayerShooting : MonoBehaviour
             SetLayerRecursive(proj.transform, projLayer);
         }
 
-        var projectile = proj.GetComponent<Projectile>();
+        var projectile = proj.GetComponent<ArrowProjectile>();
         if (projectile == null)
         {
-            projectile = proj.GetComponentInChildren<Projectile>();
+            projectile = proj.GetComponentInChildren<ArrowProjectile>();
         }
         if (projectile != null)
         {
@@ -557,11 +551,6 @@ public class PlayerShooting : MonoBehaviour
     private void StartSynchronizedShot()
     {
         awaitingRelease = true;
-
-        if (animator != null && !string.IsNullOrEmpty(characterShootStateName) && animator.layerCount > 0)
-        {
-            int layerIndex = Mathf.Clamp(characterShootLayer, 0, animator.layerCount - 1);
-            animator.CrossFadeInFixedTime(characterShootStateName, shootCrossFadeDuration, layerIndex, 0f);
-        }
+        // Animation events now handle the shot timing
     }
 }
