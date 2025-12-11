@@ -1,5 +1,76 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8720040511559690346
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3853614963470936188}
+  - component: {fileID: 3585211567689711622}
+  - component: {fileID: 1409236976301659349}
+  m_Layer: 0
+  m_Name: Box Volume
+  m_TagString: Collider
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3853614963470936188
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8720040511559690346}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: 0, w: 0.000115618095}
+  m_LocalPosition: {x: -0.04, y: -0.0487992, z: -0.16}
+  m_LocalScale: {x: 1.0165573, y: 1.7616513, z: 10.429033}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8984555623327054125}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &3585211567689711622
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8720040511559690346}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1409236976301659349
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8720040511559690346}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
+  m_IsGlobal: 0
+  priority: 0
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 0}
 --- !u!1001 &8873556647685447366
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22,31 +93,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.03
+      value: 6.2650166
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.34276
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0
+      value: -4.8975325
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.7071068
+      value: 0.000115618095
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.7071068
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -54,7 +125,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 90
+      value: 179.987
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -70,6 +141,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3853614963470936188}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
+--- !u!4 &8984555623327054125 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
+  m_PrefabInstance: {fileID: 8873556647685447366}
+  m_PrefabAsset: {fileID: 0}
