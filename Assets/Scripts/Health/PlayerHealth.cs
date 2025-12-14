@@ -13,12 +13,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private bool isInvulnerable = false;
 
     [Header("Health Bar UI")]
-    [Tooltip("UI Image with Type = Filled for health bar")]
-    [SerializeField] private Image healthBarFill;
-    [Tooltip("Parent container to show/hide the health bar")]
-    [SerializeField] private GameObject healthBarContainer;
-    [Tooltip("Should health bar face the camera?")]
-    [SerializeField] private bool billboardHealthBar = false;
+    [Tooltip("Optional: Anchor point for the floating health bar (default is above head)")]
+    public Transform HealthBarPoint;
 
     [Header("Invulnerability Visual")]
     [Tooltip("Child GameObject with invulnerability effect")]
@@ -38,7 +34,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private bool isDead = false;
     private Coroutine dotCoroutine;
-    private Camera mainCam;
 
     public bool IsInvulnerable => isInvulnerable;
     public bool IsDead => isDead;
@@ -48,26 +43,24 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private void Awake()
     {
         currentHealth = maxHealth;
-        mainCam = Camera.main;
         if (invulnerabilityEffect != null)
             invulnerabilityEffect.SetActive(false);
     }
 
     private void Start()
     {
-        UpdateHealthBar();
+        // Register with global manager for floating bar
+        if (HealthBarManager.Instance != null)
+        {
+            HealthBarManager.Instance.Register(this);
+        }
+
         NotifyHealthChanged();
     }
 
     private void LateUpdate()
     {
-        // Billboard health bar to face camera
-        if (billboardHealthBar && healthBarContainer != null && mainCam != null)
-        {
-            healthBarContainer.transform.LookAt(
-                healthBarContainer.transform.position + mainCam.transform.forward
-            );
-        }
+        // No billboard logic needed for HUD
     }
 
     public void TakeDamage(int damage)
@@ -78,6 +71,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         currentHealth -= damage;
         if (currentHealth < 0) currentHealth = 0;
+
+        Debug.Log($"[PlayerHealth] Took {damage} damage. Current: {currentHealth}/{maxHealth}");
 
         if (animator != null && !string.IsNullOrEmpty(hitTrigger))
             animator.SetTrigger(hitTrigger);
@@ -154,10 +149,17 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             invulnerabilityEffect.SetActive(false);
     }
 
+    private void OnDisable()
+    {
+        if (HealthBarManager.Instance != null)
+        {
+            HealthBarManager.Instance.Unregister(this);
+        }
+    }
+
     private void UpdateHealthBar()
     {
-        if (healthBarFill != null && maxHealth > 0)
-            healthBarFill.fillAmount = (float)currentHealth / maxHealth;
+        // Handled by HealthBarManager now
     }
 
     private void Die()
@@ -166,10 +168,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         if (animator != null && !string.IsNullOrEmpty(deathTrigger))
             animator.SetTrigger(deathTrigger);
-
-        // Hide health bar on death
-        if (healthBarContainer != null)
-            healthBarContainer.SetActive(false);
 
         OnDeath?.Invoke();
         Debug.Log($"{gameObject.name} died.");

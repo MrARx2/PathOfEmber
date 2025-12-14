@@ -15,12 +15,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private int currentHealth;
 
     [Header("Health Bar UI")]
-    [Tooltip("Assign a UI Image with Image Type = Filled")]
-    [SerializeField] private Image healthBarFill;
-    [Tooltip("Optional: Parent canvas/container to hide when dead")]
-    [SerializeField] private GameObject healthBarContainer;
-    [Tooltip("Should the health bar face the camera?")]
-    [SerializeField] private bool billboardHealthBar = true;
+    [Tooltip("Optional: Assign a transform to anchor the health bar to (e.g. above head)")]
+    public Transform HealthBarPoint;
 
     [Header("Events")]
     public UnityEvent<int> OnDamage;
@@ -28,7 +24,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     public UnityEvent<float> OnHealthChanged;
 
     private bool isDead = false;
-    private Camera mainCam;
     private Coroutine dotCoroutine;
 
     public bool IsDead => isDead;
@@ -38,21 +33,23 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private void Awake()
     {
         currentHealth = maxHealth;
-        mainCam = Camera.main;
     }
 
     private void Start()
     {
-        UpdateHealthBar();
+        // Register with global manager
+        if (HealthBarManager.Instance != null)
+        {
+            HealthBarManager.Instance.Register(this);
+        }
     }
 
-    private void LateUpdate()
+    private void OnDisable()
     {
-        if (billboardHealthBar && healthBarContainer != null && mainCam != null)
+        // Clean up
+        if (HealthBarManager.Instance != null)
         {
-            healthBarContainer.transform.LookAt(
-                healthBarContainer.transform.position + mainCam.transform.forward
-            );
+            HealthBarManager.Instance.Unregister(this);
         }
     }
 
@@ -65,7 +62,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         if (currentHealth < 0) currentHealth = 0;
 
         OnDamage?.Invoke(damage);
-        UpdateHealthBar();
         OnHealthChanged?.Invoke((float)currentHealth / maxHealth);
 
         if (currentHealth <= 0)
@@ -80,7 +76,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         currentHealth += amount;
         if (currentHealth > maxHealth) currentHealth = maxHealth;
 
-        UpdateHealthBar();
         OnHealthChanged?.Invoke((float)currentHealth / maxHealth);
     }
 
@@ -102,19 +97,9 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         dotCoroutine = null;
     }
 
-    private void UpdateHealthBar()
-    {
-        if (healthBarFill != null && maxHealth > 0)
-            healthBarFill.fillAmount = (float)currentHealth / maxHealth;
-    }
-
     private void Die()
     {
         isDead = true;
-        
-        if (healthBarContainer != null)
-            healthBarContainer.SetActive(false);
-
         OnDeath?.Invoke();
         Debug.Log($"{gameObject.name} died.");
     }
