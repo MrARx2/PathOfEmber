@@ -41,11 +41,18 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField, Tooltip("Global shooting tempo controlling both bow and character shooting animations")] private float shootingTempo = 1f;
     [SerializeField, Tooltip("Float parameter name used on both Animators to scale shooting speed (optional)")] private string shootingTempoParam = "ShootingTempo";
 
+    [Header("Power-Up Abilities")]
+    [SerializeField, Tooltip("If enabled, fires 2x the projectile count")] private bool multishotEnabled = false;
+    [SerializeField, Tooltip("Delay between multishot bursts in seconds")] private float multishotDelay = 0.1f;
+    [SerializeField, Tooltip("If enabled, fires 3 projectiles in a spread")] private bool tripleshotEnabled = false;
+    [SerializeField, Tooltip("Angle spread for triple shot")] private float tripleshotAngle = 25f;
+
     [Header("Layers (Optional)")]
     [SerializeField, Tooltip("Name of the Player layer to ignore vs projectile")] private string playerLayerName = "Player";
     [SerializeField, Tooltip("Name of the Projectile layer")] private string projectileLayerName = "Projectile";
 
     private PlayerMovement movement;
+    private PlayerAbilities abilities;
     private float fireCooldown;
     private float targetRefreshTimer;
     private Transform currentTarget;
@@ -59,10 +66,14 @@ public class PlayerShooting : MonoBehaviour
     private int resolvedUpperLayerIndex = -1;
     private bool awaitingRelease;
     private Vector3 preparedTargetPos;
+    private float baseShootingTempo;
 
     private void Awake()
     {
         movement = GetComponent<PlayerMovement>();
+        abilities = GetComponent<PlayerAbilities>();
+        baseShootingTempo = shootingTempo;
+        Debug.Log($"[PlayerShooting] Awake: shootingTempo={shootingTempo}, baseShootingTempo={baseShootingTempo}");
         if (animator == null)
         {
             Animator[] animators = GetComponentsInChildren<Animator>(true);
@@ -342,8 +353,46 @@ public class PlayerShooting : MonoBehaviour
             RotateVisualTowards(dir);
         }
 
-        Vector3 spawnPos = origin + (dir.sqrMagnitude > 1e-6f ? dir : transform.forward) * Mathf.Max(0f, muzzleOffset);
-        Quaternion spawnRot = Quaternion.LookRotation(dir.sqrMagnitude > 1e-6f ? dir : transform.forward, Vector3.up);
+        // Fire first burst immediately
+        FireBurst(origin, dir);
+
+        // If multishot is enabled, fire second burst after delay
+        if (multishotEnabled)
+        {
+            StartCoroutine(MultishotDelayRoutine(origin, dir));
+        }
+
+        float effectiveRate = fireRate * Mathf.Max(0.01f, shootingTempo);
+        fireCooldown = effectiveRate > 0f ? (1f / effectiveRate) : 0f;
+        awaitingRelease = false;
+        SetShootingState(false);
+    }
+
+    private System.Collections.IEnumerator MultishotDelayRoutine(Vector3 origin, Vector3 dir)
+    {
+        yield return new WaitForSeconds(multishotDelay);
+        FireBurst(origin, dir);
+    }
+
+    private void FireBurst(Vector3 origin, Vector3 dir)
+    {
+        if (tripleshotEnabled)
+        {
+            // Fire 3 projectiles: center, left, right
+            FireProjectile(origin, dir);
+            FireProjectile(origin, Quaternion.Euler(0, -tripleshotAngle, 0) * dir);
+            FireProjectile(origin, Quaternion.Euler(0, tripleshotAngle, 0) * dir);
+        }
+        else
+        {
+            FireProjectile(origin, dir);
+        }
+    }
+
+    private void FireProjectile(Vector3 origin, Vector3 direction)
+    {
+        Vector3 spawnPos = origin + (direction.sqrMagnitude > 1e-6f ? direction : transform.forward) * Mathf.Max(0f, muzzleOffset);
+        Quaternion spawnRot = Quaternion.LookRotation(direction.sqrMagnitude > 1e-6f ? direction : transform.forward, Vector3.up);
         GameObject proj = Instantiate(projectilePrefab, spawnPos, spawnRot);
 
         int projLayer = LayerMask.NameToLayer(projectileLayerName);
@@ -361,6 +410,17 @@ public class PlayerShooting : MonoBehaviour
         {
             projectile.SetDirection(spawnRot * Vector3.forward);
             projectile.SetSpeed(projectileSpeed);
+
+            // Apply ability effects from PlayerAbilities
+            if (abilities != null)
+            {
+                projectile.IsPiercing = abilities.HasPiercing;
+                projectile.HasFreezeEffect = abilities.HasFreezeShot;
+                projectile.HasVenomEffect = abilities.HasVenomShot;
+                projectile.FreezeDuration = abilities.FreezeDuration;
+                projectile.VenomDamagePerSecond = abilities.VenomDamagePerSecond;
+                projectile.VenomDuration = abilities.VenomDuration;
+            }
         }
 
         var projCols = proj.GetComponentsInChildren<Collider>();
@@ -378,11 +438,6 @@ public class PlayerShooting : MonoBehaviour
                 }
             }
         }
-
-        float effectiveRate = fireRate * Mathf.Max(0.01f, shootingTempo);
-        fireCooldown = effectiveRate > 0f ? (1f / effectiveRate) : 0f;
-        awaitingRelease = false;
-        SetShootingState(false);
     }
 
     private Transform FindNearestEnemyInRange()
@@ -553,4 +608,43 @@ public class PlayerShooting : MonoBehaviour
         awaitingRelease = true;
         // Animation events now handle the shot timing
     }
+
+    #region Public API for PlayerAbilities
+    /// <summary>
+    /// Sets the shooting tempo multiplier (used by PlayerAbilities for Attack Speed+ power-up).
+    /// </summary>
+    public void SetTempoMultiplier(float multiplier)
+    {
+        // Safety: only apply if base tempo is initialized
+        if (baseShootingTempo <= 0f)
+        {
+            Debug.LogWarning($"[PlayerShooting] SetTempoMultiplier called but baseShootingTempo not initialized ({baseShootingTempo}). Ignoring.");
+            return;
+        }
+        
+        if (multiplier > 0f)
+        {
+            float newTempo = baseShootingTempo * multiplier;
+            Debug.Log($"[PlayerShooting] SetTempoMultiplier({multiplier:F2}): base={baseShootingTempo}, new={newTempo}");
+            shootingTempo = newTempo;
+        }
+    }
+
+    /// <summary>
+    /// Enables or disables multishot (fires 2x projectiles).
+    /// </summary>
+    public void SetMultishotEnabled(bool enabled)
+    {
+        multishotEnabled = enabled;
+    }
+
+    /// <summary>
+    /// Enables or disables triple shot (fires 3 projectiles in a spread).
+    /// </summary>
+    public void SetTripleShotEnabled(bool enabled, float angle = 25f)
+    {
+        tripleshotEnabled = enabled;
+        tripleshotAngle = angle;
+    }
+    #endregion
 }

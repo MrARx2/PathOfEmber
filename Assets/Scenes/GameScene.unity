@@ -597,7 +597,7 @@ Transform:
   m_GameObject: {fileID: 148501734}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.88, y: 0.03, z: 6.67}
+  m_LocalPosition: {x: -0.47, y: 0.03, z: 6.67}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1600,6 +1600,7 @@ GameObject:
   - component: {fileID: 617443743}
   - component: {fileID: 617443747}
   - component: {fileID: 617443748}
+  - component: {fileID: 617443751}
   - component: {fileID: 617443742}
   - component: {fileID: 617443749}
   - component: {fileID: 617443750}
@@ -1622,7 +1623,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae3fea9361bd07e40b3807ae60da4552, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  moveSpeed: 2
+  moveSpeed: 1.5
   accelerationTime: 0.04
   decelerationTime: 0.05
   xBoundary: 4.87
@@ -1764,6 +1765,10 @@ MonoBehaviour:
   shootAfterStopDelay: 0
   shootingTempo: 1
   shootingTempoParam: ShootingTempo
+  multishotEnabled: 0
+  multishotDelay: 0.1
+  tripleshotEnabled: 0
+  tripleshotAngle: 25
   playerLayerName: Player
   projectileLayerName: Projectile
 --- !u!114 &617443750
@@ -1783,6 +1788,8 @@ MonoBehaviour:
   isInvulnerable: 0
   HealthBarPoint: {fileID: 1272922181}
   invulnerabilityEffect: {fileID: 1052317285}
+  hasOneTimeShield: 0
+  shieldEffect: {fileID: 0}
   animator: {fileID: 0}
   healTrigger: Heal
   hitTrigger: Hit
@@ -1799,6 +1806,45 @@ MonoBehaviour:
   OnHealthChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &617443751
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 617443741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff4462e812ce34142a4cc7e059ba80fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerAbilities
+  playerMovement: {fileID: 617443742}
+  playerShooting: {fileID: 617443749}
+  playerHealth: {fileID: 617443750}
+  movementSpeedStacks: 0
+  hasOneTimeShield: 0
+  maxHpPlusStacks: 0
+  hazardResistanceZone: {fileID: 0}
+  hasPiercing: 0
+  hasBouncingBullets: 0
+  hasFreezeShot: 0
+  hasVenomShot: 0
+  maximumFreezeStacks: 0
+  maximumVenomStacks: 0
+  hasMultishot: 0
+  hasTripleShot: 0
+  maxHpPlusPlusStacks: 0
+  attackSpeedStacks: 0
+  baseFreezeDuration: 2
+  freezeDurationPerStack: 2
+  baseVenomDamage: 150
+  venomDamagePerStack: 250
+  venomDuration: 3
+  tripleShotAngle: 25
+  currentMoveSpeedMultiplier: 1
+  currentAttackSpeedMultiplier: 1
+  currentFreezeDuration: 2
+  currentVenomDamagePerSecond: 150
 --- !u!1 &641520292
 GameObject:
   m_ObjectHideFlags: 0
@@ -1891,7 +1937,7 @@ Transform:
   m_GameObject: {fileID: 725755690}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3, y: 0, z: 4.46}
+  m_LocalPosition: {x: -2.68, y: 0, z: 2.99}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2495,6 +2541,10 @@ PrefabInstance:
     - target: {fileID: 3597349390109535566, guid: 4095cbabc721c864fa5f69e706496271, type: 3}
       propertyPath: m_Name
       value: shild-vfx
+      objectReference: {fileID: 0}
+    - target: {fileID: 3597349390109535566, guid: 4095cbabc721c864fa5f69e706496271, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

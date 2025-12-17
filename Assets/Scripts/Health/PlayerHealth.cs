@@ -20,6 +20,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [Tooltip("Child GameObject with invulnerability effect")]
     [SerializeField] private GameObject invulnerabilityEffect;
 
+    [Header("One-Time Shield")]
+    [SerializeField] private bool hasOneTimeShield = false;
+    [SerializeField, Tooltip("Visual effect for active shield")]
+    private GameObject shieldEffect;
+
     [Header("Animation")]
     [SerializeField] private Animator animator;
     [SerializeField] private string healTrigger = "Heal";
@@ -69,6 +74,22 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (isInvulnerable) return;
         if (damage <= 0) return;
 
+        // Check for one-time shield
+        if (hasOneTimeShield)
+        {
+            hasOneTimeShield = false;
+            if (shieldEffect != null)
+                shieldEffect.SetActive(false);
+            
+            // Notify PlayerAbilities if present
+            var abilities = GetComponent<PlayerAbilities>();
+            if (abilities != null)
+                abilities.OnShieldConsumed();
+            
+            Debug.Log("[PlayerHealth] One-Time Shield blocked damage!");
+            return;
+        }
+
         currentHealth -= damage;
         if (currentHealth < 0) currentHealth = 0;
 
@@ -83,6 +104,16 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         if (currentHealth <= 0)
             Die();
+    }
+
+    /// <summary>
+    /// Sets the one-time shield state (used by PlayerAbilities).
+    /// </summary>
+    public void SetOneTimeShield(bool enabled)
+    {
+        hasOneTimeShield = enabled;
+        if (shieldEffect != null)
+            shieldEffect.SetActive(enabled);
     }
 
     public void Heal(int amount)
@@ -133,20 +164,40 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public void SetInvulnerable(float duration)
     {
+        Debug.Log($"[PlayerHealth] SetInvulnerable called for {duration}s");
         StartCoroutine(InvulnerabilityRoutine(duration));
     }
 
     private IEnumerator InvulnerabilityRoutine(float duration)
     {
         isInvulnerable = true;
-        if (invulnerabilityEffect != null)
-            invulnerabilityEffect.SetActive(true);
+        SetInvulnerabilityEffectActive(true);
+        Debug.Log($"[PlayerHealth] Invulnerability started for {duration}s");
 
         yield return new WaitForSeconds(duration);
 
         isInvulnerable = false;
-        if (invulnerabilityEffect != null)
-            invulnerabilityEffect.SetActive(false);
+        SetInvulnerabilityEffectActive(false);
+        Debug.Log("[PlayerHealth] Invulnerability ended");
+    }
+
+    private void SetInvulnerabilityEffectActive(bool active)
+    {
+        if (invulnerabilityEffect == null)
+        {
+            Debug.LogWarning("[PlayerHealth] invulnerabilityEffect is null!");
+            return;
+        }
+
+        // Make sure the GameObject is active/inactive
+        invulnerabilityEffect.SetActive(active);
+        Debug.Log($"[PlayerHealth] invulnerabilityEffect.SetActive({active}), activeInHierarchy={invulnerabilityEffect.activeInHierarchy}");
+        
+        // Also check if there's a parent being disabled
+        if (active && !invulnerabilityEffect.activeInHierarchy)
+        {
+            Debug.LogWarning("[PlayerHealth] invulnerabilityEffect is not active in hierarchy despite SetActive(true). Check parent GameObjects!");
+        }
     }
 
     private void OnDisable()

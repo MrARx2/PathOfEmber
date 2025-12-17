@@ -14,11 +14,57 @@ public class ArrowProjectile : MonoBehaviour
     public UnityEvent<int> OnHitDamageable;
     public UnityEvent OnHitAnything;
 
+    [Header("Power-Up Effects (Set by PlayerShooting)")]
+    [SerializeField] private bool isPiercing = false;
+    [SerializeField] private bool hasFreezeEffect = false;
+    [SerializeField] private bool hasVenomEffect = false;
+    [SerializeField] private float freezeDuration = 1f;
+    [SerializeField] private int venomDamagePerSecond = 100;
+    [SerializeField] private float venomDuration = 3f;
+
     private Vector3 moveDir = Vector3.forward;
     private float lifeTimer;
     private Rigidbody rb;
 
+    #region Public Properties
     public int Damage => damage;
+    
+    public bool IsPiercing
+    {
+        get => isPiercing;
+        set => isPiercing = value;
+    }
+    
+    public bool HasFreezeEffect
+    {
+        get => hasFreezeEffect;
+        set => hasFreezeEffect = value;
+    }
+    
+    public bool HasVenomEffect
+    {
+        get => hasVenomEffect;
+        set => hasVenomEffect = value;
+    }
+    
+    public float FreezeDuration
+    {
+        get => freezeDuration;
+        set => freezeDuration = value;
+    }
+    
+    public int VenomDamagePerSecond
+    {
+        get => venomDamagePerSecond;
+        set => venomDamagePerSecond = value;
+    }
+    
+    public float VenomDuration
+    {
+        get => venomDuration;
+        set => venomDuration = value;
+    }
+    #endregion
 
     private void OnEnable()
     {
@@ -81,11 +127,42 @@ public class ArrowProjectile : MonoBehaviour
         
         if (damageable != null)
         {
+            // Apply base damage
             damageable.TakeDamage(damage);
             OnHitDamageable?.Invoke(damage);
             Debug.Log($"Arrow hit {other.name} for {damage} damage");
+
+            // Apply Freeze Effect
+            if (hasFreezeEffect)
+            {
+                EnemyHealth enemyHealth = other.GetComponent<EnemyHealth>();
+                if (enemyHealth == null)
+                    enemyHealth = other.GetComponentInParent<EnemyHealth>();
+                
+                if (enemyHealth != null)
+                {
+                    enemyHealth.ApplyFreeze(freezeDuration);
+                    Debug.Log($"Arrow applied freeze ({freezeDuration}s) to {other.name}");
+                }
+            }
+
+            // Apply Venom Effect (DoT)
+            if (hasVenomEffect)
+            {
+                EnemyHealth enemyHealth = other.GetComponent<EnemyHealth>();
+                if (enemyHealth == null)
+                    enemyHealth = other.GetComponentInParent<EnemyHealth>();
+                
+                if (enemyHealth != null)
+                {
+                    int totalTicks = Mathf.RoundToInt(venomDuration);
+                    enemyHealth.ApplyDamageOverTime(venomDamagePerSecond, 1f, totalTicks);
+                    Debug.Log($"Arrow applied venom ({venomDamagePerSecond} dmg/s for {venomDuration}s) to {other.name}");
+                }
+            }
             
-            if (destroyOnHit)
+            // Only destroy if not piercing
+            if (destroyOnHit && !isPiercing)
             {
                 Destroy(gameObject);
                 return;
@@ -94,5 +171,11 @@ public class ArrowProjectile : MonoBehaviour
         
         // Hit something non-damageable (wall, etc.)
         OnHitAnything?.Invoke();
+        
+        // Destroy on wall hit even if piercing (piercing only affects enemies)
+        if (!other.CompareTag("Enemy") && destroyOnHit)
+        {
+            Destroy(gameObject);
+        }
     }
 }

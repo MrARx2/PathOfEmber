@@ -33,6 +33,26 @@ public class PlayerMovement : MonoBehaviour
     public bool IsMoving { get; private set; }
     public float VisualYawOffsetDegrees => visualYawOffsetDegrees;
 
+    /// <summary>
+    /// Sets the movement speed multiplier (used by PlayerAbilities for power-ups).
+    /// </summary>
+    public void SetSpeedMultiplier(float multiplier)
+    {
+        // Safety: only apply if base speed is initialized
+        if (baseMoveSpeed <= 0f)
+        {
+            Debug.LogWarning($"[PlayerMovement] SetSpeedMultiplier called but baseMoveSpeed not initialized ({baseMoveSpeed}). Ignoring.");
+            return;
+        }
+        
+        if (multiplier > 0f)
+        {
+            float newSpeed = baseMoveSpeed * multiplier;
+            Debug.Log($"[PlayerMovement] SetSpeedMultiplier({multiplier:F2}): base={baseMoveSpeed}, new={newSpeed}");
+            moveSpeed = newSpeed;
+        }
+    }
+
     private const float WalkAnimPortion = 0.5f;
     private static readonly int AnimSpeed = Animator.StringToHash("Speed");
 
@@ -42,6 +62,7 @@ public class PlayerMovement : MonoBehaviour
         rb.useGravity = false;
         rb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionY;
         baseMoveSpeed = moveSpeed;
+        Debug.Log($"[PlayerMovement] Awake: moveSpeed={moveSpeed}, baseMoveSpeed={baseMoveSpeed}");
         keyboard = Keyboard.current;
         moveThresholdSquared = moveThreshold * moveThreshold;
 
