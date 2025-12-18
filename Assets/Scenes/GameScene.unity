@@ -572,6 +572,77 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 137724569}
   m_CullTransparentMesh: 1
+--- !u!1 &140909526
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 140909529}
+  - component: {fileID: 140909528}
+  - component: {fileID: 140909527}
+  m_Layer: 0
+  m_Name: Box Volume (2)
+  m_TagString: Collider
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &140909527
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 140909526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
+  m_IsGlobal: 0
+  priority: 0
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 0}
+--- !u!65 &140909528
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 140909526}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!4 &140909529
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 140909526}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -9.5}
+  m_LocalScale: {x: 10.376639, y: 1.968, z: 3.3642101}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &148501734
 GameObject:
   m_ObjectHideFlags: 0
@@ -1020,6 +1091,7 @@ GameObject:
   - component: {fileID: 330585544}
   - component: {fileID: 330585547}
   - component: {fileID: 330585548}
+  - component: {fileID: 330585549}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1158,7 +1230,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineBrain
   ShowDebugText: 0
-  ShowCameraFrustum: 1
+  ShowCameraFrustum: 0
   IgnoreTimeScale: 0
   WorldUpOverride: {fileID: 0}
   ChannelMask: -1
@@ -1177,6 +1249,20 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   CustomBlends: {fileID: 0}
+--- !u!114 &330585549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 330585543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec8add993d3c62948957bc6443a456d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraSystem.CameraVolumeTrigger
+  triggerTarget: {fileID: 617443746}
+  searchInterval: 1
 --- !u!4 &337826280 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5465940246521907071, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
@@ -1790,6 +1876,8 @@ MonoBehaviour:
   invulnerabilityEffect: {fileID: 1052317285}
   hasOneTimeShield: 0
   shieldEffect: {fileID: 0}
+  isOnFire: 0
+  fireEffect: {fileID: 0}
   animator: {fileID: 0}
   healTrigger: Heal
   hitTrigger: Hit
@@ -1824,7 +1912,7 @@ MonoBehaviour:
   movementSpeedStacks: 0
   hasOneTimeShield: 0
   maxHpPlusStacks: 0
-  hazardResistanceZone: {fileID: 0}
+  hazardResistanceStacks: 0
   hasPiercing: 0
   hasBouncingBullets: 0
   hasFreezeShot: 0
@@ -2203,13 +2291,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee2db3278a4ee444ba0bbf7af36b49a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraFollowTarget
-  player: {fileID: 0}
+  player: {fileID: 617443746}
   minX: -3
   maxX: 3
   followY: 1
   followZ: 1
   smoothSpeed: 0
   showGizmos: 1
+  gizmoZDepth: 1
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -2304,6 +2393,251 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3504689790389388570, guid: 4095cbabc721c864fa5f69e706496271, type: 3}
   m_PrefabInstance: {fileID: 1835715078}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1096719030
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1096719032}
+  - component: {fileID: 1096719031}
+  - component: {fileID: 1096719034}
+  - component: {fileID: 1096719033}
+  - component: {fileID: 1096719035}
+  m_Layer: 0
+  m_Name: HazardZonePostProcessVolume
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1096719031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1096719030}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
+  m_IsGlobal: 0
+  priority: 0
+  blendDistance: 2
+  weight: 0.5
+  sharedProfile: {fileID: 11400000, guid: 1c3da23adf43f444eadba29bf436c8c5, type: 2}
+--- !u!4 &1096719032
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1096719030}
+  serializedVersion: 2
+  m_LocalRotation: {x: 1, y: 0, z: 0, w: 0}
+  m_LocalPosition: {x: 0, y: 6.1, z: -22.38}
+  m_LocalScale: {x: 10, y: 19.084816, z: 33.573673}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 180, y: 0, z: 0}
+--- !u!65 &1096719033
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1096719030}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1096719034
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1096719030}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab7e042a5f94c4a44af75c0527e06be5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hazards.HazardZoneMeteors
+  player: {fileID: 617443746}
+  meteorStrikePrefab: {fileID: 7353491111950365648, guid: fb65813de51e74e4ab351404c4c61c8b, type: 3}
+  zoneAdvanceSpeed: 0.008
+  advanceDirection: {x: 0, y: 0, z: 1}
+  advanceStartDelay: 5
+  expandWhenPlayerInside: 0
+  expansionSpeed: 0
+  maxExpansionMultiplier: 0
+  minSpawnInterval: 0.5
+  maxSpawnInterval: 1
+  spawnWarmupDelay: 0.5
+  intensityCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  minSpawnDistance: 2
+  maxSpawnDistance: 15
+  maxMeteorsPerWave: 3
+  meteorsPerWaveCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  targetPlayer: 1
+  targetingAccuracy: 0.5
+  accuracyScalesWithDepth: 1
+  applyFireDamage: 1
+  fireDamagePerTick: 10
+  fireDamageTickInterval: 0.5
+  maxDepthFireDamageMultiplier: 2
+  depthAxis: 2
+  invertDepthDirection: 0
+  showGizmos: 1
+  debugLog: 0
+  showSpawnRing: 1
+--- !u!114 &1096719035
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1096719030}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab7e042a5f94c4a44af75c0527e06be5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hazards.HazardZoneMeteors
+  player: {fileID: 0}
+  meteorStrikePrefab: {fileID: 0}
+  zoneAdvanceSpeed: 0.001
+  advanceDirection: {x: 0, y: 0, z: 1}
+  advanceStartDelay: 5
+  expandWhenPlayerInside: 1
+  expansionSpeed: 0.002
+  maxExpansionMultiplier: 2
+  minSpawnInterval: 0.5
+  maxSpawnInterval: 3
+  spawnWarmupDelay: 0.5
+  intensityCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  minSpawnDistance: 2
+  maxSpawnDistance: 15
+  maxMeteorsPerWave: 3
+  meteorsPerWaveCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  targetPlayer: 1
+  targetingAccuracy: 0.5
+  accuracyScalesWithDepth: 1
+  applyFireDamage: 1
+  fireDamagePerTick: 10
+  fireDamageTickInterval: 0.5
+  maxDepthFireDamageMultiplier: 2
+  depthAxis: 2
+  invertDepthDirection: 0
+  showGizmos: 1
+  debugLog: 0
+  showSpawnRing: 1
 --- !u!1 &1178491559
 GameObject:
   m_ObjectHideFlags: 0
@@ -3573,3 +3907,5 @@ SceneRoots:
   - {fileID: 754336041}
   - {fileID: 735265273}
   - {fileID: 228693781}
+  - {fileID: 1096719032}
+  - {fileID: 140909529}

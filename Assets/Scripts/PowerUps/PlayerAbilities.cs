@@ -24,8 +24,9 @@ public class PlayerAbilities : MonoBehaviour
     [SerializeField, Tooltip("Stacks: +10% max HP per stack")]
     private int maxHpPlusStacks = 0;
 
-    [SerializeField, Tooltip("Placeholder for hazard resistance zone")]
-    private GameObject hazardResistanceZone;
+    [SerializeField, Tooltip("Stacks: 25% fire damage reduction per stack (max 3 = 75%)")]
+    private int hazardResistanceStacks = 0;
+    private const int MAX_HAZARD_RESISTANCE_STACKS = 3;
     #endregion
 
     #region Rare Abilities (30% - Blue)
@@ -103,6 +104,7 @@ public class PlayerAbilities : MonoBehaviour
     public bool HasMultishot => hasMultishot;
     public bool HasTripleShot => hasTripleShot;
     public bool HasOneTimeShield => hasOneTimeShield;
+    public int HazardResistanceStacks => hazardResistanceStacks;
     
     public float FreezeDuration => currentFreezeDuration;
     public int VenomDamagePerSecond => currentVenomDamagePerSecond;
@@ -222,6 +224,20 @@ public class PlayerAbilities : MonoBehaviour
         Debug.Log("[PlayerAbilities] Health Heal granted.");
     }
 
+    public void GrantHazardResistance()
+    {
+        if (hazardResistanceStacks < MAX_HAZARD_RESISTANCE_STACKS)
+        {
+            hazardResistanceStacks++;
+            float reduction = hazardResistanceStacks * 25f;
+            Debug.Log($"[PlayerAbilities] Hazard Resistance granted. Stacks: {hazardResistanceStacks}/{MAX_HAZARD_RESISTANCE_STACKS}, Fire damage reduced by {reduction}%");
+        }
+        else
+        {
+            Debug.Log("[PlayerAbilities] Hazard Resistance already at max stacks!");
+        }
+    }
+
     // ===== RARE =====
     public void GrantPiercing()
     {
@@ -323,6 +339,9 @@ public class PlayerAbilities : MonoBehaviour
     [ContextMenu("Debug: Grant Max HP+ (10%)")]
     public void DebugGrantMaxHpPlus() => GrantMaxHpPlus();
 
+    [ContextMenu("Debug: Grant Hazard Resistance (25%)")]
+    public void DebugGrantHazardResistance() => GrantHazardResistance();
+
     [ContextMenu("Debug: Grant Health Heal")]
     public void DebugGrantHealthHeal() => GrantHealthHeal();
 
@@ -365,6 +384,7 @@ public class PlayerAbilities : MonoBehaviour
         movementSpeedStacks = 0;
         hasOneTimeShield = false;
         maxHpPlusStacks = 0;
+        hazardResistanceStacks = 0;
         hasPiercing = false;
         hasBouncingBullets = false;
         hasFreezeShot = false;

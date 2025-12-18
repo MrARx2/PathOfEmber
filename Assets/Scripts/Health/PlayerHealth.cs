@@ -25,6 +25,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField, Tooltip("Visual effect for active shield")]
     private GameObject shieldEffect;
 
+    [Header("Fire State")]
+    [SerializeField, Tooltip("Is the player currently on fire (in hazard zone)?")]
+    private bool isOnFire = false;
+    [SerializeField, Tooltip("Visual effect shown when player is on fire")]
+    private GameObject fireEffect;
+
     [Header("Animation")]
     [SerializeField] private Animator animator;
     [SerializeField] private string healTrigger = "Heal";
@@ -42,6 +48,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public bool IsInvulnerable => isInvulnerable;
     public bool IsDead => isDead;
+    public bool IsOnFire => isOnFire;
     public int CurrentHealth => currentHealth;
     public int MaxHealth => maxHealth;
 
@@ -50,6 +57,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         currentHealth = maxHealth;
         if (invulnerabilityEffect != null)
             invulnerabilityEffect.SetActive(false);
+        if (fireEffect != null)
+            fireEffect.SetActive(false);
     }
 
     private void Start()
@@ -142,6 +151,19 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             UpdateHealthBar();
             NotifyHealthChanged();
         }
+    }
+
+    /// <summary>
+    /// Sets the on-fire state (called by HazardZoneMeteors).
+    /// </summary>
+    public void SetOnFire(bool onFire)
+    {
+        isOnFire = onFire;
+        if (fireEffect != null)
+        {
+            fireEffect.SetActive(onFire);
+        }
+        Debug.Log($"[PlayerHealth] Fire state: {(onFire ? "ON FIRE" : "not on fire")}");
     }
 
     public void ApplyDamageOverTime(int damagePerTick, float tickInterval, int totalTicks)

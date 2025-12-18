@@ -27,6 +27,8 @@ public class CameraFollowTarget : MonoBehaviour
 
     [Header("Debug")]
     [SerializeField] private bool showGizmos = true;
+    [SerializeField, Tooltip("Z depth of the gizmo visualization box")]
+    private float gizmoZDepth = 1f;
 
     private Vector3 velocity;
 
@@ -82,21 +84,22 @@ public class CameraFollowTarget : MonoBehaviour
         // Draw the allowed X bounds as vertical lines
         Gizmos.color = Color.cyan;
         Vector3 center = transform.position;
+        float halfZ = gizmoZDepth / 2f;
         
         // Left bound
         Vector3 leftLine = new Vector3(minX, center.y, center.z);
         Gizmos.DrawLine(leftLine + Vector3.up * 5, leftLine + Vector3.down * 5);
-        Gizmos.DrawLine(leftLine + Vector3.forward * 10, leftLine + Vector3.back * 10);
+        Gizmos.DrawLine(leftLine + Vector3.forward * halfZ, leftLine + Vector3.back * halfZ);
         
         // Right bound
         Vector3 rightLine = new Vector3(maxX, center.y, center.z);
         Gizmos.DrawLine(rightLine + Vector3.up * 5, rightLine + Vector3.down * 5);
-        Gizmos.DrawLine(rightLine + Vector3.forward * 10, rightLine + Vector3.back * 10);
+        Gizmos.DrawLine(rightLine + Vector3.forward * halfZ, rightLine + Vector3.back * halfZ);
 
         // Draw safe zone
         Gizmos.color = new Color(0, 1, 0, 0.1f);
         Vector3 safeCenter = new Vector3((minX + maxX) / 2f, center.y, center.z);
-        Vector3 safeSize = new Vector3(maxX - minX, 10f, 20f);
+        Vector3 safeSize = new Vector3(maxX - minX, 10f, gizmoZDepth);
         Gizmos.DrawCube(safeCenter, safeSize);
     }
 }

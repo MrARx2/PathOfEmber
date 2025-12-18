@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7353491111950365648
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2888856260133320874}
+  - component: {fileID: 8695689926384263836}
+  m_Layer: 0
+  m_Name: MeteorStrike-Prefab
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2888856260133320874
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7353491111950365648}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 5, y: 14.89729, z: -3.77205}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8695689926384263836
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7353491111950365648}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae96f061cc0e2fd4fbf562ec7574cbb3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hazards.MeteorStrike
+  warningDuration: 1
+  impactDamage: 150
+  impactRadius: 2
+  damageLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  meteorPrefab: {fileID: 6991140784959675198, guid: 73bbef45fbe43954faf13acd8e82024b, type: 3}
+  fallHeight: 20
+  fallSpeed: 20
+  warningPrefab: {fileID: 2994736214882207593, guid: 2059dd7ea87b9d2498d912f725ce89b7, type: 3}
+  explosionPrefab: {fileID: 8031422183763085148, guid: ebe381c506696304f87ed31429a4058e, type: 3}
+  burnMarkPrefab: {fileID: 4647384441426130188, guid: fa4c27217d4c5ec4a9ae7a74034ba242, type: 3}
+  burnMarkDuration: 10
+  cracksPrefab: {fileID: 1323983964667516989, guid: 7f972b70a1e5fb14aae039ff58b4d049, type: 3}
+  cracksDuration: 10
+  firePoolPrefab: {fileID: 5752102606631492330, guid: 2082dc4750c3fe845b23352ec4e0c914, type: 3}
+  firePoolDuration: 5
+  showGizmos: 1
+  debugLog: 0
