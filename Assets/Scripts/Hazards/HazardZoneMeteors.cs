@@ -5,8 +5,8 @@ namespace Hazards
 {
     /// <summary>
     /// Controls the Hazard Zone that prevents player backtracking.
-    /// The zone moves forward slowly and expands when player enters.
-    /// Spawns meteors with increasing intensity based on depth.
+    /// Spawns meteors with intensity based on player depth.
+    /// All rates use "per second" format for easy configuration.
     /// </summary>
     [RequireComponent(typeof(BoxCollider))]
     public class HazardZoneMeteors : MonoBehaviour
@@ -32,64 +32,61 @@ namespace Hazards
 
         [Header("=== ZONE EXPANSION ===")]
         [SerializeField, Tooltip("If true, zone expands when player is inside.")]
-        private bool expandWhenPlayerInside = true;
+        private bool expandWhenPlayerInside = false;
         
-        [SerializeField, Tooltip("How fast the zone expands when player is inside (units per second).")]
+        [SerializeField, Tooltip("Expansion speed (units per second).")]
         private float expansionSpeed = 1.0f;
         
         [SerializeField, Tooltip("Maximum zone size (original size multiplier).")]
         private float maxExpansionMultiplier = 3.0f;
 
-        [Header("=== SPAWN TIMING ===")]
-        [SerializeField, Tooltip("Minimum time between meteor spawns (at maximum intensity/depth).")]
-        private float minSpawnInterval = 0.1f;
+        [Header("=== EARLY WARNING ===")]
+        [SerializeField, Tooltip("Start spawning meteors when player is this close to the zone edge.")]
+        private float earlyWarningDistance = 10f;
         
-        [SerializeField, Tooltip("Maximum time between meteor spawns (at minimum intensity/depth).")]
-        private float maxSpawnInterval = 3.0f;
+        [SerializeField, Tooltip("Meteors per second during early warning phase.")]
+        private float earlyWarningMeteorsPerSecond = 0.5f;
+
+        [Header("=== METEOR SPAWNING (Per Second) ===")]
+        [SerializeField, Tooltip("Meteors spawned per second at MINIMUM depth (edge of zone).")]
+        private float minMeteorsPerSecond = 0.5f;
         
-        [SerializeField, Tooltip("Delay before spawning starts when player enters zone.")]
-        private float spawnWarmupDelay = 0.3f;
+        [SerializeField, Tooltip("Meteors spawned per second at MAXIMUM depth (deep in zone).")]
+        private float maxMeteorsPerSecond = 5f;
         
-        [SerializeField, Tooltip("Curve controlling intensity based on depth (0=edge, 1=deep).")]
-        private AnimationCurve intensityCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+        [SerializeField, Tooltip("Curve controlling spawn rate based on depth (0=edge, 1=deep).")]
+        private AnimationCurve spawnRateCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
         [Header("=== SPAWN DISTANCE ===")]
-        [SerializeField, Tooltip("Minimum distance from player to spawn meteors (safe zone).")]
+        [SerializeField, Tooltip("Minimum distance from player to spawn meteors.")]
         private float minSpawnDistance = 1.5f;
         
         [SerializeField, Tooltip("Maximum distance from player to spawn meteors.")]
         private float maxSpawnDistance = 12.0f;
 
-        [Header("=== MULTI-SPAWN ===")]
-        [SerializeField, Tooltip("Maximum meteors to spawn per wave at max intensity.")]
-        private int maxMeteorsPerWave = 6;
-        
-        [SerializeField, Tooltip("Curve controlling meteors per wave based on intensity.")]
-        private AnimationCurve meteorsPerWaveCurve = AnimationCurve.EaseInOut(0, 1, 1, 1);
-
         [Header("=== PLAYER TARGETING ===")]
         [SerializeField, Tooltip("Enable targeted spawning toward player.")]
         private bool targetPlayer = true;
         
-        [SerializeField, Tooltip("How accurately meteors target player (0=random, 1=exact).")]
+        [SerializeField, Tooltip("Targeting accuracy (0=random, 1=on player).")]
         [Range(0f, 1f)]
         private float targetingAccuracy = 0.5f;
         
         [SerializeField, Tooltip("Increase accuracy as depth increases.")]
         private bool accuracyScalesWithDepth = true;
 
-        [Header("=== FIRE DAMAGE ===")]
+        [Header("=== FIRE DAMAGE (Per Second) ===")]
         [SerializeField, Tooltip("Apply fire damage while player is in zone.")]
         private bool applyFireDamage = true;
         
-        [SerializeField, Tooltip("Fire damage per tick.")]
-        private int fireDamagePerTick = 10;
+        [SerializeField, Tooltip("Fire damage per second at minimum depth.")]
+        private float fireDamagePerSecond = 20f;
         
-        [SerializeField, Tooltip("Time between fire damage ticks (seconds).")]
-        private float fireDamageTickInterval = 0.5f;
-        
-        [SerializeField, Tooltip("Fire damage multiplier at max depth.")]
+        [SerializeField, Tooltip("Fire damage multiplier at maximum depth.")]
         private float maxDepthFireDamageMultiplier = 2.0f;
+        
+        [SerializeField, Tooltip("How often to apply damage ticks (internal).")]
+        private float fireDamageTickRate = 4f; // 4 ticks per second
 
         [Header("=== ZONE CONFIGURATION ===")]
         [SerializeField, Tooltip("Which axis defines 'depth' into the zone.")]
@@ -119,10 +116,12 @@ namespace Hazards
         private Coroutine _spawnRoutine;
         private Coroutine _fireDamageRoutine;
         private bool _playerInZone;
+        private bool _playerInEarlyWarning;
         private float _currentDepth;
         private float _currentIntensity;
         private float _advanceTimer;
-        private float _totalDistanceMoved; // Debug: track actual movement
+        private float _totalDistanceMoved;
+        private float _meteorAccumulator; // Accumulates fractional meteors
         private PlayerHealth _playerHealth;
         private PlayerAbilities _playerAbilities;
 
@@ -138,10 +137,8 @@ namespace Hazards
             _advanceTimer = advanceStartDelay;
             _totalDistanceMoved = 0f;
 
-            // Normalize advance direction
             advanceDirection = advanceDirection.normalized;
 
-            // Auto-find player
             if (player == null)
             {
                 GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
@@ -168,14 +165,16 @@ namespace Hazards
         {
             if (player == null) return;
 
-            // Handle zone advancing (independent of player)
             HandleZoneAdvance();
 
-            // Check player in zone
+            // Check player states
             bool wasInZone = _playerInZone;
+            bool wasInEarlyWarning = _playerInEarlyWarning;
+            
             _playerInZone = IsPositionInZone(player.position);
+            _playerInEarlyWarning = !_playerInZone && GetDistanceToZone(player.position) <= earlyWarningDistance;
 
-            // Handle state transitions
+            // State transitions
             if (_playerInZone && !wasInZone)
             {
                 OnPlayerEnterZone();
@@ -185,18 +184,31 @@ namespace Hazards
                 OnPlayerExitZone();
             }
 
-            // Handle zone expansion when player is inside
+            // Early warning transitions
+            if (_playerInEarlyWarning && !wasInEarlyWarning && !_playerInZone)
+            {
+                OnPlayerEnterEarlyWarning();
+            }
+            else if (!_playerInEarlyWarning && wasInEarlyWarning && !_playerInZone)
+            {
+                OnPlayerExitEarlyWarning();
+            }
+
+            // Zone expansion
             if (_playerInZone && expandWhenPlayerInside)
             {
                 HandleZoneExpansion();
             }
 
-            // Update depth/intensity for gizmos
+            // Update depth/intensity
             if (_playerInZone)
             {
                 _currentDepth = CalculatePlayerDepth();
-                _currentIntensity = intensityCurve.Evaluate(_currentDepth);
+                _currentIntensity = spawnRateCurve.Evaluate(_currentDepth);
             }
+
+            // Handle meteor spawning (continuous per-second approach)
+            HandleMeteorSpawning();
         }
 
         #endregion
@@ -205,76 +217,47 @@ namespace Hazards
 
         private void HandleZoneAdvance()
         {
-            // Wait for initial delay
             if (_advanceTimer > 0)
             {
                 _advanceTimer -= Time.deltaTime;
-                if (debugLog) Debug.Log($"[HazardZoneMeteors] Waiting to advance: {_advanceTimer:F1}s remaining");
                 return;
             }
 
-            // Move zone forward
             float moveAmount = zoneAdvanceSpeed * Time.deltaTime;
             transform.position += advanceDirection * moveAmount;
             _totalDistanceMoved += moveAmount;
 
-            if (debugLog && Time.frameCount % 60 == 0) // Log every ~1 second
+            if (debugLog && Time.frameCount % 60 == 0)
             {
-                Debug.Log($"[HazardZoneMeteors] Speed: {zoneAdvanceSpeed} u/s, Total moved: {_totalDistanceMoved:F2}u");
+                Debug.Log($"[HazardZone] Speed: {zoneAdvanceSpeed} u/s, Moved: {_totalDistanceMoved:F1}u");
             }
         }
 
         private void HandleZoneExpansion()
         {
-            // Double-check the toggle (safety)
-            if (!expandWhenPlayerInside)
-            {
-                return;
-            }
+            if (!expandWhenPlayerInside) return;
 
-            // Expand the zone (grow the collider size)
             Vector3 currentSize = _zoneCollider.size;
             Vector3 maxSize = _originalSize * maxExpansionMultiplier;
-
-            // Check if already at max
-            bool alreadyMax = true;
-            switch (depthAxis)
-            {
-                case DepthAxis.Z:
-                    alreadyMax = currentSize.z >= maxSize.z;
-                    break;
-                case DepthAxis.X:
-                    alreadyMax = currentSize.x >= maxSize.x;
-                    break;
-                case DepthAxis.Y:
-                    alreadyMax = currentSize.y >= maxSize.y;
-                    break;
-            }
-
-            if (alreadyMax) return;
-
-            // Expand in the depth axis direction
             float expansion = expansionSpeed * Time.deltaTime;
-            
+
             switch (depthAxis)
             {
                 case DepthAxis.Z:
-                    currentSize.z = Mathf.Min(currentSize.z + expansion, maxSize.z);
+                    if (currentSize.z < maxSize.z)
+                        currentSize.z = Mathf.Min(currentSize.z + expansion, maxSize.z);
                     break;
                 case DepthAxis.X:
-                    currentSize.x = Mathf.Min(currentSize.x + expansion, maxSize.x);
+                    if (currentSize.x < maxSize.x)
+                        currentSize.x = Mathf.Min(currentSize.x + expansion, maxSize.x);
                     break;
                 case DepthAxis.Y:
-                    currentSize.y = Mathf.Min(currentSize.y + expansion, maxSize.y);
+                    if (currentSize.y < maxSize.y)
+                        currentSize.y = Mathf.Min(currentSize.y + expansion, maxSize.y);
                     break;
             }
 
             _zoneCollider.size = currentSize;
-
-            if (debugLog && currentSize != _zoneCollider.size)
-            {
-                Debug.Log($"[HazardZoneMeteors] Zone expanding: {currentSize}");
-            }
         }
 
         #endregion
@@ -283,21 +266,13 @@ namespace Hazards
 
         private void OnPlayerEnterZone()
         {
-            if (debugLog) Debug.Log("[HazardZoneMeteors] Player ENTERED hazard zone");
+            if (debugLog) Debug.Log("[HazardZone] Player ENTERED zone");
 
-            // Start spawning
-            if (_spawnRoutine == null)
-            {
-                _spawnRoutine = StartCoroutine(SpawnRoutine());
-            }
-
-            // Start fire damage
             if (applyFireDamage && _fireDamageRoutine == null)
             {
                 _fireDamageRoutine = StartCoroutine(FireDamageRoutine());
             }
 
-            // Notify PlayerHealth
             if (_playerHealth != null)
             {
                 _playerHealth.SetOnFire(true);
@@ -306,86 +281,108 @@ namespace Hazards
 
         private void OnPlayerExitZone()
         {
-            if (debugLog) Debug.Log("[HazardZoneMeteors] Player EXITED hazard zone");
+            if (debugLog) Debug.Log("[HazardZone] Player EXITED zone");
 
-            // Stop spawning
-            if (_spawnRoutine != null)
-            {
-                StopCoroutine(_spawnRoutine);
-                _spawnRoutine = null;
-            }
-
-            // Stop fire damage
             if (_fireDamageRoutine != null)
             {
                 StopCoroutine(_fireDamageRoutine);
                 _fireDamageRoutine = null;
             }
 
-            // Notify PlayerHealth
             if (_playerHealth != null)
             {
                 _playerHealth.SetOnFire(false);
             }
         }
 
-        #endregion
-
-        #region Spawning
-
-        private IEnumerator SpawnRoutine()
+        private void OnPlayerEnterEarlyWarning()
         {
-            if (spawnWarmupDelay > 0)
-            {
-                yield return new WaitForSeconds(spawnWarmupDelay);
-            }
-
-            while (_playerInZone && player != null)
-            {
-                _currentDepth = CalculatePlayerDepth();
-                _currentIntensity = intensityCurve.Evaluate(_currentDepth);
-
-                // Spawn interval decreases with intensity
-                float spawnInterval = Mathf.Lerp(maxSpawnInterval, minSpawnInterval, _currentIntensity);
-
-                // Meteors per wave increases with intensity
-                float meteorsFloat = Mathf.Lerp(1, maxMeteorsPerWave, meteorsPerWaveCurve.Evaluate(_currentIntensity));
-                int meteorsThisWave = Mathf.Max(1, Mathf.RoundToInt(meteorsFloat));
-
-                if (debugLog)
-                {
-                    Debug.Log($"[HazardZoneMeteors] Depth: {_currentDepth:F2}, Intensity: {_currentIntensity:F2}, " +
-                              $"Interval: {spawnInterval:F2}s, Meteors: {meteorsThisWave}");
-                }
-
-                // Spawn meteors
-                for (int i = 0; i < meteorsThisWave; i++)
-                {
-                    TrySpawnMeteor();
-                }
-
-                yield return new WaitForSeconds(spawnInterval);
-            }
+            if (debugLog) Debug.Log("[HazardZone] Player entered EARLY WARNING range");
         }
 
-        private void TrySpawnMeteor()
+        private void OnPlayerExitEarlyWarning()
+        {
+            if (debugLog) Debug.Log("[HazardZone] Player exited early warning range");
+        }
+
+        #endregion
+
+        #region Meteor Spawning
+
+        private void HandleMeteorSpawning()
         {
             if (meteorStrikePrefab == null || player == null) return;
 
-            Vector3 spawnPosition = GetSpawnPosition();
-            Instantiate(meteorStrikePrefab, spawnPosition, Quaternion.identity);
+            float meteorsPerSecond = 0f;
+
+            if (_playerInZone)
+            {
+                // Inside zone: scale with depth
+                meteorsPerSecond = Mathf.Lerp(minMeteorsPerSecond, maxMeteorsPerSecond, _currentIntensity);
+            }
+            else if (_playerInEarlyWarning)
+            {
+                // Early warning phase
+                meteorsPerSecond = earlyWarningMeteorsPerSecond;
+            }
+            else
+            {
+                // Not in range
+                _meteorAccumulator = 0f;
+                return;
+            }
+
+            // Accumulate meteors over time
+            _meteorAccumulator += meteorsPerSecond * Time.deltaTime;
+
+            // Spawn whole meteors
+            while (_meteorAccumulator >= 1f)
+            {
+                _meteorAccumulator -= 1f;
+                SpawnMeteor();
+            }
+
+            if (debugLog && _playerInZone && Time.frameCount % 60 == 0)
+            {
+                Debug.Log($"[HazardZone] Depth: {_currentDepth:F2}, Rate: {meteorsPerSecond:F1}/s");
+            }
+        }
+
+        private void SpawnMeteor()
+        {
+            Vector3 spawnPos = GetSpawnPosition();
+            Instantiate(meteorStrikePrefab, spawnPos, Quaternion.identity);
 
             if (debugLog)
             {
-                Debug.Log($"[HazardZoneMeteors] Spawned meteor at {spawnPosition}");
+                Debug.Log($"[HazardZone] Spawned meteor at {spawnPos}");
             }
         }
 
         private Vector3 GetSpawnPosition()
         {
-            // Calculate current accuracy (may scale with depth)
+            const int maxAttempts = 10;
+            
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                Vector3 candidate = GenerateCandidatePosition();
+                
+                // Validate position is inside zone
+                if (IsPositionInZone(candidate))
+                {
+                    candidate.y = 0f;
+                    return candidate;
+                }
+            }
+
+            // Fallback: random position within zone bounds
+            return GetRandomPositionInZone();
+        }
+
+        private Vector3 GenerateCandidatePosition()
+        {
             float currentAccuracy = targetingAccuracy;
-            if (accuracyScalesWithDepth)
+            if (accuracyScalesWithDepth && _playerInZone)
             {
                 currentAccuracy = Mathf.Lerp(targetingAccuracy * 0.5f, 1f, _currentIntensity);
             }
@@ -394,39 +391,30 @@ namespace Hazards
 
             if (targetPlayer && Random.value < currentAccuracy)
             {
-                // Targeted spawn: closer to player
                 float offsetRange = Mathf.Lerp(maxSpawnDistance, minSpawnDistance, currentAccuracy);
                 Vector2 randomCircle = Random.insideUnitCircle * offsetRange;
-                
                 spawnPos = player.position + new Vector3(randomCircle.x, 0, randomCircle.y);
             }
             else
             {
-                // Random spawn within ring around player
                 float distance = Random.Range(minSpawnDistance, maxSpawnDistance);
                 float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
-
-                Vector3 offset = new Vector3(
-                    Mathf.Cos(angle) * distance,
-                    0f,
-                    Mathf.Sin(angle) * distance
-                );
-
+                Vector3 offset = new Vector3(Mathf.Cos(angle) * distance, 0f, Mathf.Sin(angle) * distance);
                 spawnPos = player.position + offset;
             }
 
-            // Ensure position is in zone, otherwise just use player area
-            if (!IsPositionInZone(spawnPos))
-            {
-                spawnPos = player.position + new Vector3(
-                    Random.Range(-minSpawnDistance, minSpawnDistance),
-                    0f,
-                    Random.Range(-minSpawnDistance, minSpawnDistance)
-                );
-            }
-
-            spawnPos.y = 0f; // Ground level
             return spawnPos;
+        }
+
+        private Vector3 GetRandomPositionInZone()
+        {
+            Bounds bounds = _zoneCollider.bounds;
+            Vector3 randomPos = new Vector3(
+                Random.Range(bounds.min.x, bounds.max.x),
+                0f,
+                Random.Range(bounds.min.z, bounds.max.z)
+            );
+            return randomPos;
         }
 
         #endregion
@@ -435,11 +423,14 @@ namespace Hazards
 
         private IEnumerator FireDamageRoutine()
         {
+            float tickInterval = 1f / Mathf.Max(1f, fireDamageTickRate);
+
             while (_playerInZone && _playerHealth != null)
             {
-                // Calculate damage with depth scaling
+                // Calculate DPS scaled by depth
                 float depthMultiplier = Mathf.Lerp(1f, maxDepthFireDamageMultiplier, _currentIntensity);
-                
+                float currentDPS = fireDamagePerSecond * depthMultiplier;
+
                 // Calculate resistance reduction
                 float resistanceMultiplier = 1f;
                 if (_playerAbilities != null)
@@ -448,7 +439,9 @@ namespace Hazards
                     resistanceMultiplier = Mathf.Max(0.25f, 1f - (stacks * 0.25f));
                 }
 
-                int finalDamage = Mathf.RoundToInt(fireDamagePerTick * depthMultiplier * resistanceMultiplier);
+                // Calculate damage per tick from DPS
+                float damagePerTick = (currentDPS * resistanceMultiplier) / fireDamageTickRate;
+                int finalDamage = Mathf.RoundToInt(damagePerTick);
 
                 if (finalDamage > 0)
                 {
@@ -456,18 +449,17 @@ namespace Hazards
 
                     if (debugLog)
                     {
-                        Debug.Log($"[HazardZoneMeteors] Fire damage: {finalDamage} " +
-                                  $"(depth mult: {depthMultiplier:F2}, resist mult: {resistanceMultiplier:F2})");
+                        Debug.Log($"[HazardZone] Fire tick: {finalDamage} (DPS: {currentDPS:F0}, resist: {resistanceMultiplier:F2})");
                     }
                 }
 
-                yield return new WaitForSeconds(fireDamageTickInterval);
+                yield return new WaitForSeconds(tickInterval);
             }
         }
 
         #endregion
 
-        #region Depth Calculation
+        #region Helpers
 
         private float CalculatePlayerDepth()
         {
@@ -478,7 +470,6 @@ namespace Hazards
             Vector3 size = _zoneCollider.size;
 
             float t = 0f;
-
             switch (depthAxis)
             {
                 case DepthAxis.Z:
@@ -492,11 +483,7 @@ namespace Hazards
                     break;
             }
 
-            if (invertDepthDirection)
-            {
-                t = 1f - t;
-            }
-
+            if (invertDepthDirection) t = 1f - t;
             return Mathf.Clamp01(t);
         }
 
@@ -506,6 +493,13 @@ namespace Hazards
             Vector3 localPos = transform.InverseTransformPoint(worldPosition);
             Bounds bounds = new Bounds(_zoneCollider.center, _zoneCollider.size);
             return bounds.Contains(localPos);
+        }
+
+        private float GetDistanceToZone(Vector3 worldPosition)
+        {
+            if (_zoneCollider == null) return float.MaxValue;
+            Vector3 closestPoint = _zoneCollider.ClosestPoint(worldPosition);
+            return Vector3.Distance(worldPosition, closestPoint);
         }
 
         #endregion
@@ -527,12 +521,22 @@ namespace Hazards
             Gizmos.DrawWireCube(_zoneCollider.center, _zoneCollider.size);
             Gizmos.matrix = Matrix4x4.identity;
 
-            // Advance direction arrow
+            // Early warning zone (larger)
+            if (earlyWarningDistance > 0)
+            {
+                Gizmos.matrix = transform.localToWorldMatrix;
+                Vector3 warningSize = _zoneCollider.size + Vector3.one * earlyWarningDistance * 2;
+                Gizmos.color = new Color(1f, 1f, 0f, 0.1f);
+                Gizmos.DrawWireCube(_zoneCollider.center, warningSize);
+                Gizmos.matrix = Matrix4x4.identity;
+            }
+
+            // Advance direction
             Gizmos.color = Color.yellow;
             Vector3 center = transform.TransformPoint(_zoneCollider.center);
             Gizmos.DrawRay(center, advanceDirection * 5f);
 
-            // Spawn rings around player
+            // Spawn rings
             if (showSpawnRing && player != null)
             {
                 Gizmos.color = Color.green;
@@ -540,7 +544,6 @@ namespace Hazards
                 Gizmos.color = Color.cyan;
                 DrawCircle(player.position, maxSpawnDistance, 32);
 
-                // Intensity indicator
                 if (Application.isPlaying && _playerInZone)
                 {
                     Gizmos.color = Color.Lerp(Color.green, Color.red, _currentIntensity);
