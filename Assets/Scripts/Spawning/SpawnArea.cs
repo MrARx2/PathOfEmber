@@ -27,6 +27,18 @@ public class SpawnArea : MonoBehaviour
     private Transform[] spawnPoints;
     [SerializeField, Tooltip("If true, randomize which prefab spawns at each point")]
     private bool randomizePrefabs = false;
+    
+    [SerializeField, Tooltip("If true, randomize spawn positions within the volume area")]
+    private bool randomizePositions = false;
+    
+    [SerializeField, Tooltip("Random offset range around spawn point (if randomizePositions is off)")]
+    private float positionRandomOffset = 0f;
+    
+    [SerializeField, Tooltip("If true, ignore spawn points entirely and use random positions in volume")]
+    private bool useOnlyVolumeRandomPositions = false;
+    
+    [SerializeField, Tooltip("Number of enemies to spawn when using volume random positions")]
+    private int volumeSpawnCount = 5;
 
     [Header("Debug")]
     [SerializeField] private bool showGizmos = true;
@@ -94,6 +106,15 @@ public class SpawnArea : MonoBehaviour
             Debug.LogWarning("[SpawnArea] No enemy prefabs assigned!");
             return;
         }
+
+        // Mode 1: Use only random positions within volume (ignore spawn points)
+        if (useOnlyVolumeRandomPositions && volumeArea != null)
+        {
+            SpawnAtRandomVolumePositions();
+            return;
+        }
+
+        // Mode 2: Use spawn points (with optional randomization)
         if (spawnPoints == null || spawnPoints.Length == 0)
         {
             Debug.LogWarning("[SpawnArea] No spawn points found!");
@@ -113,23 +134,79 @@ public class SpawnArea : MonoBehaviour
             }
             else
             {
-                prefab = enemyPrefabs[i % enemyPrefabs.Length]; // Cycle through
+                prefab = enemyPrefabs[i % enemyPrefabs.Length];
             }
 
             if (prefab == null) continue;
 
-            GameObject enemy = Instantiate(
-                prefab,
-                spawnPoints[i].position,
-                spawnPoints[i].rotation
-            );
-            
+            // Calculate spawn position
+            Vector3 spawnPos = spawnPoints[i].position;
+            Quaternion spawnRot = spawnPoints[i].rotation;
+
+            if (randomizePositions && volumeArea != null)
+            {
+                // Use completely random position within volume
+                spawnPos = GetRandomPositionInVolume();
+                spawnRot = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
+            }
+            else if (positionRandomOffset > 0)
+            {
+                // Add random offset to spawn point
+                Vector2 offset = Random.insideUnitCircle * positionRandomOffset;
+                spawnPos += new Vector3(offset.x, 0, offset.y);
+            }
+
+            GameObject enemy = Instantiate(prefab, spawnPos, spawnRot);
             enemy.name = $"{prefab.name}_{i}";
             spawnedEnemies.Add(enemy);
         }
 
         hasSpawned = true;
         Debug.Log($"[SpawnArea] Spawned {spawnedEnemies.Count} enemies at {gameObject.name}");
+    }
+
+    private void SpawnAtRandomVolumePositions()
+    {
+        for (int i = 0; i < volumeSpawnCount; i++)
+        {
+            GameObject prefab;
+            if (randomizePrefabs)
+            {
+                prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
+            }
+            else
+            {
+                prefab = enemyPrefabs[i % enemyPrefabs.Length];
+            }
+
+            if (prefab == null) continue;
+
+            Vector3 spawnPos = GetRandomPositionInVolume();
+            Quaternion spawnRot = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
+
+            GameObject enemy = Instantiate(prefab, spawnPos, spawnRot);
+            enemy.name = $"{prefab.name}_vol_{i}";
+            spawnedEnemies.Add(enemy);
+        }
+
+        hasSpawned = true;
+        Debug.Log($"[SpawnArea] Spawned {spawnedEnemies.Count} enemies randomly in volume at {gameObject.name}");
+    }
+
+    private Vector3 GetRandomPositionInVolume()
+    {
+        if (volumeArea == null) return transform.position;
+
+        Bounds bounds = volumeArea.bounds;
+        
+        // Get random point within bounds
+        Vector3 randomPoint = new Vector3(
+            Random.Range(bounds.min.x, bounds.max.x),
+            bounds.center.y, // Keep Y at center (ground level)
+            Random.Range(bounds.min.z, bounds.max.z)
+        );
+
+        return randomPoint;
     }
 
     [ContextMenu("Despawn All")]

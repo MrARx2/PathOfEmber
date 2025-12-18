@@ -584,7 +584,7 @@ GameObject:
   - component: {fileID: 140909528}
   - component: {fileID: 140909527}
   m_Layer: 0
-  m_Name: Box Volume (2)
+  m_Name: StartMapBlockade
   m_TagString: Collider
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -721,8 +721,12 @@ MonoBehaviour:
   - {fileID: 1178491560}
   - {fileID: 1992998475}
   randomizePrefabs: 0
+  randomizePositions: 0
+  positionRandomOffset: 0.5
+  useOnlyVolumeRandomPositions: 0
+  volumeSpawnCount: 0
   showGizmos: 1
-  gizmoColor: {r: 1, g: 0, b: 0, a: 1}
+  gizmoColor: {r: 0, g: 1, b: 1, a: 1}
 --- !u!4 &228693781
 Transform:
   m_ObjectHideFlags: 0
@@ -1807,7 +1811,7 @@ Rigidbody:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 8
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
   m_UseGravity: 0
@@ -2405,7 +2409,6 @@ GameObject:
   - component: {fileID: 1096719031}
   - component: {fileID: 1096719034}
   - component: {fileID: 1096719033}
-  - component: {fileID: 1096719035}
   m_Layer: 0
   m_Name: HazardZonePostProcessVolume
   m_TagString: Untagged
@@ -2480,12 +2483,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hazards.HazardZoneMeteors
   player: {fileID: 617443746}
   meteorStrikePrefab: {fileID: 7353491111950365648, guid: fb65813de51e74e4ab351404c4c61c8b, type: 3}
-  zoneAdvanceSpeed: 0.008
+  zoneAdvanceSpeed: 0.02
   advanceDirection: {x: 0, y: 0, z: 1}
   advanceStartDelay: 5
   expandWhenPlayerInside: 0
-  expansionSpeed: 0
-  maxExpansionMultiplier: 0
+  expansionSpeed: 0.002
+  maxExpansionMultiplier: 3
   minSpawnInterval: 0.5
   maxSpawnInterval: 1
   spawnWarmupDelay: 0.5
@@ -2548,93 +2551,7 @@ MonoBehaviour:
   fireDamageTickInterval: 0.5
   maxDepthFireDamageMultiplier: 2
   depthAxis: 2
-  invertDepthDirection: 0
-  showGizmos: 1
-  debugLog: 0
-  showSpawnRing: 1
---- !u!114 &1096719035
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1096719030}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab7e042a5f94c4a44af75c0527e06be5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Hazards.HazardZoneMeteors
-  player: {fileID: 0}
-  meteorStrikePrefab: {fileID: 0}
-  zoneAdvanceSpeed: 0.001
-  advanceDirection: {x: 0, y: 0, z: 1}
-  advanceStartDelay: 5
-  expandWhenPlayerInside: 1
-  expansionSpeed: 0.002
-  maxExpansionMultiplier: 2
-  minSpawnInterval: 0.5
-  maxSpawnInterval: 3
-  spawnWarmupDelay: 0.5
-  intensityCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  minSpawnDistance: 2
-  maxSpawnDistance: 15
-  maxMeteorsPerWave: 3
-  meteorsPerWaveCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  targetPlayer: 1
-  targetingAccuracy: 0.5
-  accuracyScalesWithDepth: 1
-  applyFireDamage: 1
-  fireDamagePerTick: 10
-  fireDamageTickInterval: 0.5
-  maxDepthFireDamageMultiplier: 2
-  depthAxis: 2
-  invertDepthDirection: 0
+  invertDepthDirection: 1
   showGizmos: 1
   debugLog: 0
   showSpawnRing: 1
@@ -3901,6 +3818,7 @@ SceneRoots:
   - {fileID: 410087041}
   - {fileID: 832575519}
   - {fileID: 330585546}
+  - {fileID: 140909529}
   - {fileID: 617443746}
   - {fileID: 13111001}
   - {fileID: 118729509}
@@ -3908,4 +3826,3 @@ SceneRoots:
   - {fileID: 735265273}
   - {fileID: 228693781}
   - {fileID: 1096719032}
-  - {fileID: 140909529}

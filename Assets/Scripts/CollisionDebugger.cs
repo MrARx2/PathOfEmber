@@ -21,6 +21,6 @@ public class CollisionDebugger : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        Debug.Log($"[{gameObject.name}] COLLISION (not trigger!) with {collision.gameObject.name}");
+        Debug.Log(collision.collider);
     }
 }
