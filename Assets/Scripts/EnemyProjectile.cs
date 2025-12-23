@@ -70,14 +70,33 @@ public class EnemyProjectile : MonoBehaviour
             Destroy(gameObject);
     }
 
+    [Header("VFX")]
+    [SerializeField] private GameObject hitVFXPrefab;
+    [SerializeField] private float hitVFXDuration = 2f;
+
+    [Header("Collision Layers")]
+    [SerializeField, Tooltip("Layers that trigger the projectile impact")] 
+    private LayerMask hitLayers;
+
     private void OnTriggerEnter(Collider other)
     {
         if (other == null) return;
+        
+        // 1. Check if the object is in our hit layers
+        if (((1 << other.gameObject.layer) & hitLayers) == 0) return;
+
+        // 2. Ignore enemies specifically (extra safety)
         if (other.CompareTag("Enemy")) return;
         
+        // 3. Ignore triggers if they aren't the player
+        if (other.isTrigger && !other.CompareTag("Player")) return;
+
+        bool isValidHit = false;
+
         // Try to damage the player
         if (other.CompareTag("Player"))
         {
+            isValidHit = true;
             var playerHealth = other.GetComponent<PlayerHealth>();
             if (playerHealth == null)
                 playerHealth = other.GetComponentInParent<PlayerHealth>();
@@ -87,17 +106,27 @@ public class EnemyProjectile : MonoBehaviour
                 if (applyDoT)
                 {
                     playerHealth.ApplyDamageOverTime(dotDamagePerTick, dotTickInterval, dotTotalTicks);
-                    Debug.Log($"Enemy projectile applied DoT to {other.name}");
                 }
                 else
                 {
                     playerHealth.TakeDamage(damage);
-                    Debug.Log($"Enemy projectile hit {other.name} for {damage} damage");
                 }
             }
+        }
+        else
+        {
+            // It matched the layer mask and wasn't filtered out, so it's a valid environment hit
+            isValidHit = true;
+        }
 
-            if (destroyOnHit)
-                Destroy(gameObject);
+        if (isValidHit && destroyOnHit)
+        {
+            if (hitVFXPrefab != null)
+            {
+                GameObject vfx = Instantiate(hitVFXPrefab, transform.position, Quaternion.identity);
+                Destroy(vfx, hitVFXDuration);
+            }
+            Destroy(gameObject);
         }
     }
 }

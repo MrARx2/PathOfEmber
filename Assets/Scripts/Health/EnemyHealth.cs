@@ -11,6 +11,9 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [Header("Configuration")]
     [SerializeField] private int maxHealth = 100;
     
+    [SerializeField, Tooltip("Optional: Assign the model child transform for accurate effect positioning")]
+    private Transform modelTransform;
+    
     [Header("State")]
     [SerializeField] private int currentHealth;
 
@@ -23,6 +26,14 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     public UnityEvent OnDeath;
     public UnityEvent<float> OnHealthChanged;
 
+    [Header("Death Settings")]
+    [SerializeField, Tooltip("Automatically destroy the enemy after death")]
+    private bool destroyOnDeath = true;
+    [SerializeField, Tooltip("Delay before destroying (for death animations/effects)")]
+    private float destroyDelay = 0.5f;
+    [SerializeField, Tooltip("Optional VFX prefab to spawn on death")]
+    private GameObject deathVFXPrefab;
+
     [Header("Freeze Settings")]
     [SerializeField, Tooltip("Time enemy cannot be frozen again after unfreeze")]
     private float freezeImmunityDuration = 5f;
@@ -33,9 +44,26 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField, Tooltip("Tint color when poisoned")]
     private Color venomTintColor = new Color(0.5f, 0f, 0.5f, 1f); // Purple
 
+    [Header("Hit Flash Settings")]
+    [SerializeField, Tooltip("Enable flash effect when hit")]
+    private bool enableHitFlash = true;
+    [SerializeField, Tooltip("Tint color when hit")]
+    private Color hitFlashColor = new Color(0.8f, 0.5f, 1f, 1f); // Light purple
+    [SerializeField, Tooltip("Duration of hit flash in seconds")]
+    private float hitFlashDuration = 0.2f;
+    [SerializeField, Tooltip("Optional VFX prefab to spawn when hit")]
+    private GameObject hitVFXPrefab;
+
+    [Header("Damage Popup Settings")]
+    [SerializeField, Tooltip("Enable floating damage numbers (requires DamagePopupManager in scene)")]
+    private bool showDamagePopup = true;
+    [SerializeField, Tooltip("Offset from enemy position for popup spawn")]
+    private Vector3 damagePopupOffset = new Vector3(0, 1.5f, 0);
+
     private bool isDead = false;
     private Coroutine dotCoroutine;
     private Coroutine freezeCoroutine;
+    private Coroutine hitFlashCoroutine;
     private bool isFrozen = false;
     private bool isVenomed = false;
     private float freezeImmunityTimer = 0f;
@@ -43,6 +71,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private UnityEngine.AI.NavMeshAgent navAgent;
     private Renderer[] renderers;
     private Color[] originalColors;
+
+    /// <summary>
+    /// Returns the visual center position (modelTransform if set, otherwise this transform).
+    /// </summary>
+    public Vector3 VisualCenter => modelTransform != null ? modelTransform.position : transform.position;
 
     public bool IsDead => isDead;
     public int CurrentHealth => currentHealth;
@@ -102,6 +135,28 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         currentHealth -= damage;
         if (currentHealth < 0) currentHealth = 0;
 
+        // Trigger hit flash effect
+        if (enableHitFlash && !isFrozen && !isVenomed)
+        {
+            if (hitFlashCoroutine != null)
+                StopCoroutine(hitFlashCoroutine);
+            hitFlashCoroutine = StartCoroutine(HitFlashRoutine());
+        }
+        
+        // Spawn hit VFX at visual center
+        if (hitVFXPrefab != null)
+        {
+            GameObject vfx = Instantiate(hitVFXPrefab, VisualCenter, Quaternion.identity);
+            Destroy(vfx, 2f); // Auto-cleanup
+        }
+        
+        // Spawn damage popup via manager
+        if (showDamagePopup && DamagePopupManager.Instance != null)
+        {
+            Vector3 popupPos = VisualCenter + damagePopupOffset;
+            DamagePopupManager.Instance.ShowDamage(damage, popupPos);
+        }
+
         OnDamage?.Invoke(damage);
         OnHealthChanged?.Invoke((float)currentHealth / maxHealth);
 
@@ -125,6 +180,22 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         if (dotCoroutine != null)
             StopCoroutine(dotCoroutine);
         dotCoroutine = StartCoroutine(DamageOverTimeRoutine(damagePerTick, tickInterval, totalTicks));
+    }
+
+    private IEnumerator HitFlashRoutine()
+    {
+        ApplyTint(hitFlashColor);
+        yield return new WaitForSeconds(hitFlashDuration);
+        
+        // Restore appropriate tint based on current state
+        if (isFrozen)
+            ApplyTint(freezeTintColor);
+        else if (isVenomed)
+            ApplyTint(venomTintColor);
+        else
+            ClearTint();
+        
+        hitFlashCoroutine = null;
     }
 
     private IEnumerator DamageOverTimeRoutine(int damagePerTick, float tickInterval, int totalTicks)
@@ -239,10 +310,41 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private void Die()
     {
+        if (isDead) return; // Prevent double death
         isDead = true;
-        ClearTint(); // Clear any tints on death
+        
+        // Stop all coroutines (DoT, Freeze, etc.)
+        StopAllCoroutines();
+        dotCoroutine = null;
+        freezeCoroutine = null;
+        
+        // Clear any visual effects
+        ClearTint();
+        
+        // Disable AI/movement immediately
+        if (navAgent != null && navAgent.isOnNavMesh)
+        {
+            navAgent.isStopped = true;
+            navAgent.enabled = false;
+        }
+        
+        // Invoke death event (for external listeners like HealthBarManager)
         OnDeath?.Invoke();
-        Debug.Log($"{gameObject.name} died.");
+        
+        Debug.Log($"[EnemyHealth] {gameObject.name} died.");
+        
+        // Spawn death VFX if assigned
+        if (deathVFXPrefab != null)
+        {
+            GameObject vfx = Instantiate(deathVFXPrefab, VisualCenter, Quaternion.identity);
+            Destroy(vfx, 3f); // Auto-cleanup VFX after 3 seconds
+        }
+        
+        // Destroy the enemy
+        if (destroyOnDeath)
+        {
+            Destroy(gameObject, destroyDelay);
+        }
     }
 
     public Transform GetTransform() => transform;

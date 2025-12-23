@@ -27,8 +27,8 @@ Transform:
   m_GameObject: {fileID: 429326876318963032}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.143, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3873748017344426221}
@@ -4921,8 +4921,8 @@ Transform:
   m_GameObject: {fileID: 5181111660253887662}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.143, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3873748017344426221}
@@ -9797,6 +9797,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3873748017344426221}
+  - component: {fileID: 757766642815645587}
+  - component: {fileID: -7790517302508887111}
   m_Layer: 0
   m_Name: vfx-fireball 1
   m_TagString: Untagged
@@ -9812,9 +9814,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7452087413518597415}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.020303598, z: -0, w: -0.9997939}
-  m_LocalPosition: {x: -1.296, y: 0, z: 0.42380285}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: -0, y: -0.020305498, z: 0, w: -0.9997938}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.2, y: 0.2, z: 0.2}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6082799960114829165}
@@ -9823,6 +9825,54 @@ Transform:
   - {fileID: 5926580756144289963}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 362.327, z: 0}
+--- !u!114 &757766642815645587
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7452087413518597415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d41481083bcf9be4f946e45490102c24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyProjectile
+  speed: 1
+  lifetime: 5
+  damage: 100
+  destroyOnHit: 1
+  applyDoT: 1
+  dotDamagePerTick: 50
+  dotTickInterval: 1
+  dotTotalTicks: 3
+  hitVFXPrefab: {fileID: 1459743276775166154, guid: 4d4f027c8a1ae4646ab7954992b03c27, type: 3}
+  hitVFXDuration: 0.5
+  hitLayers:
+    serializedVersion: 2
+    m_Bits: 8
+--- !u!136 &-7790517302508887111
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7452087413518597415}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.1
+  m_Height: 0.5
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.1, z: 0}
 --- !u!1 &8360761769017524223
 GameObject:
   m_ObjectHideFlags: 0
@@ -9849,7 +9899,7 @@ Transform:
   m_GameObject: {fileID: 8360761769017524223}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.21100001, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -9991,7 +10041,7 @@ Transform:
   m_GameObject: {fileID: 9021222281026641707}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.229, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
