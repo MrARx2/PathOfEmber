@@ -35,8 +35,8 @@ namespace EnemyAI
             base.Awake();
             
             // Chaser priority: medium-high (aggressive)
-            if (agent != null)
-                agent.avoidancePriority = 35;
+            // if (agent != null)
+            //     agent.avoidancePriority = 35; // REMOVED
         }
 
         protected override void Update()

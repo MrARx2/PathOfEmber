@@ -36,14 +36,14 @@ namespace EnemyAI
         /// </summary>
         public void OnFireProjectile()
         {
-            Debug.Log($"[EnemyAnimationRelay] EVENT RECEIVED: OnFireProjectile on {gameObject.name}");
+
             if (sniperAI != null)
             {
                 sniperAI.FireProjectileFromEvent();
             }
             else
             {
-                Debug.LogWarning($"[EnemyAnimationRelay] MISSING SniperAI referece on {gameObject.name}");
+
             }
         }
 
@@ -66,8 +66,34 @@ namespace EnemyAI
             if (sniperAI != null)
             {
                 sniperAI.OnShootAnimationEnd();
-                Debug.Log($"[EnemyAnimationRelay] OnAttackEnd event received on {gameObject.name}");
+
             }
+        }
+        
+        /// <summary>
+        /// Called by animation event at the start of Aiming phase.
+        /// Useful for locking rotation to player.
+        /// </summary>
+        public void OnAimStart()
+        {
+             if (sniperAI != null)
+             {
+                 sniperAI.FacePlayer();
+
+             }
+        }
+
+        /// <summary>
+        /// Called by animation event at the end of the shooting sequence.
+        /// Signals the AI to resume movement.
+        /// </summary>
+        public void OnAimEnd()
+        {
+             if (sniperAI != null)
+             {
+                 sniperAI.OnShootAnimationEnd();
+
+             }
         }
     }
 }

@@ -4,11 +4,16 @@ using System.Collections;
 namespace EnemyAI
 {
     /// <summary>
-    /// Sniper enemy - ranged attacker that shoots from distance.
-    /// Supports animation events for projectile spawning.
+    /// Sniper enemy - ranged attacker with "Archero Skeleton" style movement.
+    /// Alternates between Axis-Locked Movement and Shooting.
+    /// - Moves only in cardinal directions (Up, Down, Left, Right).
+    /// - Body rotation is locked to movement direction while moving.
+    /// - Looks at player only when shooting.
     /// </summary>
     public class SniperAI : EnemyAIBase
     {
+        private enum SniperState { Idle, Moving, Shooting }
+
         [Header("=== SNIPER SETTINGS ===")]
         [SerializeField] private GameObject projectilePrefab;
         [SerializeField] private Transform projectileSpawnPoint;
@@ -17,47 +22,49 @@ namespace EnemyAI
         [SerializeField, Tooltip("Damage override (0 = use prefab default)")]
         private int projectileDamage = 0;
 
-        [Header("=== RANGE SETTINGS ===")]
-        [SerializeField, Tooltip("Maximum range to engage player")]
-        private float maxEngageRange = 8f;
-        
-        [SerializeField, Tooltip("If player gets closer than this, sniper will try to reposition")]
-        private float minComfortRange = 2f;
-        
-        [SerializeField, Tooltip("Chance to reposition after each shot (0-1)")]
-        private float repositionChance = 0.3f;
-        
-        [SerializeField, Tooltip("How far to reposition")]
-        private float repositionDistance = 2f;
+        [Header("=== MOVEMENT SETTINGS ===")]
+        [SerializeField, Tooltip("Ideal range to maintain from player")]
+        private float idealRange = 6f;
+        [SerializeField, Tooltip("How far to move in one step")]
+        private float moveStepDistance = 3f;
+        [SerializeField, Tooltip("Stopping distance tolerance")]
+        private float moveTolerance = 0.5f;
 
         [Header("=== ANIMATION ===")]
         [SerializeField, Tooltip("Name of the Shoot bool/trigger parameter")]
         private string shootParameter = "Shoot";
-        
         [SerializeField, Tooltip("Is the shoot parameter a bool (true) or trigger (false)?")]
         private bool shootParameterIsBool = true;
-        
         [SerializeField, Tooltip("Use animation event to spawn projectile instead of delay")]
         private bool useAnimationEvent = true;
-        
         [SerializeField, Tooltip("Fallback: delay before spawning projectile (if not using anim event)")]
         private float projectileSpawnDelay = 0.2f;
-        
         [SerializeField, Tooltip("How long the shoot animation takes")]
         private float shootAnimationDuration = 0.5f;
 
-        private float actionPauseTimer;
-        private bool isRepositioning;
-        private bool isShooting;
+        // State Machine
+        private SniperState currentState = SniperState.Idle;
+        private Vector3 moveDirection;
         private bool waitingForAnimEvent;
+        private bool isShooting; // Added back for ShootRoutine
+        private float stateTimer;
+
+        // Cache
+        private Coroutine shootCoroutine;
 
         protected override void Awake()
         {
             base.Awake();
             
-            // Sniper priority: medium
             if (agent != null)
-                agent.avoidancePriority = 55;
+            {
+                // Removed manual priority override to allow consistent swarm behavior
+                // agent.avoidancePriority = 55;
+                // Important: We control rotation manually
+                agent.updateRotation = false; 
+                // Fix for infinite walking: Ensure we try to reach the EXACT point
+                agent.stoppingDistance = 0f; 
+            }
         }
 
         protected override void Start()
@@ -65,87 +72,204 @@ namespace EnemyAI
             base.Start();
             if (projectileSpawnPoint == null)
                 projectileSpawnPoint = transform;
+            
+            // Start behavior
+            SwitchState(SniperState.Idle);
         }
 
         protected override void Update()
         {
             if (health != null && (health.IsDead || health.IsFrozen))
             {
-                StopMovement();
-                ResetShootAnimation();
+                if (agent.isOnNavMesh) agent.isStopped = true;
                 return;
             }
 
-            if (target == null)
+            if (target == null) return;
+
+            // State Machine Update
+            switch (currentState)
             {
-                StopMovement();
-                ResetShootAnimation();
-                return;
+                case SniperState.Idle:
+                    UpdateIdle();
+                    break;
+                case SniperState.Moving:
+                    UpdateMoving();
+                    break;
+                case SniperState.Shooting:
+                    // Logic handled in coroutine/events
+                    break;
             }
 
-            // Handle cooldown
-            if (attackCooldown > 0)
-                attackCooldown -= Time.deltaTime;
-
-            // Handle pause after actions (includes shooting animation)
-            if (actionPauseTimer > 0)
+            // Animation (Locomotion)
+            if (animator != null)
             {
-                actionPauseTimer -= Time.deltaTime;
-                StopMovement();
-                LookAtTarget();
-                UpdateAnimator();
-                return;
+                // If moving, set speed param, otherwise 0
+                float speed = (currentState == SniperState.Moving && agent.isOnNavMesh) ? agent.velocity.magnitude : 0f;
+                // If using 'Speed' param in base class
+                if (!string.IsNullOrEmpty(speedParameter)) 
+                    animator.SetFloat(speedParameter, speed);
             }
-
-            float distance = Vector3.Distance(VisualPosition, target.position);
-
-            // Always look at player
-            LookAtTarget();
-
-            // If repositioning, wait until we reach destination
-            if (isRepositioning)
-            {
-                if (!agent.pathPending && agent.remainingDistance < 0.5f)
-                {
-                    isRepositioning = false;
-                    StopMovement();
-                }
-                UpdateAnimator();
-                return;
-            }
-
-            // PRIORITY 1: If player is too far, move closer
-            if (distance > maxEngageRange)
-            {
-                ChasePlayer();
-            }
-            // PRIORITY 2: If in range, SHOOT
-            else
-            {
-                StopMovement();
-                
-                // Try to shoot
-                if (attackCooldown <= 0 && !isShooting)
-                {
-                    StartShootSequence();
-                    
-                    // Set cooldown
-                    float cooldown = 1f / Mathf.Max(0.01f, attacksPerSecond);
-                    attackCooldown = cooldown;
-                    // Lock movement until animation ends (handled by OnShootAnimationEnd)
-                    actionPauseTimer = 999f;
-                }
-            }
-
-            UpdateAnimator();
         }
 
+        private void SwitchState(SniperState newState)
+        {
+            if (currentState == newState) return;
+            
+
+            
+            currentState = newState;
+            stateTimer = 0f;
+
+            switch (newState)
+            {
+                case SniperState.Idle:
+                    if (agent.isOnNavMesh) agent.isStopped = true;
+                    stateTimer = 0.5f; // Brief pause before deciding next move
+                    break;
+
+                case SniperState.Moving:
+                    if (agent.isOnNavMesh) agent.isStopped = false;
+                    PickCardinalMove();
+                    break;
+
+                case SniperState.Shooting:
+                    if (agent.isOnNavMesh) agent.isStopped = true;
+                    // Look at player immediately at start of Aiming phase
+                    LookAtTarget(); 
+                    StartShootSequence();
+                    break;
+            }
+        }
+
+        // --- IDLE STATE ---
+        private void UpdateIdle()
+        {
+            stateTimer -= Time.deltaTime;
+            if (stateTimer <= 0f)
+            {
+                // Decide: Move or Shoot?
+                // For simplicity: Move -> Shoot -> Move -> Shoot loop
+                // Or check cooldown?
+                // Archero skeletons usually move then shoot.
+                // Let's go to Moving first.
+                SwitchState(SniperState.Moving);
+            }
+        }
+
+        [Header("=== TIMING ===")]
+        [SerializeField, Tooltip("Max time to move before forcing a shot (even if destination not reached)")]
+        private float moveTimeout = 1.5f;
+
+        // --- MOVING STATE ---
+        private void UpdateMoving()
+        {
+            stateTimer += Time.deltaTime; // Reusing stateTimer to track duration
+
+            // Maintain facing direction (locked to move axis)
+            if (moveDirection != Vector3.zero)
+            {
+                Quaternion lookRot = Quaternion.LookRotation(moveDirection);
+                transform.rotation = Quaternion.Slerp(transform.rotation, lookRot, Time.deltaTime * 15f);
+            }
+
+            // Check if reached destination OR Timed out
+            bool reachedDest = !agent.pathPending && agent.remainingDistance <= moveTolerance;
+            bool timedOut = stateTimer >= moveTimeout;
+
+            if (reachedDest || timedOut)
+            {
+
+
+                // Reached destination (or gave up) -> Shoot
+                SwitchState(SniperState.Shooting);
+            }
+            
+            // Failsafe: if path is invalid or stuck
+            if (agent.pathStatus == UnityEngine.AI.NavMeshPathStatus.PathInvalid)
+            {
+                SwitchState(SniperState.Shooting);
+            }
+        }
+
+        private void PickCardinalMove()
+        {
+            if (!agent.isOnNavMesh)
+            {
+                SwitchState(SniperState.Shooting);
+                return;
+            }
+
+            // Simplified Logic: Pick a RANDOM cardinal direction.
+            // 0: +X (Right), 1: -X (Left), 2: +Z (Forward), 3: -Z (Back)
+            
+            // We try random directions until we find a valid one
+            // To prevent infinite loops, we limit attempts.
+            
+            Vector3[] directions = new Vector3[] 
+            {
+                new Vector3(1, 0, 0),  // Right
+                new Vector3(-1, 0, 0), // Left
+                new Vector3(0, 0, 1),  // Forward relative to world
+                new Vector3(0, 0, -1)  // Back relative to world
+            };
+            
+            // Shuffle directions to try them in random order
+            for (int i = 0; i < directions.Length; i++)
+            {
+                Vector3 temp = directions[i];
+                int randomIndex = Random.Range(i, directions.Length);
+                directions[i] = directions[randomIndex];
+                directions[randomIndex] = temp;
+            }
+
+            // Calculate distance based on TIME
+            float calculatedDistance = moveTimeout * agent.speed * 1.2f;
+
+            foreach (Vector3 dir in directions)
+            {
+                Vector3 dest = transform.position + dir * calculatedDistance;
+                
+                // Validate if this point is on NavMesh
+                UnityEngine.AI.NavMeshHit hit;
+                if (UnityEngine.AI.NavMesh.SamplePosition(dest, out hit, calculatedDistance, UnityEngine.AI.NavMesh.AllAreas))
+                {
+                    // Additional check: Raycast on NavMesh to ensure we can actually walk there in a straight line?
+                    // NavMeshAgent.CalculatePath can check connectivity.
+                    UnityEngine.AI.NavMeshPath path = new UnityEngine.AI.NavMeshPath();
+                    agent.CalculatePath(hit.position, path);
+                    
+                    if (path.status == UnityEngine.AI.NavMeshPathStatus.PathComplete)
+                    {
+                        agent.SetDestination(hit.position);
+                        moveDirection = dir;
+                        if (debugLog) Debug.Log($"[SniperAI] Picked Random Dir: {dir} -> {hit.position}");
+                        return; // Found a valid move!
+                    }
+                }
+            }
+
+            // If we fall through here, NO valid move found (stuck in corner?)
+            // Just face player and shoot immediately
+            // if (debugLog) Debug.Log("[SniperAI] No valid move found. Skipping to Shoot.");
+            moveDirection = (target.position - transform.position).normalized;
+            moveDirection.y = 0;
+            SwitchState(SniperState.Shooting);
+        }
+
+        // --- SHOOTING STATE ---
         private void StartShootSequence()
+        {
+            if (shootCoroutine != null) StopCoroutine(shootCoroutine);
+            shootCoroutine = StartCoroutine(ShootRoutine());
+        }
+
+        private IEnumerator ShootRoutine()
         {
             isShooting = true;
             waitingForAnimEvent = useAnimationEvent;
-            
-            // Start shoot animation
+
+            // Trigger Animation
             if (animator != null && !string.IsNullOrEmpty(shootParameter))
             {
                 if (shootParameterIsBool)
@@ -154,122 +278,74 @@ namespace EnemyAI
                     animator.SetTrigger(shootParameter);
             }
 
-            // If not using animation events, use delay instead
+            // Wait for event or fallback
             if (!useAnimationEvent)
             {
-                StartCoroutine(DelayedProjectileSpawn());
-            }
-            
-            // Schedule animation end
-            StartCoroutine(ShootAnimationTimeout());
-        }
-
-        private IEnumerator DelayedProjectileSpawn()
-        {
-            yield return new WaitForSeconds(projectileSpawnDelay);
-            if (isShooting)
-            {
+                yield return new WaitForSeconds(projectileSpawnDelay);
                 SpawnProjectile();
-                
-                // Maybe reposition after shot (if not using events)
-                float distance = target != null ? Vector3.Distance(VisualPosition, target.position) : 0f;
-                if (distance < minComfortRange || Random.value < repositionChance)
-                {
-                    StartCoroutine(DelayedReposition());
-                }
             }
-        }
 
-        private IEnumerator ShootAnimationTimeout()
-        {
-            // If using events, allow a safety buffer (e.g. 2s extra) so we don't cancel early
-            // If delay-based, use exact duration
-            float delay = useAnimationEvent ? shootAnimationDuration + 2.0f : shootAnimationDuration;
+            // Wait for animation end (Safety timeout)
+            float timeout = shootAnimationDuration + (useAnimationEvent ? 2.0f : 0.1f);
+            float elapsed = 0f;
             
-            yield return new WaitForSeconds(delay);
-            
+            // Wait until isShooting becomes false (via Event -> OnShootAnimationEnd)
+            // or timeout
+            while (elapsed < timeout && isShooting)
+            {
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            // If timed out, force reset
             if (isShooting)
             {
-                if (debugLog) Debug.LogWarning("[SniperAI] Shoot timed out - forcing animation end.");
                 OnShootAnimationEnd();
             }
+
+            // Interaction finished. Go back to Idle.
+            SwitchState(SniperState.Idle);
         }
 
-        /// <summary>
-        /// Called by EnemyAnimationRelay when animation event fires.
-        /// </summary>
         public void FireProjectileFromEvent()
         {
-            if (isShooting && waitingForAnimEvent)
+            // Just check if we are in shooting state, don't strict check 'waitingForAnimEvent' 
+            // incase of race conditions where coroutine hasn't set it yet or it was cleared.
+            // But we do want to avoid double firing if possible. 
+            // Let's trust the event.
+            if (currentState == SniperState.Shooting)
             {
                 waitingForAnimEvent = false;
                 SpawnProjectile();
-                
-                // Maybe reposition after shot
-                float distance = target != null ? Vector3.Distance(VisualPosition, target.position) : 0f;
-                if (distance < minComfortRange || Random.value < repositionChance)
-                {
-                    StartCoroutine(DelayedReposition());
-                }
             }
-            else if (debugLog)
+            else
             {
-                Debug.LogWarning($"[SniperAI] FireProjectileFromEvent ignored: isShooting={isShooting}, waiting={waitingForAnimEvent}");
+                 // Debug.LogWarning($"[SniperAI] Event fired but state is {currentState} (Expected Shooting)");
+                 // Fallback: If we are not in Shooting, maybe we should fire anyway? 
+                 // No, that risks firing while walking.
             }
         }
 
-        /// <summary>
-        /// Called when shoot animation ends (by animation event or timeout).
-        /// </summary>
         public void OnShootAnimationEnd()
-        {
-            ResetShootAnimation();
-            isShooting = false;
-            waitingForAnimEvent = false;
-            actionPauseTimer = 0f;
-        }
-
-        private void ResetShootAnimation()
         {
             if (animator != null && !string.IsNullOrEmpty(shootParameter) && shootParameterIsBool)
             {
                 animator.SetBool(shootParameter, false);
             }
+            isShooting = false;
+            waitingForAnimEvent = false;
         }
 
-        private IEnumerator DelayedReposition()
+        // Method to look at player instantly - can be called via Animation Event "FacePlayer" if needed
+        public void FacePlayer()
         {
-            yield return new WaitForSeconds(0.1f);
-            if (!health.IsDead)
-                TryReposition();
-        }
-
-        private void TryReposition()
-        {
-            if (agent == null || !agent.isOnNavMesh) return;
-            if (target == null) return;
-
-            // Find a position - mostly sideways movement
-            Vector3 awayDir = (VisualPosition - target.position).normalized;
-            Vector3 sideDir = Vector3.Cross(awayDir, Vector3.up);
-            if (Random.value > 0.5f) sideDir = -sideDir;
-            
-            Vector3 moveDir = (awayDir * 0.3f + sideDir * 0.7f).normalized;
-            Vector3 newPos = transform.position + moveDir * repositionDistance;
-            
-            // Make sure we don't go too far from player
-            float newDistance = Vector3.Distance(newPos, target.position);
-            if (newDistance > maxEngageRange)
+            if (target != null)
             {
-                newPos = transform.position + sideDir * repositionDistance;
+                Vector3 dir = (target.position - transform.position).normalized;
+                dir.y = 0;
+                if (dir != Vector3.zero)
+                    transform.rotation = Quaternion.LookRotation(dir);
             }
-
-            agent.isStopped = false;
-            agent.SetDestination(newPos);
-            isRepositioning = true;
-
-            if (debugLog)
-                Debug.Log("[SniperAI] Repositioning...");
         }
 
         private void SpawnProjectile()
@@ -277,11 +353,9 @@ namespace EnemyAI
             if (projectilePrefab == null || target == null) return;
 
             Vector3 spawnPos = projectileSpawnPoint.position;
-            
-            // Keep trajectory flat - aim at target but at spawn height
+            // Keep trajectory flat
             Vector3 targetPos = target.position;
             targetPos.y = spawnPos.y;
-            
             Vector3 direction = (targetPos - spawnPos).normalized;
 
             GameObject proj = Instantiate(projectilePrefab, spawnPos, Quaternion.LookRotation(direction));
@@ -290,19 +364,11 @@ namespace EnemyAI
             if (ep != null)
             {
                 ep.SetDirection(direction);
-                if (projectileSpeed > 0)
-                    ep.SetSpeed(projectileSpeed);
-                if (projectileDamage > 0)
-                    ep.SetDamage(projectileDamage);
+                if (projectileSpeed > 0) ep.SetSpeed(projectileSpeed);
+                if (projectileDamage > 0) ep.SetDamage(projectileDamage);
             }
-
-            if (debugLog)
-                Debug.Log("[SniperAI] Fired projectile!");
         }
 
-        protected override void OnAttack()
-        {
-            // Not used - we handle shooting via animation events
-        }
+        protected override void OnAttack() { } // Not used
     }
 }

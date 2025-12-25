@@ -37,8 +37,8 @@ namespace EnemyAI
             base.Awake();
             
             // Miniboss priority: low (others move around it)
-            if (agent != null)
-                agent.avoidancePriority = 75;
+            // if (agent != null)
+            //     agent.avoidancePriority = 75; // REMOVED
         }
 
         protected override void Start()

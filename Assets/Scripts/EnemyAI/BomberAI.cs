@@ -58,7 +58,7 @@ namespace EnemyAI
             if (agent != null)
             {
                 agent.speed = moveSpeed * speedMultiplier;
-                agent.avoidancePriority = 15; // Highest priority
+                // agent.avoidancePriority = 15; // Highest priority (REMOVED: Use spawn default for equality)
             }
 
             renderers = GetComponentsInChildren<Renderer>();
