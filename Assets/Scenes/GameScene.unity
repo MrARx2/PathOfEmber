@@ -1943,11 +1943,11 @@ MonoBehaviour:
   currentHealth: 0
   isInvulnerable: 0
   HealthBarPoint: {fileID: 1272922181}
-  invulnerabilityEffect: {fileID: 1052317285}
+  invulnerabilityEffect: {fileID: 3597349390109535566, guid: 4095cbabc721c864fa5f69e706496271, type: 3}
   hasOneTimeShield: 0
-  shieldEffect: {fileID: 0}
+  shieldEffect: {fileID: 9116693322662566799, guid: 1d551fd9157fb874cbea01349fdae905, type: 3}
   isOnFire: 0
-  fireEffect: {fileID: 0}
+  fireEffect: {fileID: 8685111587444446394, guid: 49b0d033454c0fb46a1ccef19c498b6d, type: 3}
   animator: {fileID: 0}
   healTrigger: Heal
   hitTrigger: Hit
@@ -2484,11 +2484,6 @@ Transform:
 Transform:
   m_CorrespondingSourceObject: {fileID: -8021001004253913084, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
   m_PrefabInstance: {fileID: 131104092}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &1052317285 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3597349390109535566, guid: 4095cbabc721c864fa5f69e706496271, type: 3}
-  m_PrefabInstance: {fileID: 1835715078}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &1052317286 stripped
 Transform:
