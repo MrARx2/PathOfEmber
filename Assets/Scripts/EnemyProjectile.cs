@@ -105,7 +105,9 @@ public class EnemyProjectile : MonoBehaviour
             {
                 if (applyDoT)
                 {
-                    playerHealth.ApplyDamageOverTime(dotDamagePerTick, dotTickInterval, dotTotalTicks);
+                    // Use damage as initial hit, or fallback to first tick damage if damage is 0
+                    int initialHitDamage = damage > 0 ? damage : dotDamagePerTick;
+                    playerHealth.ApplyDamageOverTime(dotDamagePerTick, dotTickInterval, dotTotalTicks, initialHitDamage);
                 }
                 else
                 {

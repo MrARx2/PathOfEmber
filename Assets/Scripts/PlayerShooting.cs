@@ -20,7 +20,6 @@ public class PlayerShooting : MonoBehaviour
     [Header("Head Look")]
     [SerializeField] private Transform headLookTarget;
     [SerializeField] private float headLookLerpSpeed = 10f;
-    [SerializeField, Tooltip("If true, LookAt snaps exactly to enemy position; if false, it smoothly follows using headLookLerpSpeed")] private bool headLookSnapToTarget = true;
 
     [Header("Animation")]
     [SerializeField] private Animator animator;

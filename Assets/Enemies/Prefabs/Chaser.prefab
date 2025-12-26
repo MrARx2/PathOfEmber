@@ -55,7 +55,7 @@ NavMeshAgent:
   m_AutoRepath: 1
   m_Height: 0.5
   m_BaseOffset: 0
-  m_WalkableMask: 4294967295
+  m_WalkableMask: 1
   m_ObstacleAvoidanceType: 4
 --- !u!114 &1330958008286997474
 MonoBehaviour:
@@ -78,11 +78,15 @@ MonoBehaviour:
   agentAcceleration: 1
   attacksPerSecond: 1
   attackPauseDuration: 0.2
+  enableContactDamage: 1
+  contactDamageAmount: 40
+  contactDamageRate: 1
+  contactDistance: 0.4
   animator: {fileID: 5222287799273776813}
   speedParameter: Speed
   attackTrigger: Attack
   debugLog: 0
-  punchDamage: 20
+  punchDamage: 50
   upperBodyLayerIndex: 1
   attackLayerWeight: 1
   layerBlendSpeed: 10
@@ -119,8 +123,9 @@ MonoBehaviour:
   freezeTintColor: {r: 0, g: 1, b: 1, a: 1}
   venomTintColor: {r: 0.5, g: 0, b: 0.5, a: 1}
   enableHitFlash: 1
-  hitFlashColor: {r: 0.8, g: 0.5, b: 1, a: 1}
-  hitFlashDuration: 0.2
+  hitFlashEmissionColor: {r: 1, g: 0.3, b: 0.3, a: 1}
+  hitFlashEmissionIntensity: 10
+  hitFlashDuration: 0.1
   hitVFXPrefab: {fileID: 5602200919654995859, guid: c16de88aca6b0594a9a5e8a538c3c6c3, type: 3}
   showDamagePopup: 1
   damagePopupOffset: {x: 0, y: 0.8, z: 0}

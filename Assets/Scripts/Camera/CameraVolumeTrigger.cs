@@ -15,10 +15,6 @@ namespace CameraSystem
         [SerializeField, Tooltip("The transform that should trigger post-processing volumes (usually the Player). If null, attempts to find object with Player tag.")]
         private Transform triggerTarget;
 
-        [Header("Update Settings")]
-        [SerializeField, Tooltip("How often to check for the target if it's missing (in seconds).")]
-        private float searchInterval = 1.0f;
-
         private UniversalAdditionalCameraData _cameraData;
         private bool _isInitialized = false;
 

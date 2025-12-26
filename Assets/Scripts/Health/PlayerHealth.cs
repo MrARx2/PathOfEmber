@@ -37,6 +37,20 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private string hitTrigger = "Hit";
     [SerializeField] private string deathTrigger = "Death";
 
+    [Header("Hit Flash Settings")]
+    [SerializeField, Tooltip("Enable flash effect when hit")]
+    private bool enableHitFlash = true;
+    [SerializeField, Tooltip("Emission color when hit (uses emission for visibility through lighting)")]
+    private Color hitFlashEmissionColor = new Color(1f, 0.3f, 0.3f, 1f); // Bright red
+    [SerializeField, Tooltip("Emission intensity multiplier")]
+    private float hitFlashEmissionIntensity = 2f;
+    [SerializeField, Tooltip("Duration of hit flash in seconds")]
+    private float hitFlashDuration = 0.1f;
+
+    [Header("Camera Shake Settings")]
+    [SerializeField, Tooltip("Enable camera shake when hit")]
+    private bool enableCameraShake = true;
+
     [Header("Events")]
     public UnityEvent<int> OnDamage;
     public UnityEvent<int> OnHeal;
@@ -45,6 +59,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private bool isDead = false;
     private Coroutine dotCoroutine;
+    private Coroutine hitFlashCoroutine;
+    private Renderer[] renderers;
+    private Color[] originalEmissionColors;
+    private bool[] hadEmissionEnabled;
 
     public bool IsInvulnerable => isInvulnerable;
     public bool IsDead => isDead;
@@ -59,6 +77,34 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             invulnerabilityEffect.SetActive(false);
         if (fireEffect != null)
             fireEffect.SetActive(false);
+        
+        // Cache only MeshRenderers and SkinnedMeshRenderers for emission flash
+        // Exclude ParticleSystemRenderer, TrailRenderer, LineRenderer, etc.
+        var allRenderers = GetComponentsInChildren<Renderer>();
+        var validRenderers = new System.Collections.Generic.List<Renderer>();
+        foreach (var r in allRenderers)
+        {
+            if (r is MeshRenderer || r is SkinnedMeshRenderer)
+            {
+                // Also check if material has emission support
+                if (r.material != null && r.material.HasProperty("_EmissionColor"))
+                {
+                    validRenderers.Add(r);
+                }
+            }
+        }
+        
+        renderers = validRenderers.ToArray();
+        originalEmissionColors = new Color[renderers.Length];
+        hadEmissionEnabled = new bool[renderers.Length];
+        
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            originalEmissionColors[i] = renderers[i].material.GetColor("_EmissionColor");
+            hadEmissionEnabled[i] = renderers[i].material.IsKeywordEnabled("_EMISSION");
+        }
+        
+        Debug.Log($"[PlayerHealth] Found {renderers.Length} emission-capable renderers for hit flash");
     }
 
     private void Start()
@@ -78,6 +124,14 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     }
 
     public void TakeDamage(int damage)
+    {
+        TakeDamageInternal(damage, triggerShake: true);
+    }
+
+    /// <summary>
+    /// Internal damage method with control over camera shake.
+    /// </summary>
+    private void TakeDamageInternal(int damage, bool triggerShake)
     {
         if (isDead) return;
         if (isInvulnerable) return;
@@ -103,6 +157,20 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (currentHealth < 0) currentHealth = 0;
 
         Debug.Log($"[PlayerHealth] Took {damage} damage. Current: {currentHealth}/{maxHealth}");
+
+        // Trigger camera shake effect (only for direct hits, not DoT)
+        if (enableCameraShake && triggerShake)
+        {
+            CameraShakeManager.Shake(CameraShakePreset.Medium);
+        }
+
+        // Trigger hit flash effect
+        if (enableHitFlash)
+        {
+            if (hitFlashCoroutine != null)
+                StopCoroutine(hitFlashCoroutine);
+            hitFlashCoroutine = StartCoroutine(HitFlashRoutine());
+        }
 
         if (animator != null && !string.IsNullOrEmpty(hitTrigger))
             animator.SetTrigger(hitTrigger);
@@ -166,8 +234,18 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         Debug.Log($"[PlayerHealth] Fire state: {(onFire ? "ON FIRE" : "not on fire")}");
     }
 
-    public void ApplyDamageOverTime(int damagePerTick, float tickInterval, int totalTicks)
+    /// <summary>
+    /// Applies damage over time. If initialDamage > 0, that amount is applied immediately
+    /// with camera shake, then the DoT ticks follow without shake.
+    /// </summary>
+    public void ApplyDamageOverTime(int damagePerTick, float tickInterval, int totalTicks, int initialDamage = 0)
     {
+        // Apply initial impact damage with camera shake
+        if (initialDamage > 0)
+        {
+            TakeDamageInternal(initialDamage, triggerShake: true);
+        }
+        
         if (dotCoroutine != null)
             StopCoroutine(dotCoroutine);
         dotCoroutine = StartCoroutine(DamageOverTimeRoutine(damagePerTick, tickInterval, totalTicks));
@@ -178,7 +256,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         for (int i = 0; i < totalTicks; i++)
         {
             if (isDead) yield break;
-            TakeDamage(damagePerTick);
+            TakeDamageInternal(damagePerTick, triggerShake: false); // DoT skips camera shake
             yield return new WaitForSeconds(tickInterval);
         }
         dotCoroutine = null;
@@ -254,6 +332,60 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public Transform GetTransform() => transform;
 
+    #region Emission Helpers
+    private IEnumerator HitFlashRoutine()
+    {
+        ApplyEmission(hitFlashEmissionColor, hitFlashEmissionIntensity);
+        yield return new WaitForSeconds(hitFlashDuration);
+        ClearEmission();
+        hitFlashCoroutine = null;
+    }
+
+    /// <summary>
+    /// Applies emission to all renderers for hit flash effect (visible through lighting).
+    /// </summary>
+    private void ApplyEmission(Color emissionColor, float intensity)
+    {
+        if (renderers == null) return;
+        Color finalEmission = emissionColor * intensity;
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null && renderers[i].material != null)
+            {
+                Material mat = renderers[i].material;
+                if (mat.HasProperty("_EmissionColor"))
+                {
+                    mat.EnableKeyword("_EMISSION");
+                    mat.SetColor("_EmissionColor", finalEmission);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Clears emission from all renderers, restoring original emission state.
+    /// </summary>
+    private void ClearEmission()
+    {
+        if (renderers == null || originalEmissionColors == null || hadEmissionEnabled == null) return;
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null && renderers[i].material != null && i < originalEmissionColors.Length)
+            {
+                Material mat = renderers[i].material;
+                if (mat.HasProperty("_EmissionColor"))
+                {
+                    mat.SetColor("_EmissionColor", originalEmissionColors[i]);
+                    if (!hadEmissionEnabled[i])
+                    {
+                        mat.DisableKeyword("_EMISSION");
+                    }
+                }
+            }
+        }
+    }
+    #endregion
+
     // ========== DEBUG ==========
     [ContextMenu("Debug: Take 100 Damage")]
     public void DebugDamage100() => TakeDamage(100);
@@ -281,4 +413,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     [ContextMenu("Debug: Kill Player")]
     public void DebugKill() => TakeDamage(currentHealth);
+
+    [ContextMenu("Debug: Test Hit Flash")]
+    public void DebugTestHitFlash()
+    {
+        if (hitFlashCoroutine != null)
+            StopCoroutine(hitFlashCoroutine);
+        hitFlashCoroutine = StartCoroutine(HitFlashRoutine());
+        Debug.Log($"[PlayerHealth] Testing hit flash with {renderers?.Length ?? 0} renderers");
+    }
 }

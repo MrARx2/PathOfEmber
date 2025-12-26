@@ -23,10 +23,6 @@ namespace EnemyAI
         private int projectileDamage = 0;
 
         [Header("=== MOVEMENT SETTINGS ===")]
-        [SerializeField, Tooltip("Ideal range to maintain from player")]
-        private float idealRange = 6f;
-        [SerializeField, Tooltip("How far to move in one step")]
-        private float moveStepDistance = 3f;
         [SerializeField, Tooltip("Stopping distance tolerance")]
         private float moveTolerance = 0.5f;
 
@@ -86,6 +82,37 @@ namespace EnemyAI
             }
 
             if (target == null) return;
+
+            // CONTACT DAMAGE CHECK (from base class logic)
+            if (enableContactDamage && target != null)
+            {
+                if (contactDamageCooldown > 0)
+                    contactDamageCooldown -= Time.deltaTime;
+
+                float distanceToPlayer = Vector3.Distance(VisualPosition, target.position);
+                
+                // Debug every second
+                if (debugLog && Time.frameCount % 60 == 0)
+                    Debug.Log($"[SniperAI] Contact check: dist={distanceToPlayer:F2}, threshold={contactDistance:F2}, cooldown={contactDamageCooldown:F2}");
+                
+                if (distanceToPlayer <= contactDistance && contactDamageCooldown <= 0)
+                {
+                    IDamageable playerHealth = target.GetComponent<IDamageable>();
+                    if (playerHealth == null)
+                        playerHealth = target.GetComponentInParent<IDamageable>();
+                    
+                    if (playerHealth != null)
+                    {
+                        playerHealth.TakeDamage(contactDamageAmount);
+                        contactDamageCooldown = contactDamageRate;
+                        if (debugLog) Debug.Log($"[SniperAI] Dealt {contactDamageAmount} contact damage!");
+                    }
+                }
+            }
+            else if (!enableContactDamage && debugLog && Time.frameCount % 300 == 0)
+            {
+                Debug.Log("[SniperAI] Contact damage is DISABLED in Inspector!");
+            }
 
             // State Machine Update
             switch (currentState)

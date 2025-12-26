@@ -47,10 +47,12 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [Header("Hit Flash Settings")]
     [SerializeField, Tooltip("Enable flash effect when hit")]
     private bool enableHitFlash = true;
-    [SerializeField, Tooltip("Tint color when hit")]
-    private Color hitFlashColor = new Color(0.8f, 0.5f, 1f, 1f); // Light purple
+    [SerializeField, Tooltip("Emission color when hit (uses emission for visibility through lighting)")]
+    private Color hitFlashEmissionColor = new Color(1f, 0.3f, 0.3f, 1f); // Bright red-orange
+    [SerializeField, Tooltip("Emission intensity multiplier")]
+    private float hitFlashEmissionIntensity = 2f;
     [SerializeField, Tooltip("Duration of hit flash in seconds")]
-    private float hitFlashDuration = 0.2f;
+    private float hitFlashDuration = 0.1f;
     [SerializeField, Tooltip("Optional VFX prefab to spawn when hit")]
     private GameObject hitVFXPrefab;
 
@@ -71,6 +73,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private UnityEngine.AI.NavMeshAgent navAgent;
     private Renderer[] renderers;
     private Color[] originalColors;
+    private Color[] originalEmissionColors;
+    private bool[] hadEmissionEnabled;
 
     /// <summary>
     /// Returns the visual center position (modelTransform if set, otherwise this transform).
@@ -89,14 +93,34 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         animator = GetComponentInChildren<Animator>();
         navAgent = GetComponent<UnityEngine.AI.NavMeshAgent>();
         
-        // Cache all renderers for tinting
-        renderers = GetComponentsInChildren<Renderer>();
+        // Cache only MeshRenderers and SkinnedMeshRenderers for tinting/emission
+        // Exclude ParticleSystemRenderer, TrailRenderer, LineRenderer, etc.
+        var allRenderers = GetComponentsInChildren<Renderer>();
+        var validRenderers = new System.Collections.Generic.List<Renderer>();
+        foreach (var r in allRenderers)
+        {
+            if (r is MeshRenderer || r is SkinnedMeshRenderer)
+            {
+                if (r.material != null)
+                {
+                    validRenderers.Add(r);
+                }
+            }
+        }
+        
+        renderers = validRenderers.ToArray();
         originalColors = new Color[renderers.Length];
+        originalEmissionColors = new Color[renderers.Length];
+        hadEmissionEnabled = new bool[renderers.Length];
+        
         for (int i = 0; i < renderers.Length; i++)
         {
-            if (renderers[i] != null && renderers[i].material != null)
+            originalColors[i] = renderers[i].material.color;
+            // Cache original emission state
+            if (renderers[i].material.HasProperty("_EmissionColor"))
             {
-                originalColors[i] = renderers[i].material.color;
+                originalEmissionColors[i] = renderers[i].material.GetColor("_EmissionColor");
+                hadEmissionEnabled[i] = renderers[i].material.IsKeywordEnabled("_EMISSION");
             }
         }
     }
@@ -184,16 +208,9 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private IEnumerator HitFlashRoutine()
     {
-        ApplyTint(hitFlashColor);
+        ApplyEmission(hitFlashEmissionColor, hitFlashEmissionIntensity);
         yield return new WaitForSeconds(hitFlashDuration);
-        
-        // Restore appropriate tint based on current state
-        if (isFrozen)
-            ApplyTint(freezeTintColor);
-        else if (isVenomed)
-            ApplyTint(venomTintColor);
-        else
-            ClearTint();
+        ClearEmission();
         
         hitFlashCoroutine = null;
     }
@@ -376,6 +393,52 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             if (renderers[i] != null && renderers[i].material != null && i < originalColors.Length)
             {
                 renderers[i].material.color = originalColors[i];
+            }
+        }
+    }
+    #endregion
+
+    #region Emission Helpers
+    /// <summary>
+    /// Applies emission to all renderers for hit flash effect (visible through lighting).
+    /// </summary>
+    private void ApplyEmission(Color emissionColor, float intensity)
+    {
+        if (renderers == null) return;
+        Color finalEmission = emissionColor * intensity;
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null && renderers[i].material != null)
+            {
+                Material mat = renderers[i].material;
+                if (mat.HasProperty("_EmissionColor"))
+                {
+                    mat.EnableKeyword("_EMISSION");
+                    mat.SetColor("_EmissionColor", finalEmission);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Clears emission from all renderers, restoring original emission state.
+    /// </summary>
+    private void ClearEmission()
+    {
+        if (renderers == null || originalEmissionColors == null || hadEmissionEnabled == null) return;
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null && renderers[i].material != null && i < originalEmissionColors.Length)
+            {
+                Material mat = renderers[i].material;
+                if (mat.HasProperty("_EmissionColor"))
+                {
+                    mat.SetColor("_EmissionColor", originalEmissionColors[i]);
+                    if (!hadEmissionEnabled[i])
+                    {
+                        mat.DisableKeyword("_EMISSION");
+                    }
+                }
             }
         }
     }

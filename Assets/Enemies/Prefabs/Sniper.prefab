@@ -72,13 +72,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI.SniperAI
   target: {fileID: 0}
   modelTransform: {fileID: 7900245869590481414}
-  moveSpeed: 0.5
+  moveSpeed: 0.6
   attackRange: 3
   stoppingDistanceMultiplier: 0.2
   agentRadius: 0.25
   agentAcceleration: 1
   attacksPerSecond: 1
   attackPauseDuration: 0.5
+  enableContactDamage: 1
+  contactDamageAmount: 40
+  contactDamageRate: 1
+  contactDistance: 0.5
   animator: {fileID: 5221407396846849227}
   speedParameter: Speed
   attackTrigger: Shoot
@@ -86,9 +90,7 @@ MonoBehaviour:
   projectilePrefab: {fileID: 7452087413518597415, guid: d61a5155f8e7b93429b2c0468125b66e, type: 3}
   projectileSpawnPoint: {fileID: 5446834975013867878}
   projectileSpeed: 2
-  projectileDamage: 0
-  idealRange: 6
-  moveStepDistance: 1
+  projectileDamage: 60
   moveTolerance: 0.5
   shootParameter: Shoot
   shootParameterIsBool: 1
@@ -128,8 +130,9 @@ MonoBehaviour:
   freezeTintColor: {r: 0, g: 1, b: 1, a: 1}
   venomTintColor: {r: 0.5, g: 0, b: 0.5, a: 1}
   enableHitFlash: 1
-  hitFlashColor: {r: 0.8, g: 0.5, b: 1, a: 1}
-  hitFlashDuration: 0.2
+  hitFlashEmissionColor: {r: 1, g: 0.3, b: 0.3, a: 1}
+  hitFlashEmissionIntensity: 2
+  hitFlashDuration: 0.1
   hitVFXPrefab: {fileID: 5602200919654995859, guid: c16de88aca6b0594a9a5e8a538c3c6c3, type: 3}
   showDamagePopup: 1
   damagePopupOffset: {x: 0, y: 0.8, z: 0}

@@ -36,19 +36,21 @@ namespace EnemyAI
         [SerializeField] private Color emissionColor = new Color(1f, 0.2f, 0f); // Orange-Red
         [SerializeField] private string emissionProperty = "_EmissionColor";
         
-        [SerializeField, Tooltip("Optional animator trigger")]
-        private string explosionTrigger = "Explode";
-
         [Header("=== VISUAL SWELL ===")]
         [SerializeField, Tooltip("Swell up before exploding?")]
         private bool enableSwellEffect = true;
         [SerializeField] private float maxSwellScale = 1.5f;
+
+        [Header("=== WARNING INDICATOR ===")]
+        [SerializeField, Tooltip("Warning indicator prefab (spawns on ground during detonation)")]
+        private GameObject warningPrefab;
 
         private bool hasExploded = false;
         private bool isDetonating = false;
         private Renderer[] renderers;
         private MaterialPropertyBlock propertyBlock;
         private Vector3 initialScale;
+        private GameObject warningInstance;
 
         protected override void Awake()
         {
@@ -112,14 +114,14 @@ namespace EnemyAI
 
             StopMovement();
 
-            if (animator != null && !string.IsNullOrEmpty(explosionTrigger))
-                animator.SetTrigger(explosionTrigger);
-
             StartCoroutine(DetonationSequence());
         }
 
         private IEnumerator DetonationSequence()
         {
+            // Spawn warning indicator on ground
+            SpawnWarningIndicator();
+            
             float elapsed = 0f;
 
             while (elapsed < detonationDelay)
@@ -142,7 +144,27 @@ namespace EnemyAI
                 yield return null;
             }
 
+            // Clean up warning before explosion
+            if (warningInstance != null)
+            {
+                Destroy(warningInstance);
+                warningInstance = null;
+            }
+            
             Explode();
+        }
+
+        private void SpawnWarningIndicator()
+        {
+            if (warningPrefab == null) return;
+            
+            // Spawn at ground level below bomber
+            Vector3 groundPos = transform.position;
+            groundPos.y = 0f;
+            
+            // Rotated to lie flat on ground
+            Quaternion groundRot = Quaternion.Euler(90f, 0f, 0f);
+            warningInstance = Instantiate(warningPrefab, groundPos, groundRot);
         }
 
         private void SetEmissionIntensity(float intensity)
@@ -173,6 +195,9 @@ namespace EnemyAI
                 Destroy(vfx, 3f);
             }
 
+            // Camera shake for explosion impact (even if player not hit)
+            CameraShakeManager.Shake(CameraShakePreset.Heavy);
+
             // Deal Damage
             Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, damageLayer);
             foreach (Collider hit in hits)
@@ -185,7 +210,7 @@ namespace EnemyAI
                 if (damageable == null)
                     damageable = hit.GetComponentInParent<IDamageable>();
 
-                if (damageable != null && damageable != health)
+                if (damageable != null && damageable != (object)health)
                 {
                     damageable.TakeDamage(explosionDamage);
                     if (debugLog) Debug.Log($"[BomberAI] Exploded hitting {hit.name}");
@@ -198,7 +223,7 @@ namespace EnemyAI
 
         protected override void OnAttack() { } // Not used
 
-        protected void OnDrawGizmosSelected()
+        protected override void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, detonationRange);

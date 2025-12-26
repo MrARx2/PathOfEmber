@@ -45,6 +45,16 @@ namespace EnemyAI
         [SerializeField, Tooltip("Pause movement during attack (seconds).")]
         protected float attackPauseDuration = 0.5f;
 
+        [Header("=== CONTACT DAMAGE ===")]
+        [SerializeField, Tooltip("Deals damage when touching player?")]
+        protected bool enableContactDamage = true;
+        [SerializeField] protected int contactDamageAmount = 10;
+        [SerializeField, Tooltip("How often to deal contact damage (seconds)")]
+        protected float contactDamageRate = 1.0f;
+        [SerializeField, Tooltip("Distance considered 'touching'")]
+        protected float contactDistance = 1.2f;
+
+
         [Header("=== ANIMATION ===")]
         [SerializeField] protected Animator animator;
         [SerializeField] protected string speedParameter = "Speed";
@@ -60,6 +70,7 @@ namespace EnemyAI
         protected NavMeshAgent agent;
         protected EnemyHealth health;
         protected float attackCooldown;
+        protected float contactDamageCooldown;
         protected bool isAttacking;
 
         /// <summary>
@@ -131,6 +142,24 @@ namespace EnemyAI
                 StopMovement();
                 LookAtTarget();
                 return;
+            }
+
+            // CONTACT DAMAGE CHECK
+            if (enableContactDamage && target != null)
+            {
+                if (contactDamageCooldown > 0)
+                    contactDamageCooldown -= Time.deltaTime;
+
+                if (distanceToPlayer <= contactDistance && contactDamageCooldown <= 0)
+                {
+                    IDamageable playerHealth = target.GetComponent<IDamageable>();
+                    if (playerHealth != null)
+                    {
+                        playerHealth.TakeDamage(contactDamageAmount);
+                        contactDamageCooldown = contactDamageRate;
+                        if (debugLog) Debug.Log($"[{GetType().Name}] Dealt {contactDamageAmount} contact damage.");
+                    }
+                }
             }
 
             // MAIN LOGIC: Simple and clear

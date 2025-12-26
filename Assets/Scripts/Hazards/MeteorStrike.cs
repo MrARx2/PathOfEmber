@@ -246,6 +246,9 @@ namespace Hazards
             GameObject firePool = Instantiate(firePoolPrefab, _impactPosition, Quaternion.identity);
             Destroy(firePool, firePoolDuration);
 
+            // Camera shake for meteor impact (explosion-style environmental shake)
+            CameraShakeManager.Shake(CameraShakePreset.Meteor);
+
             if (debugLog) Debug.Log($"[MeteorStrike] Fire pool spawned, will last {firePoolDuration}s");
         }
 
