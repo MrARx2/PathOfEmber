@@ -158,7 +158,7 @@ Transform:
   m_GameObject: {fileID: 4276896270514901491}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.47, y: 0.03, z: 6.67}
+  m_LocalPosition: {x: 2.11, y: 0.03, z: -2.664}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -255,23 +255,16 @@ MonoBehaviour:
   enemyPrefabs:
   - {fileID: 436750832329653349, guid: 1bc38cafcc1faf446a0b0b791e1af79b, type: 3}
   - {fileID: 436750832329653349, guid: 1bc38cafcc1faf446a0b0b791e1af79b, type: 3}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
   spawnPoints:
   - {fileID: 4230546257710157996}
   - {fileID: 1565601396156492103}
   - {fileID: 141245661900310022}
   - {fileID: 6240039688498101738}
   - {fileID: 2146911756484352352}
-  - {fileID: 8137920084140696407}
-  - {fileID: 1809750373779811727}
   randomizePrefabs: 0
   randomizePositions: 0
   positionRandomOffset: 0.2
-  useOnlyVolumeRandomPositions: 1
+  useOnlyVolumeRandomPositions: 0
   volumeSpawnCount: 40
   showGizmos: 1
   gizmoColor: {r: 0, g: 1, b: 1, a: 1}

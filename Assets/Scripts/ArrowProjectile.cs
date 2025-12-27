@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using System.Collections;
 
 public class ArrowProjectile : MonoBehaviour
 {
@@ -27,10 +28,18 @@ public class ArrowProjectile : MonoBehaviour
     [SerializeField] private int maxBounces = 2;
     [SerializeField] private LayerMask wallLayers;
     
+    [Header("Trail Fade Effect")]
+    [SerializeField, Tooltip("Duration of the smooth trail fade")]
+    private float trailFadeDuration = 0.3f;
+    [SerializeField, Tooltip("Detach trail on destroy for lingering effect")]
+    private bool detachTrailOnDestroy = true;
+    
     private int bounceCount = 0;
     private Vector3 moveDir = Vector3.forward;
     private float lifeTimer;
     private Rigidbody rb;
+    private TrailRenderer[] trails;
+    private float[] initialTrailWidths;
 
     #region Public Properties
     public int Damage => damage;
@@ -107,6 +116,17 @@ public class ArrowProjectile : MonoBehaviour
             rb.isKinematic = true;
             rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
         }
+        
+        // Cache trail renderers for fade effect
+        trails = GetComponentsInChildren<TrailRenderer>();
+        initialTrailWidths = new float[trails.Length];
+        for (int i = 0; i < trails.Length; i++)
+        {
+            if (trails[i] != null)
+            {
+                initialTrailWidths[i] = trails[i].widthMultiplier;
+            }
+        }
     }
 
     public void SetDirection(Vector3 dir)
@@ -158,7 +178,7 @@ public class ArrowProjectile : MonoBehaviour
                 {
                     // Max bounces reached - destroy on wall hit
                     Debug.Log($"[ArrowProjectile] Max bounces reached. Destroyed on wall {hit.collider.name}");
-                    Destroy(gameObject);
+                    GracefulDestroy();
                     return;
                 }
             }
@@ -173,7 +193,7 @@ public class ArrowProjectile : MonoBehaviour
 
         lifeTimer -= dt;
         if (lifeTimer <= 0f)
-            Destroy(gameObject);
+            GracefulDestroy();
     }
     
     private void HandleBounce(RaycastHit hit)
@@ -246,7 +266,7 @@ public class ArrowProjectile : MonoBehaviour
             // Only destroy if not piercing
             if (destroyOnHit && !isPiercing)
             {
-                Destroy(gameObject);
+                GracefulDestroy();
                 return;
             }
         }
@@ -261,7 +281,7 @@ public class ArrowProjectile : MonoBehaviour
             // Only destroy if we're not a bouncing arrow that still has bounces left
             if (!hasBouncing || bounceCount >= maxBounces)
             {
-                Destroy(gameObject);
+                GracefulDestroy();
             }
         }
     }
@@ -269,5 +289,92 @@ public class ArrowProjectile : MonoBehaviour
     private bool IsWallLayer(int layer)
     {
         return ((1 << layer) & wallLayers) != 0;
+    }
+    
+    /// <summary>
+    /// Gracefully destroys the arrow with a smooth trail fade effect.
+    /// </summary>
+    private void GracefulDestroy()
+    {
+        if (trails != null && trails.Length > 0 && detachTrailOnDestroy)
+        {
+            // Detach trails so they can fade independently
+            foreach (var trail in trails)
+            {
+                if (trail != null)
+                {
+                    // Create a temporary holder for the trail
+                    GameObject trailHolder = new GameObject("FadingTrail");
+                    trailHolder.transform.position = trail.transform.position;
+                    trail.transform.SetParent(trailHolder.transform);
+                    
+                    // Start fade coroutine on a temporary MonoBehaviour
+                    var fader = trailHolder.AddComponent<TrailFader>();
+                    fader.StartFade(trail, trailFadeDuration);
+                }
+            }
+        }
+        
+        Destroy(gameObject);
+    }
+}
+
+/// <summary>
+/// Helper component that fades a detached trail smoothly.
+/// </summary>
+public class TrailFader : MonoBehaviour
+{
+    public void StartFade(TrailRenderer trail, float duration)
+    {
+        StartCoroutine(FadeRoutine(trail, duration));
+    }
+    
+    private IEnumerator FadeRoutine(TrailRenderer trail, float duration)
+    {
+        if (trail == null)
+        {
+            Destroy(gameObject);
+            yield break;
+        }
+        
+        float initialWidth = trail.widthMultiplier;
+        Gradient initialColorGradient = trail.colorGradient;
+        
+        // Get initial alpha keys
+        GradientAlphaKey[] alphaKeys = initialColorGradient.alphaKeys;
+        float[] initialAlphas = new float[alphaKeys.Length];
+        for (int i = 0; i < alphaKeys.Length; i++)
+        {
+            initialAlphas[i] = alphaKeys[i].alpha;
+        }
+        
+        float elapsed = 0f;
+        
+        while (elapsed < duration && trail != null)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            
+            // Use smooth easing: fast start, slow finish (feels more natural)
+            float easedT = 1f - Mathf.Pow(1f - t, 3f); // Ease out cubic
+            float fadeValue = 1f - easedT;
+            
+            // Fade width with a nice taper
+            trail.widthMultiplier = initialWidth * fadeValue;
+            
+            // Fade alpha
+            for (int i = 0; i < alphaKeys.Length; i++)
+            {
+                alphaKeys[i].alpha = initialAlphas[i] * fadeValue;
+            }
+            Gradient newGradient = new Gradient();
+            newGradient.SetKeys(initialColorGradient.colorKeys, alphaKeys);
+            trail.colorGradient = newGradient;
+            
+            yield return null;
+        }
+        
+        // Clean up
+        Destroy(gameObject);
     }
 }

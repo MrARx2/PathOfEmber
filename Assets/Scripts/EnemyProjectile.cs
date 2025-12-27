@@ -19,14 +19,24 @@ public class EnemyProjectile : MonoBehaviour
     [Header("VFX")]
     [SerializeField] private GameObject hitVFXPrefab;
     [SerializeField] private float hitVFXDuration = 2f;
+    [SerializeField, Tooltip("VFX spawned when hitting a wall (explosion)")]
+    private GameObject wallHitVFXPrefab;
+    [SerializeField] private float wallHitVFXDuration = 1f;
 
     [Header("Fade Out Settings")]
     [SerializeField, Tooltip("Duration of the fade-out effect")]
     private float fadeOutDuration = 0.2f;
     [SerializeField, Tooltip("Shrink projectile scale during fade-out")]
     private bool shrinkOnFade = true;
+    [SerializeField, Tooltip("Specific child to shrink (leave empty to shrink whole projectile)")]
+    private Transform shrinkTarget;
     [SerializeField, Tooltip("Fade out trail width during fade")]
     private bool fadeTrailWidth = true;
+    [SerializeField, Tooltip("Detach trail for lingering effect (disable for slimmer attached trail)")]
+    private bool detachTrailOnFade = false;
+    [SerializeField, Tooltip("Duration for detached trail to linger (only if detach enabled)")]
+    private float trailLingerDuration = 0.4f;
+
 
     [Header("Trail Enhancement (Optional)")]
     [SerializeField, Tooltip("Auto-configure trail - DISABLE if using custom prefab effects")]
@@ -43,6 +53,8 @@ public class EnemyProjectile : MonoBehaviour
     [Header("Collision Layers")]
     [SerializeField, Tooltip("Layers that trigger the projectile impact")] 
     private LayerMask hitLayers;
+    [SerializeField, Tooltip("Layers that block the projectile (walls)")] 
+    private LayerMask wallLayers;
 
     [Header("Performance")]
     [SerializeField, Tooltip("Disable shadows on all child renderers for better performance")]
@@ -55,6 +67,9 @@ public class EnemyProjectile : MonoBehaviour
     private Renderer[] renderers;
     private TrailRenderer[] trails;
     private Vector3 initialScale;
+    private Vector3 shrinkTargetInitialScale;
+    private Renderer shrinkTargetRenderer;
+    private Color shrinkTargetInitialEmission;
     private Color[] initialColors;
     private float[] initialTrailWidths;
 
@@ -84,6 +99,19 @@ public class EnemyProjectile : MonoBehaviour
         renderers = GetComponentsInChildren<Renderer>();
         trails = GetComponentsInChildren<TrailRenderer>();
         initialScale = transform.localScale;
+        
+        // Cache shrink target initial scale and emission
+        if (shrinkTarget != null)
+        {
+            shrinkTargetInitialScale = shrinkTarget.localScale;
+            shrinkTargetRenderer = shrinkTarget.GetComponent<Renderer>();
+            
+            // Cache initial emission color
+            if (shrinkTargetRenderer != null && shrinkTargetRenderer.material.HasProperty("_EmissionColor"))
+            {
+                shrinkTargetInitialEmission = shrinkTargetRenderer.material.GetColor("_EmissionColor");
+            }
+        }
         
         // Cache initial colors
         initialColors = new Color[renderers.Length];
@@ -238,9 +266,38 @@ public class EnemyProjectile : MonoBehaviour
 
     private void Update()
     {
-        // Keep moving at constant speed (even during fade for clean trail)
         float dt = Time.deltaTime;
-        transform.position += moveDir * speed * dt;
+        float moveDistance = speed * dt;
+        
+        // Check for wall collision using SphereCast (walls are solid, not triggers)
+        if (!isFadingOut && wallLayers != 0)
+        {
+            float lookAhead = Mathf.Max(moveDistance * 2f, 0.5f);
+            
+            RaycastHit hit;
+            if (Physics.SphereCast(transform.position, 0.1f, moveDir, out hit, lookAhead, wallLayers, QueryTriggerInteraction.Ignore))
+            {
+                // Hit a wall! Spawn explosion VFX and destroy instantly (no fade)
+                Debug.Log($"[EnemyProjectile] Hit wall '{hit.collider.name}' at {hit.point}");
+                
+                if (wallHitVFXPrefab != null)
+                {
+                    GameObject vfx = Instantiate(wallHitVFXPrefab, hit.point, Quaternion.identity);
+                    Destroy(vfx, wallHitVFXDuration);
+                    Debug.Log($"[EnemyProjectile] Spawned wall hit VFX at {hit.point}");
+                }
+                else
+                {
+                    Debug.LogWarning("[EnemyProjectile] Wall hit but wallHitVFXPrefab is not assigned!");
+                }
+                
+                Destroy(gameObject);
+                return;
+            }
+        }
+        
+        // Keep moving at constant speed (even during fade for clean trail)
+        transform.position += moveDir * moveDistance;
 
         if (!isFadingOut)
         {
@@ -276,7 +333,8 @@ public class EnemyProjectile : MonoBehaviour
             
             if (playerHealth != null)
             {
-                if (applyDoT)
+                // During fade, no trail = no DoT, just impact damage
+                if (applyDoT && !isFadingOut)
                 {
                     // Use damage as initial hit, or fallback to first tick damage if damage is 0
                     int initialHitDamage = damage > 0 ? damage : dotDamagePerTick;
@@ -284,6 +342,7 @@ public class EnemyProjectile : MonoBehaviour
                 }
                 else
                 {
+                    // Impact damage only (or fading out)
                     playerHealth.TakeDamage(damage);
                 }
             }
@@ -318,13 +377,37 @@ public class EnemyProjectile : MonoBehaviour
 
     private IEnumerator FadeOutRoutine()
     {
+        // Detach trails if enabled for lingering effect
+        if (detachTrailOnFade && trails != null)
+        {
+            foreach (var trail in trails)
+            {
+                if (trail != null)
+                {
+                    // Create holder for detached trail
+                    GameObject trailHolder = new GameObject("LingeringTrail");
+                    trailHolder.transform.position = trail.transform.position;
+                    trail.transform.SetParent(trailHolder.transform);
+                    
+                    // Start independent fade
+                    var fader = trailHolder.AddComponent<EnemyTrailFader>();
+                    fader.StartFade(trail, trailLingerDuration);
+                }
+            }
+            // Clear trails array so we don't try to fade them again
+            trails = new TrailRenderer[0];
+        }
+        
         float elapsed = 0f;
         
         while (elapsed < fadeOutDuration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / fadeOutDuration;
-            float fadeValue = 1f - t; // 1 -> 0
+            
+            // Use cubic easing for smooth taper (fast start, slow finish)
+            float easedT = 1f - Mathf.Pow(1f - t, 3f);
+            float fadeValue = 1f - easedT;
             
             // Fade renderer colors/alpha
             for (int i = 0; i < renderers.Length; i++)
@@ -336,8 +419,8 @@ public class EnemyProjectile : MonoBehaviour
                 renderers[i].material.color = c;
             }
             
-            // Fade trail width
-            if (fadeTrailWidth)
+            // Fade trail width (if not detached)
+            if (fadeTrailWidth && trails != null)
             {
                 for (int i = 0; i < trails.Length; i++)
                 {
@@ -346,11 +429,108 @@ public class EnemyProjectile : MonoBehaviour
                 }
             }
             
-            // Shrink scale
+            // Shrink scale with sexy easing (back ease - slight overshoot then shrink)
             if (shrinkOnFade)
             {
-                transform.localScale = initialScale * Mathf.Lerp(1f, 0.1f, t);
+                // Back ease out: slight overshoot at start, then smooth shrink
+                // Creates a "pop and shrink" effect
+                float backEase;
+                if (easedT < 0.2f)
+                {
+                    // Quick initial pop (slight scale up)
+                    float popT = easedT / 0.2f;
+                    backEase = 1f + 0.1f * Mathf.Sin(popT * Mathf.PI);
+                }
+                else
+                {
+                    // Smooth shrink to final size
+                    float shrinkT = (easedT - 0.2f) / 0.8f;
+                    backEase = Mathf.Lerp(1.1f, 0f, shrinkT * shrinkT); // Quadratic ease for smooth finish
+                }
+                
+                // Use specific shrink target if assigned, otherwise shrink whole projectile
+                if (shrinkTarget != null)
+                {
+                    // Non-uniform shrink: Z shrinks faster for "squash" effect
+                    float zShrink = backEase * backEase; // Z shrinks quadratically (faster)
+                    Vector3 newScale = new Vector3(
+                        shrinkTargetInitialScale.x * backEase,
+                        shrinkTargetInitialScale.y * backEase,
+                        shrinkTargetInitialScale.z * zShrink  // Flattens on Z
+                    );
+                    shrinkTarget.localScale = newScale;
+                    
+                    // Fade emission to 0 (fireball dying)
+                    if (shrinkTargetRenderer != null && shrinkTargetRenderer.material.HasProperty("_EmissionColor"))
+                    {
+                        Color fadedEmission = shrinkTargetInitialEmission * backEase;
+                        shrinkTargetRenderer.material.SetColor("_EmissionColor", fadedEmission);
+                    }
+                }
+                else
+                {
+                    transform.localScale = initialScale * backEase;
+                }
             }
+            
+            yield return null;
+        }
+        
+        Destroy(gameObject);
+    }
+}
+
+/// <summary>
+/// Helper component that fades a detached enemy projectile trail.
+/// </summary>
+public class EnemyTrailFader : MonoBehaviour
+{
+    public void StartFade(TrailRenderer trail, float duration)
+    {
+        StartCoroutine(FadeRoutine(trail, duration));
+    }
+    
+    private IEnumerator FadeRoutine(TrailRenderer trail, float duration)
+    {
+        if (trail == null)
+        {
+            Destroy(gameObject);
+            yield break;
+        }
+        
+        float initialWidth = trail.widthMultiplier;
+        Gradient initialGradient = trail.colorGradient;
+        
+        // Cache initial alpha values
+        GradientAlphaKey[] alphaKeys = initialGradient.alphaKeys;
+        float[] initialAlphas = new float[alphaKeys.Length];
+        for (int i = 0; i < alphaKeys.Length; i++)
+        {
+            initialAlphas[i] = alphaKeys[i].alpha;
+        }
+        
+        float elapsed = 0f;
+        
+        while (elapsed < duration && trail != null)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            
+            // Cubic ease out for natural feel
+            float easedT = 1f - Mathf.Pow(1f - t, 3f);
+            float fadeValue = 1f - easedT;
+            
+            // Fade width
+            trail.widthMultiplier = initialWidth * fadeValue;
+            
+            // Fade alpha
+            for (int i = 0; i < alphaKeys.Length; i++)
+            {
+                alphaKeys[i].alpha = initialAlphas[i] * fadeValue;
+            }
+            Gradient newGradient = new Gradient();
+            newGradient.SetKeys(initialGradient.colorKeys, alphaKeys);
+            trail.colorGradient = newGradient;
             
             yield return null;
         }

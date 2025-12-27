@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5439839351434426237}
   - component: {fileID: 1366600897048496209}
   - component: {fileID: 4648287318822458498}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Box Volume
   m_TagString: Collider
   m_Icon: {fileID: 0}
@@ -139,6 +139,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: HouseRoof
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b0aff23020fd7424ab57e3907f906376, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 8164078558771037576, guid: b0aff23020fd7424ab57e3907f906376, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -214,8 +222,16 @@ PrefabInstance:
       value: HouseBox
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 190e98d759fd5204f87b23c8787c002e, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 190e98d759fd5204f87b23c8787c002e, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8164078558771037576, guid: 190e98d759fd5204f87b23c8787c002e, type: 3}
+      propertyPath: m_Layer
+      value: 8
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

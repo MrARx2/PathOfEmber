@@ -764,7 +764,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &806515998
 Transform:
   m_ObjectHideFlags: 0
@@ -1064,20 +1064,10 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1bc38cafcc1faf446a0b0b791e1af79b, type: 3}
---- !u!1 &1482639893 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 436750832329653349, guid: 1bc38cafcc1faf446a0b0b791e1af79b, type: 3}
-  m_PrefabInstance: {fileID: 1309011688}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1482639898 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 393544486423801494, guid: 1bc38cafcc1faf446a0b0b791e1af79b, type: 3}
   m_PrefabInstance: {fileID: 1309011688}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1992998475 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2146911756484352352, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
-  m_PrefabInstance: {fileID: 2484712272955473686}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2078963750
 PrefabInstance:
@@ -1148,58 +1138,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 4230546257710157996, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 2.11
-      objectReference: {fileID: 0}
-    - target: {fileID: 4230546257710157996, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -2.664
-      objectReference: {fileID: 0}
     - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
       propertyPath: player
       value: 
       objectReference: {fileID: 617443746}
-    - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
-      propertyPath: randomizePrefabs
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
-      propertyPath: spawnPoints.Array.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
-      propertyPath: enemyPrefabs.Array.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
-      propertyPath: 'spawnPoints.Array.data[5]'
-      value: 
-      objectReference: {fileID: 1992998475}
-    - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
-      propertyPath: 'enemyPrefabs.Array.data[2]'
-      value: 
-      objectReference: {fileID: 1482639893}
-    - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
-      propertyPath: 'enemyPrefabs.Array.data[3]'
-      value: 
-      objectReference: {fileID: 1482639893}
-    - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
-      propertyPath: 'enemyPrefabs.Array.data[4]'
-      value: 
-      objectReference: {fileID: 1482639893}
-    - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
-      propertyPath: 'enemyPrefabs.Array.data[5]'
-      value: 
-      objectReference: {fileID: 1482639893}
-    - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
-      propertyPath: 'enemyPrefabs.Array.data[6]'
-      value: 
-      objectReference: {fileID: 1482639893}
-    - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
-      propertyPath: useOnlyVolumeRandomPositions
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 5616687524376724972, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.06
@@ -1430,10 +1372,6 @@ PrefabInstance:
     - target: {fileID: 7452087413518597415, guid: d61a5155f8e7b93429b2c0468125b66e, type: 3}
       propertyPath: m_Name
       value: vfx-fireball 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7452087413518597415, guid: d61a5155f8e7b93429b2c0468125b66e, type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1724,6 +1662,7 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 330585546}
   - {fileID: 140909529}
+  - {fileID: 8939858344869600763}
   - {fileID: 6641594244439432670}
   - {fileID: 2620025724771516311}
   - {fileID: 118729509}
@@ -1733,5 +1672,4 @@ SceneRoots:
   - {fileID: 3312266482452028786}
   - {fileID: 1282017260}
   - {fileID: 806515998}
-  - {fileID: 8939858344869600763}
   - {fileID: 5831775596108825071}

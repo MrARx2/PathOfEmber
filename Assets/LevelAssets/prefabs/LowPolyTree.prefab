@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 3608338205343463533}
   - component: {fileID: 2188272869695326067}
   - component: {fileID: 1497750375529112099}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Collider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -138,6 +138,14 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: ba307b31b8a97494f998084004d44a26, type: 3}
       propertyPath: m_Name
       value: LowPolyTree
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: ba307b31b8a97494f998084004d44a26, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 8164078558771037576, guid: ba307b31b8a97494f998084004d44a26, type: 3}
+      propertyPath: m_Layer
+      value: 8
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

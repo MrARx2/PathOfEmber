@@ -9847,9 +9847,14 @@ MonoBehaviour:
   dotTotalTicks: 3
   hitVFXPrefab: {fileID: 1459743276775166154, guid: 4d4f027c8a1ae4646ab7954992b03c27, type: 3}
   hitVFXDuration: 0.5
+  wallHitVFXPrefab: {fileID: 1459743276775166154, guid: 760c7013b20f0474a86b630ee2fb6888, type: 3}
+  wallHitVFXDuration: 1
   fadeOutDuration: 0.2
   shrinkOnFade: 1
+  shrinkTarget: {fileID: 6082799960114829165}
   fadeTrailWidth: 1
+  detachTrailOnFade: 0
+  trailLingerDuration: 0.4
   autoSetupTrail: 0
   trailHeadColor: {r: 1, g: 0.9, b: 0.4, a: 1}
   trailTailColor: {r: 1, g: 0.3, b: 0, a: 0}
@@ -9858,6 +9863,9 @@ MonoBehaviour:
   hitLayers:
     serializedVersion: 2
     m_Bits: 8
+  wallLayers:
+    serializedVersion: 2
+    m_Bits: 256
   disableShadows: 1
 --- !u!136 &-7790517302508887111
 CapsuleCollider:
@@ -10194,7 +10202,7 @@ TrailRenderer:
     numCapVertices: 0
     alignment: 0
     textureMode: 0
-    textureScale: {x: 1, y: 0.5}
+    textureScale: {x: 1, y: 1}
     shadowBias: 0.5
     generateLightingData: 0
   m_MinVertexDistance: 0.1
