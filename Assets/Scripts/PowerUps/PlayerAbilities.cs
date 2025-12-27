@@ -35,7 +35,7 @@ public class PlayerAbilities : MonoBehaviour
     private bool hasPiercing = false;
 
     [SerializeField, Tooltip("Arrows bounce off walls")]
-    private bool hasBouncingBullets = false;
+    private bool hasBouncingArrows = false;
 
     [SerializeField, Tooltip("Arrows freeze enemies for 1s")]
     private bool hasFreezeShot = false;
@@ -98,7 +98,7 @@ public class PlayerAbilities : MonoBehaviour
 
     #region Public Properties
     public bool HasPiercing => hasPiercing;
-    public bool HasBouncingBullets => hasBouncingBullets;
+    public bool HasBouncingArrows => hasBouncingArrows;
     public bool HasFreezeShot => hasFreezeShot;
     public bool HasVenomShot => hasVenomShot;
     public bool HasMultishot => hasMultishot;
@@ -245,10 +245,10 @@ public class PlayerAbilities : MonoBehaviour
         Debug.Log("[PlayerAbilities] Piercing granted.");
     }
 
-    public void GrantBouncingBullets()
+    public void GrantBouncingArrows()
     {
-        hasBouncingBullets = true;
-        Debug.Log("[PlayerAbilities] Bouncing Bullets granted.");
+        hasBouncingArrows = true;
+        Debug.Log("[PlayerAbilities] Bouncing Arrows granted.");
     }
 
     public void GrantFreezeShot()
@@ -348,8 +348,8 @@ public class PlayerAbilities : MonoBehaviour
     [ContextMenu("Debug: Grant Piercing")]
     public void DebugGrantPiercing() => GrantPiercing();
 
-    [ContextMenu("Debug: Grant Bouncing Bullets")]
-    public void DebugGrantBouncingBullets() => GrantBouncingBullets();
+    [ContextMenu("Debug: Grant Bouncing Arrows")]
+    public void DebugGrantBouncingArrows() => GrantBouncingArrows();
 
     [ContextMenu("Debug: Grant Freeze Shot")]
     public void DebugGrantFreezeShot() => GrantFreezeShot();
@@ -386,7 +386,7 @@ public class PlayerAbilities : MonoBehaviour
         maxHpPlusStacks = 0;
         hazardResistanceStacks = 0;
         hasPiercing = false;
-        hasBouncingBullets = false;
+        hasBouncingArrows = false;
         hasFreezeShot = false;
         hasVenomShot = false;
         maximumFreezeStacks = 0;

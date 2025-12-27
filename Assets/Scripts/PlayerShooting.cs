@@ -414,6 +414,7 @@ public class PlayerShooting : MonoBehaviour
             if (abilities != null)
             {
                 projectile.IsPiercing = abilities.HasPiercing;
+                projectile.HasBouncing = abilities.HasBouncingArrows;
                 projectile.HasFreezeEffect = abilities.HasFreezeShot;
                 projectile.HasVenomEffect = abilities.HasVenomShot;
                 projectile.FreezeDuration = abilities.FreezeDuration;

@@ -21,7 +21,13 @@ public class ArrowProjectile : MonoBehaviour
     [SerializeField] private float freezeDuration = 1f;
     [SerializeField] private int venomDamagePerSecond = 100;
     [SerializeField] private float venomDuration = 3f;
-
+    
+    [Header("Bouncing Arrows")]
+    [SerializeField] private bool hasBouncing = false;
+    [SerializeField] private int maxBounces = 2;
+    [SerializeField] private LayerMask wallLayers;
+    
+    private int bounceCount = 0;
     private Vector3 moveDir = Vector3.forward;
     private float lifeTimer;
     private Rigidbody rb;
@@ -63,6 +69,24 @@ public class ArrowProjectile : MonoBehaviour
     {
         get => venomDuration;
         set => venomDuration = value;
+    }
+    
+    public bool HasBouncing
+    {
+        get => hasBouncing;
+        set => hasBouncing = value;
+    }
+    
+    public int MaxBounces
+    {
+        get => maxBounces;
+        set => maxBounces = value;
+    }
+    
+    public LayerMask WallLayers
+    {
+        get => wallLayers;
+        set => wallLayers = value;
     }
     #endregion
 
@@ -108,11 +132,69 @@ public class ArrowProjectile : MonoBehaviour
     private void Update()
     {
         float dt = Time.deltaTime;
-        transform.position += moveDir * speed * dt;
+        float moveDistance = speed * dt;
+        
+        // Use a larger lookahead distance to prevent tunneling
+        float lookAhead = Mathf.Max(moveDistance * 2f, 0.5f);
+        
+        // Check for wall collision using SphereCast for reliable detection
+        if (hasBouncing && wallLayers != 0)
+        {
+            // Debug: draw raycast
+            Debug.DrawRay(transform.position, moveDir * lookAhead, bounceCount < maxBounces ? Color.cyan : Color.red, 0.1f);
+            
+            RaycastHit hit;
+            // Use SphereCast for more reliable detection (catches edges better)
+            if (Physics.SphereCast(transform.position, 0.1f, moveDir, out hit, lookAhead, wallLayers, QueryTriggerInteraction.Ignore))
+            {
+                if (bounceCount < maxBounces)
+                {
+                    // Hit a wall! Bounce!
+                    Debug.Log($"[ArrowProjectile] Wall detected! Bouncing off {hit.collider.name} ({bounceCount + 1}/{maxBounces})");
+                    HandleBounce(hit);
+                    return; // Skip normal movement this frame
+                }
+                else
+                {
+                    // Max bounces reached - destroy on wall hit
+                    Debug.Log($"[ArrowProjectile] Max bounces reached. Destroyed on wall {hit.collider.name}");
+                    Destroy(gameObject);
+                    return;
+                }
+            }
+        }
+        else if (hasBouncing && wallLayers == 0)
+        {
+            Debug.LogWarning("[ArrowProjectile] Bouncing enabled but wallLayers is EMPTY! Set Wall Layers on Arrow prefab.");
+        }
+        
+        // Normal movement
+        transform.position += moveDir * moveDistance;
 
         lifeTimer -= dt;
         if (lifeTimer <= 0f)
             Destroy(gameObject);
+    }
+    
+    private void HandleBounce(RaycastHit hit)
+    {
+        bounceCount++;
+        
+        // Calculate reflection using wall normal
+        Vector3 newDir = Vector3.Reflect(moveDir, hit.normal);
+        newDir.y = 0; // Keep flat (horizontal only)
+        newDir.Normalize();
+        
+        // Apply new direction
+        SetDirection(newDir);
+        
+        // Reset lifetime on bounce
+        lifeTimer = lifetime;
+        
+        // Move to hit point + small offset in reflected direction
+        transform.position = hit.point + newDir * 0.1f;
+        
+        Debug.Log($"[ArrowProjectile] Bounced off {hit.collider.name} ({bounceCount}/{maxBounces})");
     }
 
     private void OnTriggerEnter(Collider other)
@@ -172,10 +254,20 @@ public class ArrowProjectile : MonoBehaviour
         // Hit something non-damageable (wall, etc.)
         OnHitAnything?.Invoke();
         
-        // Destroy on wall hit even if piercing (piercing only affects enemies)
+        // Note: Wall bouncing is handled via raycast in Update(), not here
+        // Destroy on wall hit (if not bouncing or max bounces reached)
         if (!other.CompareTag("Enemy") && destroyOnHit)
         {
-            Destroy(gameObject);
+            // Only destroy if we're not a bouncing arrow that still has bounces left
+            if (!hasBouncing || bounceCount >= maxBounces)
+            {
+                Destroy(gameObject);
+            }
         }
+    }
+    
+    private bool IsWallLayer(int layer)
+    {
+        return ((1 << layer) & wallLayers) != 0;
     }
 }

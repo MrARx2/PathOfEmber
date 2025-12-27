@@ -213,6 +213,17 @@ MonoBehaviour:
   OnHitAnything:
     m_PersistentCalls:
       m_Calls: []
+  isPiercing: 0
+  hasFreezeEffect: 0
+  hasVenomEffect: 0
+  freezeDuration: 1
+  venomDamagePerSecond: 100
+  venomDuration: 3
+  hasBouncing: 0
+  maxBounces: 2
+  wallLayers:
+    serializedVersion: 2
+    m_Bits: 256
 --- !u!4 &3155557943967144755 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 26f12725e9bbeee44aef610fdfaa45c8, type: 3}
