@@ -129,6 +129,15 @@ MonoBehaviour:
   hitVFXPrefab: {fileID: 5602200919654995859, guid: c16de88aca6b0594a9a5e8a538c3c6c3, type: 3}
   showDamagePopup: 1
   damagePopupOffset: {x: 0, y: 0.8, z: 0}
+  enableStagger: 1
+  staggerDuration: 0.15
+  enableKnockback: 1
+  knockbackForce: 2
+  knockbackDecay: 10
+  knockbackBlockLayers:
+    serializedVersion: 2
+    m_Bits: 256
+  knockbackCollisionRadius: 0.5
 --- !u!1001 &1807032776106531644
 PrefabInstance:
   m_ObjectHideFlags: 0

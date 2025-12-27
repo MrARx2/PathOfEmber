@@ -127,38 +127,38 @@ public class ArrowProjectile : MonoBehaviour
         
         if (damageable != null)
         {
-            // Apply base damage
-            damageable.TakeDamage(damage);
+            // Check if it's an EnemyHealth for knockback support
+            EnemyHealth enemyHealth = other.GetComponent<EnemyHealth>();
+            if (enemyHealth == null)
+                enemyHealth = other.GetComponentInParent<EnemyHealth>();
+            
+            if (enemyHealth != null)
+            {
+                // Use knockback-enabled damage with arrow's direction
+                enemyHealth.TakeDamageWithKnockback(damage, moveDir);
+            }
+            else
+            {
+                // Fallback for other IDamageable types
+                damageable.TakeDamage(damage);
+            }
+            
             OnHitDamageable?.Invoke(damage);
             Debug.Log($"Arrow hit {other.name} for {damage} damage");
 
-            // Apply Freeze Effect
-            if (hasFreezeEffect)
+            // Apply Freeze Effect (reuse enemyHealth from above)
+            if (hasFreezeEffect && enemyHealth != null)
             {
-                EnemyHealth enemyHealth = other.GetComponent<EnemyHealth>();
-                if (enemyHealth == null)
-                    enemyHealth = other.GetComponentInParent<EnemyHealth>();
-                
-                if (enemyHealth != null)
-                {
-                    enemyHealth.ApplyFreeze(freezeDuration);
-                    Debug.Log($"Arrow applied freeze ({freezeDuration}s) to {other.name}");
-                }
+                enemyHealth.ApplyFreeze(freezeDuration);
+                Debug.Log($"Arrow applied freeze ({freezeDuration}s) to {other.name}");
             }
 
             // Apply Venom Effect (DoT)
-            if (hasVenomEffect)
+            if (hasVenomEffect && enemyHealth != null)
             {
-                EnemyHealth enemyHealth = other.GetComponent<EnemyHealth>();
-                if (enemyHealth == null)
-                    enemyHealth = other.GetComponentInParent<EnemyHealth>();
-                
-                if (enemyHealth != null)
-                {
-                    int totalTicks = Mathf.RoundToInt(venomDuration);
-                    enemyHealth.ApplyDamageOverTime(venomDamagePerSecond, 1f, totalTicks);
-                    Debug.Log($"Arrow applied venom ({venomDamagePerSecond} dmg/s for {venomDuration}s) to {other.name}");
-                }
+                int totalTicks = Mathf.RoundToInt(venomDuration);
+                enemyHealth.ApplyDamageOverTime(venomDamagePerSecond, 1f, totalTicks);
+                Debug.Log($"Arrow applied venom ({venomDamagePerSecond} dmg/s for {venomDuration}s) to {other.name}");
             }
             
             // Only destroy if not piercing

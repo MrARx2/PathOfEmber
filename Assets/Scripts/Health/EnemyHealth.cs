@@ -62,6 +62,22 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField, Tooltip("Offset from enemy position for popup spawn")]
     private Vector3 damagePopupOffset = new Vector3(0, 1.5f, 0);
 
+    [Header("Stagger & Knockback")]
+    [SerializeField, Tooltip("Enable stagger effect when hit")]
+    private bool enableStagger = true;
+    [SerializeField, Tooltip("Duration of stagger (enemy stops moving)")]
+    private float staggerDuration = 0.15f;
+    [SerializeField, Tooltip("Enable knockback effect when hit")]
+    private bool enableKnockback = true;
+    [SerializeField, Tooltip("Knockback force applied")]
+    private float knockbackForce = 2f;
+    [SerializeField, Tooltip("How quickly knockback decays")]
+    private float knockbackDecay = 10f;
+    [SerializeField, Tooltip("Layers that block knockback (walls, obstacles)")]
+    private LayerMask knockbackBlockLayers;
+    [SerializeField, Tooltip("Radius for wall collision check")]
+    private float knockbackCollisionRadius = 0.5f;
+
     private bool isDead = false;
     private Coroutine dotCoroutine;
     private Coroutine freezeCoroutine;
@@ -75,6 +91,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private Color[] originalColors;
     private Color[] originalEmissionColors;
     private bool[] hadEmissionEnabled;
+    private bool isStaggered = false;
+    private Vector3 knockbackVelocity = Vector3.zero;
 
     /// <summary>
     /// Returns the visual center position (modelTransform if set, otherwise this transform).
@@ -131,6 +149,78 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         {
             freezeImmunityTimer -= Time.deltaTime;
         }
+        
+        // Apply knockback movement with wall collision check
+        if (knockbackVelocity.sqrMagnitude > 0.01f)
+        {
+            Vector3 movement = knockbackVelocity * Time.deltaTime;
+            
+            // Check for walls in knockback direction
+            if (!IsBlockedByWall(movement))
+            {
+                transform.position += movement;
+            }
+            else
+            {
+                // Hit a wall, stop knockback
+                knockbackVelocity = Vector3.zero;
+            }
+            
+            knockbackVelocity = Vector3.Lerp(knockbackVelocity, Vector3.zero, knockbackDecay * Time.deltaTime);
+        }
+        else
+        {
+            knockbackVelocity = Vector3.zero;
+        }
+    }
+    
+    private bool IsBlockedByWall(Vector3 movement)
+    {
+        if (knockbackBlockLayers == 0)
+        {
+            Debug.LogWarning($"[EnemyHealth] {gameObject.name} - Knockback Block Layers not set! Set it to 'Walls' layer.");
+            return false;
+        }
+        
+        float distance = movement.magnitude;
+        if (distance < 0.001f) return false;
+        
+        Vector3 direction = movement.normalized;
+        float moveDist = movement.magnitude;
+        Vector3 origin = transform.position + Vector3.up * 0.1f; // Low to detect short walls
+        
+        // Check ahead using the configured collision radius
+        RaycastHit hit;
+        bool blocked = Physics.SphereCast(origin, knockbackCollisionRadius, direction, out hit, moveDist + knockbackCollisionRadius, knockbackBlockLayers, QueryTriggerInteraction.Ignore);
+        
+        // Debug: Draw the check in scene view
+        Debug.DrawRay(origin, direction * (moveDist + knockbackCollisionRadius), blocked ? Color.red : Color.green, 0.1f);
+        
+        if (blocked)
+        {
+            // Calculate how far we can move before hitting the wall
+            float safeDistance = Mathf.Max(0, hit.distance - knockbackCollisionRadius);
+            
+            if (safeDistance > 0.01f)
+            {
+                // Allow partial movement up to the wall
+                transform.position += direction * safeDistance;
+            }
+            
+            // Stop remaining knockback
+            knockbackVelocity = Vector3.zero;
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // Debug: Show knockback collision sphere
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Vector3 origin = transform.position + Vector3.up * 0.1f;
+        Gizmos.DrawWireSphere(origin, knockbackCollisionRadius);
     }
 
     private void Start()
@@ -186,6 +276,67 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         if (currentHealth <= 0)
             Die();
+    }
+
+    /// <summary>
+    /// Takes damage and applies knockback in hit direction.
+    /// Call this from projectiles/attacks that have directional impact.
+    /// </summary>
+    public void TakeDamageWithKnockback(int damage, Vector3 hitDirection)
+    {
+        TakeDamage(damage);
+        
+        if (isDead) return;
+        
+        // Apply knockback
+        if (enableKnockback && hitDirection.sqrMagnitude > 0.01f)
+        {
+            ApplyKnockback(hitDirection.normalized);
+        }
+        
+        // Apply stagger
+        if (enableStagger && !isFrozen)
+        {
+            StartCoroutine(StaggerRoutine());
+        }
+    }
+
+    /// <summary>
+    /// Applies knockback velocity in the given direction.
+    /// </summary>
+    public void ApplyKnockback(Vector3 direction)
+    {
+        if (isDead || isFrozen) return;
+        
+        // Ensure horizontal knockback only
+        direction.y = 0;
+        knockbackVelocity = direction.normalized * knockbackForce;
+    }
+
+    private Coroutine staggerCoroutine;
+    
+    private IEnumerator StaggerRoutine()
+    {
+        if (isStaggered) yield break;
+        isStaggered = true;
+        
+        // Stop NavMeshAgent briefly
+        bool wasAgentEnabled = false;
+        if (navAgent != null && navAgent.enabled && navAgent.isOnNavMesh)
+        {
+            wasAgentEnabled = true;
+            navAgent.isStopped = true;
+        }
+        
+        yield return new WaitForSeconds(staggerDuration);
+        
+        // Resume movement
+        if (navAgent != null && wasAgentEnabled && !isFrozen && !isDead)
+        {
+            navAgent.isStopped = false;
+        }
+        
+        isStaggered = false;
     }
 
     public void Heal(int amount)

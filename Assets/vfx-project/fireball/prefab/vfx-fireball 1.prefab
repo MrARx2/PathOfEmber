@@ -28,7 +28,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
+  m_LocalScale: {x: 0.4, y: 0.4, z: 0.4}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3873748017344426221}
@@ -4922,7 +4922,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
+  m_LocalScale: {x: 0.01, y: 0.01, z: 0.01}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3873748017344426221}
@@ -9837,8 +9837,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d41481083bcf9be4f946e45490102c24, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyProjectile
-  speed: 1
-  lifetime: 5
+  speed: 3
+  lifetime: 3
   damage: 100
   destroyOnHit: 1
   applyDoT: 1
@@ -9847,14 +9847,18 @@ MonoBehaviour:
   dotTotalTicks: 3
   hitVFXPrefab: {fileID: 1459743276775166154, guid: 4d4f027c8a1ae4646ab7954992b03c27, type: 3}
   hitVFXDuration: 0.5
-  fadeOutDuration: 0.5
+  fadeOutDuration: 0.2
   shrinkOnFade: 1
-  slowDownOnFade: 1
-  scaleTrailWithSpeed: 1
-  baseSpeedForTrail: 1
+  fadeTrailWidth: 1
+  autoSetupTrail: 0
+  trailHeadColor: {r: 1, g: 0.9, b: 0.4, a: 1}
+  trailTailColor: {r: 1, g: 0.3, b: 0, a: 0}
+  trailTime: 0.15
+  trailStartWidth: 0.05
   hitLayers:
     serializedVersion: 2
     m_Bits: 8
+  disableShadows: 1
 --- !u!136 &-7790517302508887111
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -9905,7 +9909,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3873748017344426221}
@@ -9919,8 +9923,8 @@ TrailRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8360761769017524223}
   m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
   m_MotionVectors: 0
@@ -9958,19 +9962,37 @@ TrailRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: -2
-  m_Time: 0.2
+  m_Time: 0.15
   m_PreviewTimeScale: 1
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 0.09
+    widthMultiplier: 0.25
     widthCurve:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
+        value: 0.257576
+        inSlope: -1.2
+        outSlope: -1.2
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 0.29128912
+        value: 0.19797316
+        inSlope: -0.6306824
+        outSlope: -0.6306824
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.25878108
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: -0.8
+        outSlope: -0.8
         tangentMode: 0
         weightedMode: 0
         inWeight: 0.33333334
@@ -9980,42 +10002,42 @@ TrailRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 1, g: 0.35016125, b: 0.031372547, a: 1}
-      key1: {r: 0, g: 0, b: 0, a: 0}
-      key2: {r: 0, g: 0, b: 0, a: 0}
+      key0: {r: 1, g: 0.95, b: 0.6, a: 1}
+      key1: {r: 1, g: 0.625, b: 0.3, a: 0.7}
+      key2: {r: 1, g: 0.3, b: 0, a: 0.2}
       key3: {r: 0, g: 0, b: 0, a: 0}
       key4: {r: 0, g: 0, b: 0, a: 0}
       key5: {r: 0, g: 0, b: 0, a: 0}
       key6: {r: 0, g: 0, b: 0, a: 0}
       key7: {r: 0, g: 0, b: 0, a: 0}
-      ctime0: 7325
-      ctime1: 65535
-      ctime2: 0
+      ctime0: 0
+      ctime1: 32768
+      ctime2: 65535
       ctime3: 0
       ctime4: 0
       ctime5: 0
       ctime6: 0
       ctime7: 0
       atime0: 0
-      atime1: 65535
-      atime2: 0
-      atime3: 0
+      atime1: 19661
+      atime2: 45875
+      atime3: 65535
       atime4: 0
       atime5: 0
       atime6: 0
       atime7: 0
       m_Mode: 0
-      m_ColorSpace: 0
-      m_NumColorKeys: 2
-      m_NumAlphaKeys: 2
+      m_ColorSpace: -1
+      m_NumColorKeys: 3
+      m_NumAlphaKeys: 4
     numCornerVertices: 0
     numCapVertices: 0
     alignment: 0
     textureMode: 0
-    textureScale: {x: 1, y: 1}
+    textureScale: {x: 1, y: 0.1}
     shadowBias: 0.5
     generateLightingData: 0
-  m_MinVertexDistance: 0.1
+  m_MinVertexDistance: 0.05
   m_MaskInteraction: 0
   m_Autodestruct: 0
   m_Emitting: 1
@@ -10047,7 +10069,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3873748017344426221}
@@ -10110,13 +10132,31 @@ TrailRenderer:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 1
+        value: 0.30808067
         inSlope: 0
         outSlope: 0
         tangentMode: 0
         weightedMode: 0
         inWeight: 0.33333334
         outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 0.5000049
+        value: 0.2272701
+        inSlope: -0.29641593
+        outSlope: -0.29641593
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0.23852462
+      - serializedVersion: 3
+        time: 1
+        value: 0.17171717
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -10154,7 +10194,7 @@ TrailRenderer:
     numCapVertices: 0
     alignment: 0
     textureMode: 0
-    textureScale: {x: 1, y: 1}
+    textureScale: {x: 1, y: 0.5}
     shadowBias: 0.5
     generateLightingData: 0
   m_MinVertexDistance: 0.1

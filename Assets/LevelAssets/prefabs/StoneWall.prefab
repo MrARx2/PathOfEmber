@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 3853614963470936188}
   - component: {fileID: 3585211567689711622}
   - component: {fileID: 1409236976301659349}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Box Volume
   m_TagString: Collider
   m_Icon: {fileID: 0}
@@ -131,6 +131,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8330647501056133860, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: -4092844578741883967, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -138,6 +142,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
       propertyPath: m_Name
       value: StoneWall
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
+      propertyPath: m_Layer
+      value: 8
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

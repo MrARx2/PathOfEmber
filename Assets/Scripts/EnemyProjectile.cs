@@ -22,21 +22,31 @@ public class EnemyProjectile : MonoBehaviour
 
     [Header("Fade Out Settings")]
     [SerializeField, Tooltip("Duration of the fade-out effect")]
-    private float fadeOutDuration = 0.3f;
-    [SerializeField, Tooltip("Shrink scale during fade-out")]
+    private float fadeOutDuration = 0.2f;
+    [SerializeField, Tooltip("Shrink projectile scale during fade-out")]
     private bool shrinkOnFade = true;
-    [SerializeField, Tooltip("Slow down during fade-out")]
-    private bool slowDownOnFade = true;
+    [SerializeField, Tooltip("Fade out trail width during fade")]
+    private bool fadeTrailWidth = true;
 
-    [Header("Speed-Based Trail")]
-    [SerializeField, Tooltip("Scale trail width based on speed during flight (optional)")]
-    private bool scaleTrailWithSpeed = false;
-    [SerializeField, Tooltip("Reference speed for base trail width (only used if scaleTrailWithSpeed is true)")]
-    private float baseSpeedForTrail = 8f;
+    [Header("Trail Enhancement (Optional)")]
+    [SerializeField, Tooltip("Auto-configure trail - DISABLE if using custom prefab effects")]
+    private bool autoSetupTrail = false;
+    [SerializeField, Tooltip("Trail color at head (bright)")]
+    private Color trailHeadColor = new Color(1f, 0.9f, 0.4f, 1f); // Bright yellow-white
+    [SerializeField, Tooltip("Trail color at tail (faded)")]
+    private Color trailTailColor = new Color(1f, 0.3f, 0f, 0f); // Orange to transparent
+    [SerializeField, Tooltip("Trail duration in seconds")]
+    private float trailTime = 0.15f;
+    [SerializeField, Tooltip("Trail width at head")]
+    private float trailStartWidth = 0.3f;
 
     [Header("Collision Layers")]
     [SerializeField, Tooltip("Layers that trigger the projectile impact")] 
     private LayerMask hitLayers;
+
+    [Header("Performance")]
+    [SerializeField, Tooltip("Disable shadows on all child renderers for better performance")]
+    private bool disableShadows = true;
 
     private Vector3 moveDir = Vector3.forward;
     private float lifeTimer;
@@ -49,9 +59,6 @@ public class EnemyProjectile : MonoBehaviour
     private float[] initialTrailWidths;
 
     public int Damage => damage;
-    
-    private float initialSpeed;
-    private float currentSpeed;
 
     private void OnEnable()
     {
@@ -98,9 +105,89 @@ public class EnemyProjectile : MonoBehaviour
             }
         }
         
-        // Cache initial speed
-        initialSpeed = speed;
-        currentSpeed = speed;
+        // Auto-setup beautiful fire trail
+        if (autoSetupTrail)
+        {
+            SetupBeautifulTrail();
+        }
+        
+        // Apply shadow settings to all renderers
+        ApplyShadowSettings();
+    }
+    
+    private void ApplyShadowSettings()
+    {
+        var shadowMode = disableShadows 
+            ? UnityEngine.Rendering.ShadowCastingMode.Off 
+            : UnityEngine.Rendering.ShadowCastingMode.On;
+        
+        foreach (var rend in renderers)
+        {
+            if (rend == null) continue;
+            rend.shadowCastingMode = shadowMode;
+            rend.receiveShadows = !disableShadows;
+        }
+        
+        foreach (var trail in trails)
+        {
+            if (trail == null) continue;
+            trail.shadowCastingMode = shadowMode;
+            trail.receiveShadows = !disableShadows;
+        }
+    }
+    
+    /// <summary>
+    /// Configures TrailRenderer with beautiful fire effect settings.
+    /// </summary>
+    private void SetupBeautifulTrail()
+    {
+        foreach (var trail in trails)
+        {
+            if (trail == null) continue;
+            
+            // Timing - short and snappy
+            trail.time = trailTime;
+            trail.minVertexDistance = 0.02f; // Smooth curves
+            
+            // Width curve - tapered comet tail effect
+            trail.widthMultiplier = trailStartWidth;
+            AnimationCurve widthCurve = new AnimationCurve();
+            widthCurve.AddKey(0f, 1f);      // Full width at head
+            widthCurve.AddKey(0.3f, 0.6f);  // Taper quickly
+            widthCurve.AddKey(0.7f, 0.2f);  // Continue tapering
+            widthCurve.AddKey(1f, 0f);      // Point at tail
+            trail.widthCurve = widthCurve;
+            
+            // Color gradient - bright head, fading tail
+            Gradient colorGradient = new Gradient();
+            colorGradient.SetKeys(
+                new GradientColorKey[] {
+                    new GradientColorKey(trailHeadColor, 0f),
+                    new GradientColorKey(new Color(1f, 0.5f, 0.1f), 0.3f), // Orange mid
+                    new GradientColorKey(trailTailColor, 1f)
+                },
+                new GradientAlphaKey[] {
+                    new GradientAlphaKey(1f, 0f),
+                    new GradientAlphaKey(0.8f, 0.2f),
+                    new GradientAlphaKey(0.3f, 0.6f),
+                    new GradientAlphaKey(0f, 1f)
+                }
+            );
+            trail.colorGradient = colorGradient;
+            
+            // Ensure shadow casting is off for performance
+            trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            trail.receiveShadows = false;
+        }
+        
+        // Update cached widths after setup
+        for (int i = 0; i < trails.Length; i++)
+        {
+            if (trails[i] != null)
+            {
+                initialTrailWidths[i] = trails[i].widthMultiplier;
+            }
+        }
     }
 
     public void SetDirection(Vector3 dir)
@@ -123,37 +210,50 @@ public class EnemyProjectile : MonoBehaviour
         damage = newDamage;
     }
 
-    private void Update()
+    public void SetLifetime(float newLifetime)
     {
-        if (isFadingOut) return; // Movement handled in fade routine
-        
-        float dt = Time.deltaTime;
-        transform.position += moveDir * currentSpeed * dt;
-        
-        // Scale trail width based on current speed
-        UpdateTrailWidth();
-
-        lifeTimer -= dt;
-        if (lifeTimer <= 0f)
-            StartFadeOut();
+        if (newLifetime > 0f)
+        {
+            lifetime = newLifetime;
+            lifeTimer = lifetime;
+        }
     }
     
-    private void UpdateTrailWidth()
+    /// <summary>
+    /// Sets lifetime so projectile travels exactly maxRange units.
+    /// Projectile can hit during entire travel including fade-out.
+    /// </summary>
+    public void SetMaxRange(float maxRange, float overrideSpeed = 0f)
     {
-        if (!scaleTrailWithSpeed || trails == null) return;
+        float actualSpeed = overrideSpeed > 0 ? overrideSpeed : speed;
         
-        float speedRatio = currentSpeed / Mathf.Max(0.1f, baseSpeedForTrail);
-        
-        for (int i = 0; i < trails.Length; i++)
+        if (maxRange > 0f && actualSpeed > 0f)
         {
-            if (trails[i] == null) continue;
-            trails[i].widthMultiplier = initialTrailWidths[i] * speedRatio;
+            // Simple calculation: lifetime = time to travel the range
+            // Fade is just visual - projectile can still hit during fade
+            lifetime = maxRange / actualSpeed;
+            lifeTimer = lifetime;
+        }
+    }
+
+    private void Update()
+    {
+        // Keep moving at constant speed (even during fade for clean trail)
+        float dt = Time.deltaTime;
+        transform.position += moveDir * speed * dt;
+
+        if (!isFadingOut)
+        {
+            lifeTimer -= dt;
+            if (lifeTimer <= 0f)
+                StartFadeOut();
         }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other == null || isFadingOut) return;
+        if (other == null) return;
+        // Note: Projectile can still hit during fade-out!
         
         // 1. Check if the object is in our hit layers
         if (((1 << other.gameObject.layer) & hitLayers) == 0) return;
@@ -210,12 +310,8 @@ public class EnemyProjectile : MonoBehaviour
         if (isFadingOut) return;
         isFadingOut = true;
         
-        // Disable collisions during fade
-        var cols = GetComponentsInChildren<Collider>();
-        foreach (var col in cols)
-        {
-            if (col != null) col.enabled = false;
-        }
+        // NOTE: Colliders stay ENABLED so projectile can still hit during fade-out!
+        // The projectile will be destroyed after fadeOutDuration
         
         StartCoroutine(FadeOutRoutine());
     }
@@ -223,21 +319,12 @@ public class EnemyProjectile : MonoBehaviour
     private IEnumerator FadeOutRoutine()
     {
         float elapsed = 0f;
-        float startSpeed = currentSpeed;
         
         while (elapsed < fadeOutDuration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / fadeOutDuration;
             float fadeValue = 1f - t; // 1 -> 0
-            
-            // Slow down
-            if (slowDownOnFade)
-            {
-                currentSpeed = Mathf.Lerp(startSpeed, 0f, t);
-                // Keep moving while slowing
-                transform.position += moveDir * currentSpeed * Time.deltaTime;
-            }
             
             // Fade renderer colors/alpha
             for (int i = 0; i < renderers.Length; i++)
@@ -249,18 +336,20 @@ public class EnemyProjectile : MonoBehaviour
                 renderers[i].material.color = c;
             }
             
-            // Shrink trails based on current speed
-            float speedRatio = currentSpeed / Mathf.Max(0.1f, initialSpeed);
-            for (int i = 0; i < trails.Length; i++)
+            // Fade trail width
+            if (fadeTrailWidth)
             {
-                if (trails[i] == null) continue;
-                trails[i].widthMultiplier = initialTrailWidths[i] * speedRatio * fadeValue;
+                for (int i = 0; i < trails.Length; i++)
+                {
+                    if (trails[i] == null) continue;
+                    trails[i].widthMultiplier = initialTrailWidths[i] * fadeValue;
+                }
             }
             
             // Shrink scale
             if (shrinkOnFade)
             {
-                transform.localScale = initialScale * Mathf.Lerp(1f, 0.2f, t);
+                transform.localScale = initialScale * Mathf.Lerp(1f, 0.1f, t);
             }
             
             yield return null;

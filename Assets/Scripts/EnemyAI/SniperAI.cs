@@ -38,6 +38,20 @@ namespace EnemyAI
         [SerializeField, Tooltip("How long the shoot animation takes")]
         private float shootAnimationDuration = 0.5f;
 
+        [Header("=== AIM LINE INDICATOR ===")]
+        [SerializeField, Tooltip("Show aim line during aiming phase")]
+        private bool showAimLine = true;
+        [SerializeField, Tooltip("Starting color (when aiming begins)")]
+        private Color aimLineStartColor = Color.white;
+        [SerializeField, Tooltip("End color (when about to fire)")]
+        private Color aimLineEndColor = new Color(1f, 0.2f, 0.2f, 1f);
+        [SerializeField, Tooltip("Aim line width")]
+        private float aimLineWidth = 0.05f;
+        [SerializeField, Tooltip("How far the aim line extends")]
+        private float aimLineLength = 20f;
+        [SerializeField, Tooltip("How long the aiming phase lasts (for color transition)")]
+        private float aimDuration = 0.5f;
+
         // State Machine
         private SniperState currentState = SniperState.Idle;
         private Vector3 moveDirection;
@@ -47,6 +61,7 @@ namespace EnemyAI
 
         // Cache
         private Coroutine shootCoroutine;
+        private LineRenderer aimLine;
 
         protected override void Awake()
         {
@@ -69,8 +84,46 @@ namespace EnemyAI
             if (projectileSpawnPoint == null)
                 projectileSpawnPoint = transform;
             
+            // Setup aim line
+            SetupAimLine();
+            
             // Start behavior
             SwitchState(SniperState.Idle);
+        }
+        
+        private void SetupAimLine()
+        {
+            if (!showAimLine) return;
+            
+            // Create LineRenderer for aim indicator
+            GameObject lineObj = new GameObject("AimLine");
+            lineObj.transform.SetParent(transform);
+            lineObj.transform.localPosition = Vector3.zero;
+            
+            aimLine = lineObj.AddComponent<LineRenderer>();
+            aimLine.positionCount = 2;
+            aimLine.startWidth = aimLineWidth;
+            // Don't go too thin - prevents jagged appearance
+            aimLine.endWidth = Mathf.Max(aimLineWidth * 0.4f, 0.02f);
+            aimLine.useWorldSpace = true;
+            
+            // Smoothing - reduces jagged edges
+            aimLine.numCornerVertices = 4;
+            aimLine.numCapVertices = 4;
+            aimLine.textureMode = LineTextureMode.Stretch;
+            
+            // Create simple material for the line
+            aimLine.material = new Material(Shader.Find("Sprites/Default"));
+            // Initial color (will be updated in routine)
+            aimLine.startColor = aimLineStartColor;
+            aimLine.endColor = new Color(aimLineStartColor.r, aimLineStartColor.g, aimLineStartColor.b, 0f);
+            
+            // Performance
+            aimLine.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            aimLine.receiveShadows = false;
+            
+            // Hide by default
+            aimLine.enabled = false;
         }
 
         protected override void Update()
@@ -78,6 +131,8 @@ namespace EnemyAI
             if (health != null && (health.IsDead || health.IsFrozen))
             {
                 if (agent.isOnNavMesh) agent.isStopped = true;
+                // Hide aim line if interrupted
+                HideAimLine();
                 return;
             }
 
@@ -336,6 +391,9 @@ namespace EnemyAI
 
         public void FireProjectileFromEvent()
         {
+            // Hide aim line when firing
+            HideAimLine();
+            
             // Just check if we are in shooting state, don't strict check 'waitingForAnimEvent' 
             // incase of race conditions where coroutine hasn't set it yet or it was cleared.
             // But we do want to avoid double firing if possible. 
@@ -373,6 +431,70 @@ namespace EnemyAI
                 if (dir != Vector3.zero)
                     transform.rotation = Quaternion.LookRotation(dir);
             }
+            
+            // Show aim line when facing player (aiming phase)
+            ShowAimLine();
+        }
+        
+        // --- AIM LINE CONTROL ---
+        private void ShowAimLine()
+        {
+            if (!showAimLine || aimLine == null) return;
+            aimLine.enabled = true;
+            StartCoroutine(UpdateAimLineRoutine());
+        }
+        
+        private void HideAimLine()
+        {
+            if (aimLine == null) return;
+            aimLine.enabled = false;
+        }
+        
+        private System.Collections.IEnumerator UpdateAimLineRoutine()
+        {
+            float elapsed = 0f;
+            // Timeout: 22 frames at 30fps = ~0.73 seconds
+            float maxAimTime = 0.75f;
+            
+            while (aimLine != null && aimLine.enabled && target != null && elapsed < maxAimTime)
+            {
+                // Check for interruption (frozen, dead, state changed)
+                if (health != null && (health.IsDead || health.IsFrozen))
+                {
+                    HideAimLine();
+                    yield break;
+                }
+                
+                // If we left shooting state somehow, hide line
+                if (currentState != SniperState.Shooting)
+                {
+                    HideAimLine();
+                    yield break;
+                }
+                
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / aimDuration);
+                
+                // Lerp color from start (white) to end (red)
+                Color currentColor = Color.Lerp(aimLineStartColor, aimLineEndColor, t);
+                aimLine.startColor = currentColor;
+                aimLine.endColor = new Color(currentColor.r, currentColor.g, currentColor.b, 0f);
+                
+                // Update line positions
+                Vector3 startPos = projectileSpawnPoint != null ? projectileSpawnPoint.position : transform.position;
+                Vector3 direction = (target.position - startPos).normalized;
+                direction.y = 0; // Keep flat
+                
+                Vector3 endPos = startPos + direction * aimLineLength;
+                
+                aimLine.SetPosition(0, startPos);
+                aimLine.SetPosition(1, endPos);
+                
+                yield return null;
+            }
+            
+            // Auto-hide on timeout
+            HideAimLine();
         }
 
         private void SpawnProjectile()
@@ -393,6 +515,13 @@ namespace EnemyAI
                 ep.SetDirection(direction);
                 if (projectileSpeed > 0) ep.SetSpeed(projectileSpeed);
                 if (projectileDamage > 0) ep.SetDamage(projectileDamage);
+                
+                // Set projectile lifetime based on attack range
+                // Pass the speed so calculation is correct
+                if (attackRange > 0)
+                {
+                    ep.SetMaxRange(attackRange, projectileSpeed);
+                }
             }
         }
 
