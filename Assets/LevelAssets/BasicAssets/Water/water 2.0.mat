@@ -7,16 +7,16 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: water
-  m_Shader: {fileID: -6465566751694194690, guid: 0ddf914472f859645acbc361233f6061, type: 3}
+  m_Name: water 2.0
+  m_Shader: {fileID: -6465566751694194690, guid: 19767e6744507c54898a9714fff8b358, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords: []
-  m_LightmapFlags: 2
-  m_EnableInstancingVariants: 0
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
+  m_CustomRenderQueue: 3000
   stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
@@ -38,25 +38,26 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _QueueControl: 0
+    - _QueueControl: 1
     - _QueueOffset: 0
-    - _foam_amount: 0.51
-    - _foam_cutoff: 0.97
-    - _foam_scale: 40
-    - _foam_speed: 0.01
-    - _ripple_amount: 6
-    - _ripple_density: 5.83
-    - _ripple_power: 7.25
-    - _ripple_speed: 2
-    - _wave_scale: 0
-    - _wave_speed: 0.1
+    - _depth_fade_distance: 1.81
+    - _flow_direction: 0
+    - _foam_amount: 1.95
+    - _foam_cutoff: 8.21
+    - _foam_speed: 0.2
+    - _refraction_speed: -0.4
+    - _refraction_strength: 0.02
     m_Colors:
-    - _base_Color: {r: 0, g: 0.39367238, b: 0.7830189, a: 0.4745098}
-    - _foam_color: {r: 1, g: 1, b: 1, a: 0.23921569}
-    - _ripple_color: {r: 0, g: 0.23822278, b: 0.24528301, a: 0.2627451}
+    - _Vector2: {r: 1, g: 0, b: 0, a: 0}
+    - _deep_color: {r: 0, g: 0.35124573, b: 0.3584906, a: 1}
+    - _foam_color: {r: 0.5377358, g: 0.5377358, b: 0.5377358, a: 1}
+    - _foam_scale: {r: 5, g: 5, b: 0, a: 0}
+    - _foam_speed: {r: 0.4, g: 0, b: 0, a: 0}
+    - _refraction_xy_scale: {r: 0.2, g: 0.2, b: 0, a: 0}
+    - _shallow_color: {r: 0, g: 0.16378805, b: 0.3490566, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!114 &5052962147254306262
+--- !u!114 &3405339541114063439
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
