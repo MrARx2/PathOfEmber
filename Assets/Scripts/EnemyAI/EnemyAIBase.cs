@@ -198,7 +198,11 @@ namespace EnemyAI
             agent.SetDestination(target.position);
 
             if (debugLog && Time.frameCount % 60 == 0)
-                Debug.Log($"[{GetType().Name}] Chasing player, distance: {Vector3.Distance(transform.position, target.position):F1}");
+            {
+                string pathStatus = agent.pathStatus.ToString();
+                bool hasPath = agent.hasPath;
+                Debug.Log($"[{GetType().Name}] Chasing: distance={Vector3.Distance(transform.position, target.position):F1}, pathStatus={pathStatus}, hasPath={hasPath}");
+            }
         }
 
         protected virtual void StopMovement()

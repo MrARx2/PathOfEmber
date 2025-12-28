@@ -1,5 +1,58 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3463088071552976328
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8338387385997254626}
+  - component: {fileID: 2216012129854648755}
+  m_Layer: 0
+  m_Name: BridgeFloor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8338387385997254626
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3463088071552976328}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1293072490073840461}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &2216012129854648755
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3463088071552976328}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.754546, y: 2.9358716, z: 0.16735017}
+  m_Center: {x: -0.0022043309, y: -0.042852506, z: -0.04112146}
 --- !u!1 &7284001746485049119
 GameObject:
   m_ObjectHideFlags: 0
@@ -223,12 +276,55 @@ PrefabInstance:
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: beae60a87641a8b49984372331fbcb6a, type: 3}
       insertIndex: -1
+      addedObject: {fileID: 8338387385997254626}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: beae60a87641a8b49984372331fbcb6a, type: 3}
+      insertIndex: -1
       addedObject: {fileID: 932288562817492186}
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: beae60a87641a8b49984372331fbcb6a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7693272497867045363}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 500268983518027937, guid: beae60a87641a8b49984372331fbcb6a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7853311333501700807}
   m_SourcePrefab: {fileID: 100100000, guid: beae60a87641a8b49984372331fbcb6a, type: 3}
+--- !u!1 &1191795924552113159 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 500268983518027937, guid: beae60a87641a8b49984372331fbcb6a, type: 3}
+  m_PrefabInstance: {fileID: 1619980752656743590}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7853311333501700807
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1191795924552113159}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a5ac11cc976e418e8d13136b07e1f52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshSurface
+  m_SerializedVersion: 0
+  m_AgentTypeID: 0
+  m_CollectObjects: 1
+  m_Size: {x: 1, y: 5, z: 0.7004056}
+  m_Center: {x: 0, y: 0, z: 0.14979719}
+  m_LayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_UseGeometry: 1
+  m_DefaultArea: 0
+  m_GenerateLinks: 1
+  m_IgnoreNavMeshAgent: 1
+  m_IgnoreNavMeshObstacle: 1
+  m_OverrideTileSize: 0
+  m_TileSize: 256
+  m_OverrideVoxelSize: 0
+  m_VoxelSize: 0.16666667
+  m_MinRegionArea: 2
+  m_NavMeshData: {fileID: 23800000, guid: fbdacd525ce23f649969e3649a08a943, type: 2}
+  m_BuildHeightMesh: 0
 --- !u!4 &1293072490073840461 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: beae60a87641a8b49984372331fbcb6a, type: 3}

@@ -130,7 +130,11 @@ namespace EnemyAI
         {
             if (health != null && (health.IsDead || health.IsFrozen))
             {
-                if (agent.isOnNavMesh) agent.isStopped = true;
+                if (agent.isOnNavMesh)
+                {
+                    agent.isStopped = true;
+                    agent.velocity = Vector3.zero;
+                }
                 // Hide aim line if interrupted
                 HideAimLine();
                 return;
@@ -198,15 +202,17 @@ namespace EnemyAI
         {
             if (currentState == newState) return;
             
-
-            
             currentState = newState;
             stateTimer = 0f;
 
             switch (newState)
             {
                 case SniperState.Idle:
-                    if (agent.isOnNavMesh) agent.isStopped = true;
+                    if (agent.isOnNavMesh)
+                    {
+                        agent.isStopped = true;
+                        agent.velocity = Vector3.zero; // Stop sliding!
+                    }
                     stateTimer = 0.5f; // Brief pause before deciding next move
                     break;
 
@@ -216,7 +222,11 @@ namespace EnemyAI
                     break;
 
                 case SniperState.Shooting:
-                    if (agent.isOnNavMesh) agent.isStopped = true;
+                    if (agent.isOnNavMesh)
+                    {
+                        agent.isStopped = true;
+                        agent.velocity = Vector3.zero; // Stop sliding!
+                    }
                     // Look at player immediately at start of Aiming phase
                     LookAtTarget(); 
                     StartShootSequence();

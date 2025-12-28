@@ -75,6 +75,16 @@ namespace EnemyAI
                     damageLayer = 1 << playerLayer;
             }
         }
+        
+        private void OnDestroy()
+        {
+            // Clean up warning indicator if bomber dies before explosion
+            if (warningInstance != null)
+            {
+                Destroy(warningInstance);
+                warningInstance = null;
+            }
+        }
 
         protected override void Update()
         {
