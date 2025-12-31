@@ -40,6 +40,12 @@ public class SpawnArea : MonoBehaviour
     [SerializeField, Tooltip("Number of enemies to spawn when using volume random positions")]
     private int volumeSpawnCount = 5;
 
+    [Header("Spawn-Once Tracking")]
+    [SerializeField, Tooltip("Unique ID for this spawn area. If empty, uses GameObject name + position hash.")]
+    private string uniqueId = "";
+    [SerializeField, Tooltip("If true, uses the global SpawnAreaRegistry to track spawns across chunk recycling")]
+    private bool useGlobalRegistry = true;
+
     [Header("Debug")]
     [SerializeField] private bool showGizmos = true;
     [SerializeField] private Color gizmoColor = Color.red;
@@ -52,6 +58,9 @@ public class SpawnArea : MonoBehaviour
 
     private void Start()
     {
+        // Cache squared distance for performance (avoid sqrt in Update)
+        activationDistanceSqr = activationDistance * activationDistance;
+        
         if (player == null)
         {
             var playerObj = GameObject.FindGameObjectWithTag("Player");
@@ -63,17 +72,40 @@ public class SpawnArea : MonoBehaviour
         {
             CollectChildSpawnPoints();
         }
+        
+        // Generate unique ID if not set
+        if (string.IsNullOrEmpty(uniqueId))
+        {
+            uniqueId = GenerateUniqueId();
+        }
+        
+        // Check if already spawned in global registry
+        if (useGlobalRegistry && SpawnAreaRegistry.Instance.HasSpawned(uniqueId))
+        {
+            hasSpawned = true;
+            Debug.Log($"[SpawnArea] '{uniqueId}' already spawned (from registry), skipping.");
+        }
+    }
+    
+    private string GenerateUniqueId()
+    {
+        // Create a unique ID based on name and position
+        Vector3 pos = transform.position;
+        return $"{gameObject.name}_{pos.x:F1}_{pos.y:F1}_{pos.z:F1}";
     }
 
+    private float activationDistanceSqr; // Cached squared distance for performance
+    
     private void Update()
     {
         if (hasSpawned && oneTimeSpawn) return;
         if (player == null) return;
 
+        // Use sqrMagnitude instead of Distance to avoid expensive sqrt calculation
         Vector3 checkPosition = GetActivationCenter();
-        float distance = Vector3.Distance(checkPosition, player.position);
+        float distanceSqr = (checkPosition - player.position).sqrMagnitude;
         
-        if (distance <= activationDistance)
+        if (distanceSqr <= activationDistanceSqr)
         {
             SpawnEnemies();
         }
@@ -162,7 +194,14 @@ public class SpawnArea : MonoBehaviour
         }
 
         hasSpawned = true;
-        Debug.Log($"[SpawnArea] Spawned {spawnedEnemies.Count} enemies at {gameObject.name}");
+        
+        // Register with global registry
+        if (useGlobalRegistry)
+        {
+            SpawnAreaRegistry.Instance.MarkAsSpawned(uniqueId);
+        }
+        
+        Debug.Log($"[SpawnArea] Spawned {spawnedEnemies.Count} enemies at {gameObject.name} (ID: {uniqueId})");
     }
 
     private void SpawnAtRandomVolumePositions()
@@ -190,7 +229,14 @@ public class SpawnArea : MonoBehaviour
         }
 
         hasSpawned = true;
-        Debug.Log($"[SpawnArea] Spawned {spawnedEnemies.Count} enemies randomly in volume at {gameObject.name}");
+        
+        // Register with global registry
+        if (useGlobalRegistry)
+        {
+            SpawnAreaRegistry.Instance.MarkAsSpawned(uniqueId);
+        }
+        
+        Debug.Log($"[SpawnArea] Spawned {spawnedEnemies.Count} enemies randomly in volume at {gameObject.name} (ID: {uniqueId})");
     }
 
     private Vector3 GetRandomPositionInVolume()
@@ -262,13 +308,72 @@ public class SpawnArea : MonoBehaviour
         {
             if (points[i] == null) continue;
             
-            float t = points.Length > 1 ? (float)i / (points.Length - 1) : 0f;
-            Gizmos.color = Color.Lerp(Color.red, Color.green, t);
+            // Get the prefab that would spawn at this index (same logic as SpawnEnemies)
+            string enemyName = "";
+            if (enemyPrefabs != null && enemyPrefabs.Length > 0)
+            {
+                GameObject prefab = enemyPrefabs[i % enemyPrefabs.Length];
+                if (prefab != null)
+                {
+                    enemyName = prefab.name;
+                    Gizmos.color = GetColorFromPrefabName(enemyName);
+                }
+                else
+                {
+                    Gizmos.color = Color.gray;
+                }
+            }
+            else
+            {
+                Gizmos.color = Color.gray;
+            }
+            
             Gizmos.DrawSphere(points[i].position, 0.5f);
             
             #if UNITY_EDITOR
-            UnityEditor.Handles.Label(points[i].position + Vector3.up, $"[{i}]");
+            // Show the enemy name that will spawn here
+            string label = !string.IsNullOrEmpty(enemyName) ? enemyName : $"[{i}]";
+            UnityEditor.Handles.Label(points[i].position + Vector3.up, label);
             #endif
+        }
+    }
+    
+    /// <summary>
+    /// Determines gizmo color based on prefab name.
+    /// Chaser = Green, Bomber = Red, Sniper = Blue, Miniboss = Magenta
+    /// </summary>
+    private Color GetColorFromPrefabName(string prefabName)
+    {
+        string nameLower = prefabName.ToLower();
+        
+        if (nameLower.Contains("chaser"))
+            return Color.green;
+        if (nameLower.Contains("bomber"))
+            return Color.red;
+        if (nameLower.Contains("sniper"))
+            return Color.blue;
+        if (nameLower.Contains("miniboss") || nameLower.Contains("boss"))
+            return Color.magenta;
+            
+        // Default color for unknown enemy types
+        return Color.yellow;
+    }
+    
+    private Color GetColorForEnemyType(EnemyType enemyType)
+    {
+        switch (enemyType)
+        {
+            case EnemyType.Chaser:
+                return Color.green;
+            case EnemyType.Bomber:
+                return Color.red;
+            case EnemyType.Sniper:
+                return Color.blue;
+            case EnemyType.Miniboss:
+                return Color.magenta;
+            case EnemyType.Custom:
+            default:
+                return Color.yellow;
         }
     }
 }
