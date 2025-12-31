@@ -1766,6 +1766,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: FinalLava12
       objectReference: {fileID: 0}
+    - target: {fileID: 7328514804434747643, guid: 0c883ca6469add849853c7783f7fa331, type: 3}
+      propertyPath: m_VoxelSize
+      value: 0.065
+      objectReference: {fileID: 0}
+    - target: {fileID: 7328514804434747643, guid: 0c883ca6469add849853c7783f7fa331, type: 3}
+      propertyPath: m_NavMeshData
+      value: 
+      objectReference: {fileID: 23800000, guid: 5e248e15c1138604a9d6e8ee7add340f, type: 2}
+    - target: {fileID: 7328514804434747643, guid: 0c883ca6469add849853c7783f7fa331, type: 3}
+      propertyPath: m_OverrideVoxelSize
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2147,6 +2159,10 @@ PrefabInstance:
       propertyPath: player
       value: 
       objectReference: {fileID: 617443746}
+    - target: {fileID: 4160272665902423083, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
+      propertyPath: showGizmos
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2221,6 +2237,14 @@ PrefabInstance:
       objectReference: {fileID: 843083826}
     - target: {fileID: 1330958008286997474, guid: 875345555c5440b45b20a67898072601, type: 3}
       propertyPath: moveSpeed
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3113836084053875633, guid: 875345555c5440b45b20a67898072601, type: 3}
+      propertyPath: OnDeath.m_PersistentCalls.m_Calls.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3113836084053875633, guid: 875345555c5440b45b20a67898072601, type: 3}
+      propertyPath: OnDeath.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 4077978376418061874, guid: 875345555c5440b45b20a67898072601, type: 3}
