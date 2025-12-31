@@ -10,6 +10,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 {
     [Header("Configuration")]
     [SerializeField] private int maxHealth = 100;
+    [SerializeField, Tooltip("XP granted to player when this enemy dies")]
+    private int xpReward = 10;
     
     [SerializeField, Tooltip("Optional: Assign the model child transform for accurate effect positioning")]
     private Transform modelTransform;
@@ -494,6 +496,13 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         {
             navAgent.isStopped = true;
             navAgent.enabled = false;
+        }
+        
+        // Grant XP to player
+        if (XPSystem.Instance != null && xpReward > 0)
+        {
+            XPSystem.Instance.AddXP(xpReward);
+            Debug.Log($"[EnemyHealth] {gameObject.name} granted {xpReward} XP to player.");
         }
         
         // Invoke death event (for external listeners like HealthBarManager)
