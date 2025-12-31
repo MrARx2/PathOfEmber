@@ -7,16 +7,16 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: water 2.0
-  m_Shader: {fileID: -6465566751694194690, guid: 19767e6744507c54898a9714fff8b358, type: 3}
+  m_Name: lava
+  m_Shader: {fileID: -6465566751694194690, guid: 99e1732ba39aaf041a34dc620a385827, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
-  m_EnableInstancingVariants: 1
+  m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 3000
+  m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
@@ -38,26 +38,23 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _QueueControl: 1
+    - _QueueControl: 0
     - _QueueOffset: 0
-    - _depth_fade_distance: 0.45
-    - _flow_direction: 0
-    - _foam_amount: 1.95
-    - _foam_cutoff: 5.78
-    - _foam_speed: 0.2
-    - _refraction_speed: -0.23
-    - _refraction_strength: 0.04
+    - _lava_density: 5
+    - _lava_power: 6
+    - _lava_speed: 1
+    - _magma_amount: 1.75
+    - _magma_cutoff: 2.54
     m_Colors:
-    - _Vector2: {r: 1, g: 0, b: 0, a: 0}
-    - _deep_color: {r: 0, g: 0.46651474, b: 0.4716981, a: 1}
-    - _foam_color: {r: 0.5377358, g: 0.5377358, b: 0.5377358, a: 1}
-    - _foam_scale: {r: 5, g: 5, b: 0, a: 0}
-    - _foam_speed: {r: 0.4, g: 0, b: 0, a: 0}
-    - _refraction_xy_scale: {r: 0.2, g: 0.2, b: 0, a: 0}
-    - _shallow_color: {r: 0, g: 0.21814708, b: 0.46226418, a: 1}
+    - _Color: {r: 0.7884232, g: 0.000000161345, b: 0, a: 1}
+    - _Color_1: {r: 0.7884232, g: 0.000000161345, b: 0, a: 1}
+    - _Color_2: {r: 0.7882353, g: 0.3087067, b: 0, a: 1}
+    - _magma_coler: {r: 0.16981125, g: 0.083971746, b: 0, a: 1}
+    - _magma_scale: {r: 1, g: 1, b: 0, a: 0}
+    - _magma_speed: {r: 0.1, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!114 &3405339541114063439
+--- !u!114 &1431983569656824111
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}

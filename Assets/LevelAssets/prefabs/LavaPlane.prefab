@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 376530911142552588}
   - component: {fileID: 1339832386528023994}
   - component: {fileID: 4127214884347787378}
+  - component: {fileID: 5555555555555555555}
   m_Layer: 0
   m_Name: LavaPlane
   m_TagString: Untagged
@@ -105,10 +106,31 @@ MeshCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 5
-  m_Convex: 0
+  m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &5555555555555555555
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2778058253875509943}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a1b2c3d4e5f60718293a4b5c6d7e8f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  damagePerSecond: 10
+  ignitePlayer: 1
+  fireTickRate: 1
+  scrollTexture: 1
+  scrollSpeed: {x: 0.1, y: 0.05}
+  texturePropertyName: _MainTex
+  riseAndFall: 1
+  tideHeight: 0.5
+  tideSpeed: 0.5
