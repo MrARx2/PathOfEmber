@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections.Generic;
 
 namespace EnemyAI
 {
@@ -37,6 +38,25 @@ namespace EnemyAI
         
         [SerializeField, Tooltip("How fast the agent accelerates. Lower = less overshooting.")]
         protected float agentAcceleration = 4f;
+        
+        [SerializeField, Tooltip("How often to force path recalculation when stuck (seconds).")]
+        protected float pathRecalculationInterval = 0.5f;
+        
+        [Header("=== OBSTACLE AVOIDANCE ===")]
+        [SerializeField, Tooltip("Enable proactive obstacle detection using NavMesh raycasting")]
+        protected bool enableObstacleRaycast = true;
+        
+        [SerializeField, Tooltip("Height offset for line-of-sight raycast (0.1 = near ground)")]
+        protected float raycastHeight = 0.1f;
+        
+        [SerializeField, Tooltip("How far to the side to search for alternate paths (units)")]
+        protected float obstacleAvoidanceDistance = 3f;
+        
+        [SerializeField, Tooltip("Number of angles to try when finding alternate path")]
+        protected int obstacleAvoidanceRays = 8;
+        
+        [SerializeField, Tooltip("Layers to check for physical obstacles (walls, etc). Default: Everything")]
+        protected LayerMask obstacleLayerMask = ~0; // Default to all layers
 
         [Header("=== ATTACK TIMING ===")]
         [SerializeField, Tooltip("Attacks per second.")]
@@ -72,6 +92,30 @@ namespace EnemyAI
         protected float attackCooldown;
         protected float contactDamageCooldown;
         protected bool isAttacking;
+        
+        // Path tracking for obstacle avoidance
+        protected float lastPathRecalcTime;
+        protected Vector3 lastPosition;
+        protected float stuckCheckTimer;
+        protected const float STUCK_CHECK_INTERVAL = 0.3f;
+        protected const float STUCK_THRESHOLD = 0.1f; // Min distance moved in interval
+        
+        // Alternate waypoint for obstacle avoidance
+        protected Vector3 alternateWaypoint;
+        protected bool hasAlternateWaypoint;
+        protected float alternateWaypointTimeout;
+        
+        // Route memory - remembers successful waypoints for re-evaluation
+        protected struct RememberedRoute
+        {
+            public Vector3 waypoint;
+            public float lastScore;
+            public float timestamp;
+            public bool wasSuccessful; // Did we reach the waypoint without getting stuck?
+        }
+        protected List<RememberedRoute> routeMemory = new List<RememberedRoute>();
+        protected const int MAX_REMEMBERED_ROUTES = 5;
+        protected const float ROUTE_MEMORY_DURATION = 10f; // Forget routes after 10 seconds
 
         /// <summary>
         /// Returns the visual center position (modelTransform if set, otherwise this transform).
@@ -96,10 +140,14 @@ namespace EnemyAI
             agent.angularSpeed = 360f;
             agent.acceleration = agentAcceleration;
             
-            // NavMesh agent setup for small-scale game
+            // NavMesh agent setup for obstacle avoidance
             agent.radius = agentRadius;
             agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
             agent.autoBraking = true;
+            agent.autoRepath = true; // Automatically recalculate path when blocked
+            
+            // Initialize stuck detection
+            lastPosition = transform.position;
         }
 
         protected virtual void Start()
@@ -195,13 +243,358 @@ namespace EnemyAI
             }
 
             agent.isStopped = false;
-            agent.SetDestination(target.position);
-
-            if (debugLog && Time.frameCount % 60 == 0)
+            
+            // === LINE OF SIGHT CHECK ===
+            // This is the PRIMARY check - do we have a clear path to the player?
+            Vector3 rayOrigin = transform.position + Vector3.up * raycastHeight;
+            Vector3 toTarget = target.position - transform.position;
+            float distToTarget = toTarget.magnitude;
+            Vector3 rayDir = toTarget.normalized;
+            
+            RaycastHit physicsHit;
+            bool lineOfSightBlocked = Physics.Raycast(rayOrigin, rayDir, out physicsHit, 
+                distToTarget, obstacleLayerMask, QueryTriggerInteraction.Ignore);
+            
+            // Check if what we hit is actually an obstacle (not the player)
+            if (lineOfSightBlocked)
             {
-                string pathStatus = agent.pathStatus.ToString();
-                bool hasPath = agent.hasPath;
-                Debug.Log($"[{GetType().Name}] Chasing: distance={Vector3.Distance(transform.position, target.position):F1}, pathStatus={pathStatus}, hasPath={hasPath}");
+                // If we hit the player or something with Player tag, we actually have line of sight
+                if (physicsHit.collider.gameObject == target.gameObject || 
+                    physicsHit.collider.CompareTag("Player"))
+                {
+                    lineOfSightBlocked = false;
+                }
+            }
+            
+            // Visual debug
+            if (debugLog)
+            {
+                if (lineOfSightBlocked)
+                    Debug.DrawRay(rayOrigin, rayDir * physicsHit.distance, Color.red, 0.1f);
+                else
+                    Debug.DrawRay(rayOrigin, rayDir * distToTarget, Color.green, 0.1f);
+            }
+            
+            // === DECISION LOGIC ===
+            
+            if (!lineOfSightBlocked)
+            {
+                // CLEAR LINE OF SIGHT - go directly to player!
+                // Clear any alternate waypoint since we can see the player now
+                if (hasAlternateWaypoint)
+                {
+                    hasAlternateWaypoint = false;
+                    if (debugLog)
+                        Debug.Log($"[{GetType().Name}] Line of sight restored, going direct to player");
+                }
+                
+                agent.SetDestination(target.position);
+            }
+            else
+            {
+                // LINE OF SIGHT BLOCKED - need to navigate around obstacle
+                
+                if (debugLog && Time.frameCount % 30 == 0)
+                    Debug.Log($"[{GetType().Name}] Blocked by {physicsHit.collider.name} at distance {physicsHit.distance:F1}");
+                
+                // If we already have an alternate waypoint, check if we should keep using it
+                if (hasAlternateWaypoint)
+                {
+                    alternateWaypointTimeout -= Time.deltaTime;
+                    float distToWaypoint = Vector3.Distance(transform.position, alternateWaypoint);
+                    
+                    // Reached waypoint or timed out?
+                    if (distToWaypoint < 1.5f || alternateWaypointTimeout <= 0)
+                    {
+                        // Mark as successful if we actually reached it (not timed out)
+                        if (distToWaypoint < 1.5f)
+                        {
+                            MarkRouteSuccessful();
+                        }
+                        
+                        hasAlternateWaypoint = false;
+                        if (debugLog)
+                            Debug.Log($"[{GetType().Name}] Reached alternate waypoint, recalculating...");
+                    }
+                    else
+                    {
+                        // Keep going to alternate waypoint
+                        agent.SetDestination(alternateWaypoint);
+                        return;
+                    }
+                }
+                
+                // Stuck detection
+                stuckCheckTimer += Time.deltaTime;
+                if (stuckCheckTimer >= STUCK_CHECK_INTERVAL)
+                {
+                    float distMoved = Vector3.Distance(transform.position, lastPosition);
+                    bool isStuck = distMoved < STUCK_THRESHOLD && agent.velocity.sqrMagnitude < 0.1f;
+                    
+                    if (isStuck)
+                    {
+                        // Force new waypoint search
+                        hasAlternateWaypoint = false;
+                        if (debugLog)
+                            Debug.Log($"[{GetType().Name}] Stuck! Finding new path...");
+                    }
+                    
+                    lastPosition = transform.position;
+                    stuckCheckTimer = 0f;
+                }
+                
+                // Find alternate waypoint if we don't have one
+                if (!hasAlternateWaypoint && Time.time - lastPathRecalcTime > pathRecalculationInterval)
+                {
+                    Vector3 alternatePos;
+                    if (FindAlternateWaypoint(out alternatePos))
+                    {
+                        alternateWaypoint = alternatePos;
+                        hasAlternateWaypoint = true;
+                        alternateWaypointTimeout = 3f; // Try for max 3 seconds
+                        agent.ResetPath();
+                        agent.SetDestination(alternateWaypoint);
+                        lastPathRecalcTime = Time.time;
+                        
+                        if (debugLog)
+                            Debug.Log($"[{GetType().Name}] Found alternate waypoint");
+                        return;
+                    }
+                }
+                
+                // Fallback: try direct path anyway (NavMesh might find a way)
+                agent.SetDestination(target.position);
+            }
+        }
+        
+        /// <summary>
+        /// Finds an alternate waypoint to navigate around an obstacle.
+        /// Uses actual NavMesh path length for accurate scoring.
+        /// Remembers and re-evaluates successful routes.
+        /// </summary>
+        protected virtual bool FindAlternateWaypoint(out Vector3 waypoint)
+        {
+            waypoint = Vector3.zero;
+            
+            Vector3 toTarget = target.position - transform.position;
+            toTarget.y = 0;
+            float directDistToTarget = toTarget.magnitude;
+            
+            if (directDistToTarget < 0.5f)
+                return false; // Too close, no need for alternate
+            
+            Vector3 dirToTarget = toTarget.normalized;
+            
+            // Clean up old route memories
+            CleanRouteMemory();
+            
+            float bestScore = float.MaxValue; // Lower is better (shortest path)
+            Vector3 bestWaypoint = Vector3.zero;
+            bool foundAny = false;
+            
+            // === PHASE 1: Evaluate new waypoint candidates ===
+            float[] searchAngles = { 90f, -90f, 70f, -70f, 110f, -110f, 50f, -50f, 130f, -130f, 45f, -45f };
+            
+            for (int i = 0; i < Mathf.Min(searchAngles.Length, obstacleAvoidanceRays); i++)
+            {
+                float angle = searchAngles[i];
+                
+                Quaternion rotation = Quaternion.AngleAxis(angle, Vector3.up);
+                Vector3 searchDir = rotation * dirToTarget;
+                Vector3 candidatePos = transform.position + searchDir * obstacleAvoidanceDistance;
+                
+                float score;
+                if (EvaluateWaypoint(candidatePos, out score))
+                {
+                    if (score < bestScore)
+                    {
+                        bestScore = score;
+                        bestWaypoint = candidatePos;
+                        foundAny = true;
+                        
+                        if (debugLog)
+                            Debug.Log($"[{GetType().Name}] New waypoint at angle {angle}, total path: {score:F1} units");
+                    }
+                }
+            }
+            
+            // === PHASE 2: Re-evaluate remembered successful routes ===
+            for (int i = 0; i < routeMemory.Count; i++)
+            {
+                RememberedRoute route = routeMemory[i];
+                
+                // Only re-evaluate routes that were successful before
+                if (!route.wasSuccessful) continue;
+                
+                float score;
+                if (EvaluateWaypoint(route.waypoint, out score))
+                {
+                    // Successful routes get a small bonus (slightly lower score = preferred)
+                    score *= 0.9f;
+                    
+                    if (score < bestScore)
+                    {
+                        bestScore = score;
+                        bestWaypoint = route.waypoint;
+                        foundAny = true;
+                        
+                        if (debugLog)
+                            Debug.Log($"[{GetType().Name}] Remembered route still good, total path: {score:F1} units");
+                    }
+                }
+            }
+            
+            if (foundAny)
+            {
+                waypoint = bestWaypoint;
+                
+                // Remember this route
+                RememberRoute(bestWaypoint, bestScore);
+                
+                return true;
+            }
+            
+            return false;
+        }
+        
+        /// <summary>
+        /// Evaluates a waypoint and returns a score based on total path length to reach player.
+        /// Lower score = better (shorter total path).
+        /// </summary>
+        protected virtual bool EvaluateWaypoint(Vector3 candidatePos, out float score)
+        {
+            score = float.MaxValue;
+            
+            // Sample valid NavMesh position
+            NavMeshHit sampleHit;
+            if (!NavMesh.SamplePosition(candidatePos, out sampleHit, obstacleAvoidanceDistance * 0.5f, NavMesh.AllAreas))
+                return false;
+            
+            Vector3 waypointPos = sampleHit.position;
+            
+            // CHECK 1: Is there a physical obstacle between us and the waypoint?
+            Vector3 rayOrigin = transform.position + Vector3.up * raycastHeight;
+            Vector3 toWaypoint = waypointPos - transform.position;
+            float distToWaypoint = toWaypoint.magnitude;
+            
+            RaycastHit physicsHit;
+            bool pathBlocked = Physics.Raycast(rayOrigin, toWaypoint.normalized, out physicsHit, 
+                distToWaypoint, obstacleLayerMask, QueryTriggerInteraction.Ignore);
+            
+            if (pathBlocked)
+                return false;
+            
+            // CHECK 2: Can NavMesh path to waypoint?
+            NavMeshPath pathToWaypoint = new NavMeshPath();
+            if (!agent.CalculatePath(waypointPos, pathToWaypoint) || 
+                pathToWaypoint.status != NavMeshPathStatus.PathComplete)
+                return false;
+            
+            // CHECK 3: Can NavMesh path from waypoint to target?
+            NavMeshPath pathToTarget = new NavMeshPath();
+            if (!NavMesh.CalculatePath(waypointPos, target.position, NavMesh.AllAreas, pathToTarget) ||
+                pathToTarget.status != NavMeshPathStatus.PathComplete)
+                return false;
+            
+            // Calculate actual path lengths
+            float pathLengthToWaypoint = CalculatePathLength(pathToWaypoint);
+            float pathLengthToTarget = CalculatePathLength(pathToTarget);
+            
+            // Total travel distance = path to waypoint + path from waypoint to target
+            float totalPathLength = pathLengthToWaypoint + pathLengthToTarget;
+            
+            // Penalty for paths that are much longer than direct distance
+            float directDist = Vector3.Distance(transform.position, target.position);
+            float efficiencyPenalty = (totalPathLength / directDist) - 1f; // 0 = perfect, higher = worse
+            
+            // Final score: total path length + efficiency penalty
+            score = totalPathLength + (efficiencyPenalty * 2f);
+            
+            return true;
+        }
+        
+        /// <summary>
+        /// Calculates the actual length of a NavMesh path by summing corner distances.
+        /// </summary>
+        protected float CalculatePathLength(NavMeshPath path)
+        {
+            if (path.corners.Length < 2)
+                return 0f;
+            
+            float length = 0f;
+            for (int i = 0; i < path.corners.Length - 1; i++)
+            {
+                length += Vector3.Distance(path.corners[i], path.corners[i + 1]);
+            }
+            return length;
+        }
+        
+        /// <summary>
+        /// Remembers a route for future re-evaluation.
+        /// </summary>
+        protected void RememberRoute(Vector3 waypointPos, float score)
+        {
+            // Check if we already have this waypoint
+            for (int i = 0; i < routeMemory.Count; i++)
+            {
+                if (Vector3.Distance(routeMemory[i].waypoint, waypointPos) < 1f)
+                {
+                    // Update existing entry
+                    RememberedRoute updated = routeMemory[i];
+                    updated.lastScore = score;
+                    updated.timestamp = Time.time;
+                    routeMemory[i] = updated;
+                    return;
+                }
+            }
+            
+            // Add new entry
+            if (routeMemory.Count >= MAX_REMEMBERED_ROUTES)
+            {
+                // Remove oldest
+                routeMemory.RemoveAt(0);
+            }
+            
+            routeMemory.Add(new RememberedRoute
+            {
+                waypoint = waypointPos,
+                lastScore = score,
+                timestamp = Time.time,
+                wasSuccessful = false // Will be marked true when we reach it
+            });
+        }
+        
+        /// <summary>
+        /// Marks the current waypoint as successfully reached.
+        /// </summary>
+        protected void MarkRouteSuccessful()
+        {
+            for (int i = 0; i < routeMemory.Count; i++)
+            {
+                if (Vector3.Distance(routeMemory[i].waypoint, alternateWaypoint) < 1.5f)
+                {
+                    RememberedRoute updated = routeMemory[i];
+                    updated.wasSuccessful = true;
+                    routeMemory[i] = updated;
+                    
+                    if (debugLog)
+                        Debug.Log($"[{GetType().Name}] Marked route as successful");
+                    return;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Removes old routes from memory.
+        /// </summary>
+        protected void CleanRouteMemory()
+        {
+            for (int i = routeMemory.Count - 1; i >= 0; i--)
+            {
+                if (Time.time - routeMemory[i].timestamp > ROUTE_MEMORY_DURATION)
+                {
+                    routeMemory.RemoveAt(i);
+                }
             }
         }
 
@@ -273,6 +666,14 @@ namespace EnemyAI
             {
                 Gizmos.color = Color.green;
                 Gizmos.DrawLine(transform.position + Vector3.up, target.position + Vector3.up);
+            }
+            
+            // Show alternate waypoint if active
+            if (hasAlternateWaypoint)
+            {
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawWireSphere(alternateWaypoint, 0.5f);
+                Gizmos.DrawLine(transform.position + Vector3.up * 0.5f, alternateWaypoint + Vector3.up * 0.5f);
             }
         }
 

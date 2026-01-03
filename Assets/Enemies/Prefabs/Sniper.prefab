@@ -45,7 +45,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 436750832329653349}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 0.05
+  m_Radius: 0.15
   m_Speed: 0.4
   m_Acceleration: 1
   avoidancePriority: 50
@@ -77,6 +77,13 @@ MonoBehaviour:
   stoppingDistanceMultiplier: 0.2
   agentRadius: 0.25
   agentAcceleration: 0.2
+  pathRecalculationInterval: 0.5
+  enableObstacleRaycast: 1
+  obstacleAvoidanceDistance: 3
+  obstacleAvoidanceRays: 8
+  obstacleLayerMask:
+    serializedVersion: 2
+    m_Bits: 256
   attacksPerSecond: 0.5
   attackPauseDuration: 0.5
   enableContactDamage: 1
@@ -117,6 +124,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
   maxHealth: 150
+  xpReward: 10
   modelTransform: {fileID: 7900245869590481414}
   currentHealth: 0
   HealthBarPoint: {fileID: 0}

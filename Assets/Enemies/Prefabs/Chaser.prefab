@@ -44,7 +44,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 7767272942612385543}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 0.05
+  m_Radius: 0.15
   m_Speed: 0.2
   m_Acceleration: 1
   avoidancePriority: 50
@@ -71,11 +71,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI.ChaserAI
   target: {fileID: 0}
   modelTransform: {fileID: 2204907571803602135}
-  moveSpeed: 0.5
+  moveSpeed: 0.2
   attackRange: 0.2
   stoppingDistanceMultiplier: 0.2
   agentRadius: 0.25
   agentAcceleration: 1
+  pathRecalculationInterval: 0.5
+  enableObstacleRaycast: 1
+  obstacleAvoidanceDistance: 3
+  obstacleAvoidanceRays: 8
+  obstacleLayerMask:
+    serializedVersion: 2
+    m_Bits: 256
   attacksPerSecond: 1
   attackPauseDuration: 0.2
   enableContactDamage: 1
@@ -104,6 +111,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
   maxHealth: 100
+  xpReward: 10
   modelTransform: {fileID: 2204907571803602135}
   currentHealth: 0
   HealthBarPoint: {fileID: 0}

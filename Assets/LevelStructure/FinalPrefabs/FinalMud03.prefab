@@ -158,7 +158,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1064877440553196682, guid: 6f2c34f55fe806a428b0218047d0b8b1, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 20
+      value: 14.77612
       objectReference: {fileID: 0}
     - target: {fileID: 1064877440553196682, guid: 6f2c34f55fe806a428b0218047d0b8b1, type: 3}
       propertyPath: m_LocalPosition.y
@@ -166,7 +166,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1064877440553196682, guid: 6f2c34f55fe806a428b0218047d0b8b1, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 41
+      value: 7.8919983
       objectReference: {fileID: 0}
     - target: {fileID: 1064877440553196682, guid: 6f2c34f55fe806a428b0218047d0b8b1, type: 3}
       propertyPath: m_LocalRotation.w
@@ -174,15 +174,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1064877440553196682, guid: 6f2c34f55fe806a428b0218047d0b8b1, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 1064877440553196682, guid: 6f2c34f55fe806a428b0218047d0b8b1, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 1064877440553196682, guid: 6f2c34f55fe806a428b0218047d0b8b1, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 1064877440553196682, guid: 6f2c34f55fe806a428b0218047d0b8b1, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -860,6 +860,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1121669526297053257}
     m_Modifications:
+    - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
+      propertyPath: activationDistance
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
       propertyPath: spawnPoints.Array.size
       value: 5

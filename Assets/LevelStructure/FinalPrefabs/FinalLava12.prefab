@@ -863,7 +863,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7554273722631316909, guid: 85da7cfe1266f464aa11133bbd1eed64, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 20
+      value: 14.77612
       objectReference: {fileID: 0}
     - target: {fileID: 7554273722631316909, guid: 85da7cfe1266f464aa11133bbd1eed64, type: 3}
       propertyPath: m_LocalPosition.y
@@ -871,7 +871,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7554273722631316909, guid: 85da7cfe1266f464aa11133bbd1eed64, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 229
+      value: 195.892
       objectReference: {fileID: 0}
     - target: {fileID: 7554273722631316909, guid: 85da7cfe1266f464aa11133bbd1eed64, type: 3}
       propertyPath: m_LocalRotation.w
@@ -879,15 +879,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7554273722631316909, guid: 85da7cfe1266f464aa11133bbd1eed64, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 7554273722631316909, guid: 85da7cfe1266f464aa11133bbd1eed64, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 7554273722631316909, guid: 85da7cfe1266f464aa11133bbd1eed64, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 7554273722631316909, guid: 85da7cfe1266f464aa11133bbd1eed64, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -1009,7 +1009,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 1
   m_VoxelSize: 0.065
   m_MinRegionArea: 0.1
-  m_NavMeshData: {fileID: 23800000, guid: 6206de2e1811ef9478bbd536b66b39bc, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: 5e248e15c1138604a9d6e8ee7add340f, type: 2}
   m_BuildHeightMesh: 0
 --- !u!1001 &6897462646803467045
 PrefabInstance:
@@ -1096,6 +1096,10 @@ PrefabInstance:
     - target: {fileID: 1809750373779811727, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
       propertyPath: m_LocalPosition.z
       value: 4.82
+      objectReference: {fileID: 0}
+    - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
+      propertyPath: activationDistance
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
       propertyPath: spawnPoints.Array.size

@@ -63,6 +63,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private Renderer[] renderers;
     private Color[] originalEmissionColors;
     private bool[] hadEmissionEnabled;
+    private bool hasHitTrigger = false;
 
     public bool IsInvulnerable => isInvulnerable;
     public bool IsDead => isDead;
@@ -116,6 +117,19 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
 
         NotifyHealthChanged();
+        
+        // Check if animator has hit trigger parameter (to avoid warning spam)
+        if (animator != null && !string.IsNullOrEmpty(hitTrigger))
+        {
+            foreach (var param in animator.parameters)
+            {
+                if (param.name == hitTrigger && param.type == AnimatorControllerParameterType.Trigger)
+                {
+                    hasHitTrigger = true;
+                    break;
+                }
+            }
+        }
     }
 
     private void LateUpdate()
@@ -172,7 +186,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             hitFlashCoroutine = StartCoroutine(HitFlashRoutine());
         }
 
-        if (animator != null && !string.IsNullOrEmpty(hitTrigger))
+        // Only trigger animation if parameter exists (checked at Start)
+        if (hasHitTrigger)
             animator.SetTrigger(hitTrigger);
 
         OnDamage?.Invoke(damage);

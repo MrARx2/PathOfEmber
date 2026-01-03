@@ -170,22 +170,16 @@ public class ArrowProjectile : MonoBehaviour
                 if (bounceCount < maxBounces)
                 {
                     // Hit a wall! Bounce!
-                    Debug.Log($"[ArrowProjectile] Wall detected! Bouncing off {hit.collider.name} ({bounceCount + 1}/{maxBounces})");
                     HandleBounce(hit);
                     return; // Skip normal movement this frame
                 }
                 else
                 {
                     // Max bounces reached - destroy on wall hit
-                    Debug.Log($"[ArrowProjectile] Max bounces reached. Destroyed on wall {hit.collider.name}");
                     GracefulDestroy();
                     return;
                 }
             }
-        }
-        else if (hasBouncing && wallLayers == 0)
-        {
-            Debug.LogWarning("[ArrowProjectile] Bouncing enabled but wallLayers is EMPTY! Set Wall Layers on Arrow prefab.");
         }
         
         // Normal movement
@@ -213,8 +207,6 @@ public class ArrowProjectile : MonoBehaviour
         
         // Move to hit point + small offset in reflected direction
         transform.position = hit.point + newDir * 0.1f;
-        
-        Debug.Log($"[ArrowProjectile] Bounced off {hit.collider.name} ({bounceCount}/{maxBounces})");
     }
 
     private void OnTriggerEnter(Collider other)
@@ -246,13 +238,11 @@ public class ArrowProjectile : MonoBehaviour
             }
             
             OnHitDamageable?.Invoke(damage);
-            Debug.Log($"Arrow hit {other.name} for {damage} damage");
 
             // Apply Freeze Effect (reuse enemyHealth from above)
             if (hasFreezeEffect && enemyHealth != null)
             {
                 enemyHealth.ApplyFreeze(freezeDuration);
-                Debug.Log($"Arrow applied freeze ({freezeDuration}s) to {other.name}");
             }
 
             // Apply Venom Effect (DoT)
@@ -260,7 +250,6 @@ public class ArrowProjectile : MonoBehaviour
             {
                 int totalTicks = Mathf.RoundToInt(venomDuration);
                 enemyHealth.ApplyDamageOverTime(venomDamagePerSecond, 1f, totalTicks);
-                Debug.Log($"Arrow applied venom ({venomDamagePerSecond} dmg/s for {venomDuration}s) to {other.name}");
             }
             
             // Only destroy if not piercing

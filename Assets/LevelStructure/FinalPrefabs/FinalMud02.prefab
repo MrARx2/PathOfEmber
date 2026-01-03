@@ -415,7 +415,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1224119571745376902, guid: aa9d48d1898fef5439534312a06c825c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 20
+      value: 14.77612
       objectReference: {fileID: 0}
     - target: {fileID: 1224119571745376902, guid: aa9d48d1898fef5439534312a06c825c, type: 3}
       propertyPath: m_LocalPosition.y
@@ -423,7 +423,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1224119571745376902, guid: aa9d48d1898fef5439534312a06c825c, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 20.5
+      value: -12.608002
       objectReference: {fileID: 0}
     - target: {fileID: 1224119571745376902, guid: aa9d48d1898fef5439534312a06c825c, type: 3}
       propertyPath: m_LocalRotation.w
@@ -431,15 +431,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1224119571745376902, guid: aa9d48d1898fef5439534312a06c825c, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 1224119571745376902, guid: aa9d48d1898fef5439534312a06c825c, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 1224119571745376902, guid: aa9d48d1898fef5439534312a06c825c, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 1224119571745376902, guid: aa9d48d1898fef5439534312a06c825c, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -568,7 +568,7 @@ MonoBehaviour:
   m_Center: {x: 0, y: 0, z: 0}
   m_LayerMask:
     serializedVersion: 2
-    m_Bits: 128
+    m_Bits: 384
   m_UseGeometry: 0
   m_DefaultArea: 0
   m_GenerateLinks: 1
@@ -579,7 +579,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 0.1
-  m_NavMeshData: {fileID: 23800000, guid: eed6f6bd9277cca44ac728b0e1c18888, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: b47f0cd0fe0aca74eaaebc8da8f483b6, type: 2}
   m_BuildHeightMesh: 0
 --- !u!4 &8916694193922057386 stripped
 Transform:
@@ -595,7 +595,15 @@ PrefabInstance:
     m_TransformParent: {fileID: 8916694193922057386}
     m_Modifications:
     - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
+      propertyPath: activationDistance
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
       propertyPath: spawnPoints.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}
+      propertyPath: enemyPrefabs.Array.size
       value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5050420129043895072, guid: 26309761f59c03e49bf79eabad4cfe11, type: 3}

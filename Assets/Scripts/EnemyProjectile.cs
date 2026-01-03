@@ -277,18 +277,11 @@ public class EnemyProjectile : MonoBehaviour
             RaycastHit hit;
             if (Physics.SphereCast(transform.position, 0.1f, moveDir, out hit, lookAhead, wallLayers, QueryTriggerInteraction.Ignore))
             {
-                // Hit a wall! Spawn explosion VFX and destroy instantly (no fade)
-                Debug.Log($"[EnemyProjectile] Hit wall '{hit.collider.name}' at {hit.point}");
-                
+                // Hit a wall! Spawn explosion VFX and destroy instantly
                 if (wallHitVFXPrefab != null)
                 {
                     GameObject vfx = Instantiate(wallHitVFXPrefab, hit.point, Quaternion.identity);
                     Destroy(vfx, wallHitVFXDuration);
-                    Debug.Log($"[EnemyProjectile] Spawned wall hit VFX at {hit.point}");
-                }
-                else
-                {
-                    Debug.LogWarning("[EnemyProjectile] Wall hit but wallHitVFXPrefab is not assigned!");
                 }
                 
                 Destroy(gameObject);

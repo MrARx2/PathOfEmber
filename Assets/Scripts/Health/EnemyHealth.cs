@@ -373,7 +373,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         // Apply venom tint
         isVenomed = true;
         ApplyTint(venomTintColor);
-        Debug.Log($"[EnemyHealth] {gameObject.name} venom tint applied");
 
         for (int i = 0; i < totalTicks; i++)
         {
@@ -398,7 +397,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         {
             ApplyTint(freezeTintColor); // Restore freeze tint
         }
-        Debug.Log($"[EnemyHealth] {gameObject.name} venom effect ended");
         dotCoroutine = null;
     }
 
@@ -412,7 +410,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         if (isFrozen) return;
         if (freezeImmunityTimer > 0f)
         {
-            Debug.Log($"[EnemyHealth] {gameObject.name} is immune to freeze for {freezeImmunityTimer:F1}s");
             return;
         }
 
@@ -427,7 +424,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         // Apply freeze tint
         ApplyTint(freezeTintColor);
-        Debug.Log($"[EnemyHealth] {gameObject.name} freeze tint applied");
 
         // Stop animator
         float originalSpeed = 1f;
@@ -444,8 +440,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             wasEnabled = navAgent.enabled;
             navAgent.isStopped = true;
         }
-
-        Debug.Log($"[EnemyHealth] {gameObject.name} frozen for {duration}s");
 
         yield return new WaitForSeconds(duration);
 
@@ -474,8 +468,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         {
             ClearTint();
         }
-
-        Debug.Log($"[EnemyHealth] {gameObject.name} unfrozen, immune for {freezeImmunityDuration}s");
     }
 
     private void Die()
@@ -502,13 +494,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         if (XPSystem.Instance != null && xpReward > 0)
         {
             XPSystem.Instance.AddXP(xpReward);
-            Debug.Log($"[EnemyHealth] {gameObject.name} granted {xpReward} XP to player.");
         }
         
         // Invoke death event (for external listeners like HealthBarManager)
         OnDeath?.Invoke();
-        
-        Debug.Log($"[EnemyHealth] {gameObject.name} died.");
         
         // Spawn death VFX if assigned
         if (deathVFXPrefab != null)

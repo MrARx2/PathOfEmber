@@ -1,5 +1,54 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4400739847986780402
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 352869542701766065}
+  - component: {fileID: 7637148609549136119}
+  m_Layer: 8
+  m_Name: NavMesh Modifier Volume
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &352869542701766065
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4400739847986780402}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: 0, w: 0.000115618095}
+  m_LocalPosition: {x: 0, y: -2.24, z: -0.09}
+  m_LocalScale: {x: 0.31938997, y: 2.711067, z: 2.5681713}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8984555623327054125}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7637148609549136119
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4400739847986780402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35e95dc5ff2b64380880dd7ac5922847, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifierVolume
+  m_SerializedVersion: 0
+  m_Size: {x: 4, y: 1, z: 4}
+  m_Center: {x: 0, y: 1, z: 0}
+  m_Area: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &8720040511559690346
 GameObject:
   m_ObjectHideFlags: 0
@@ -153,17 +202,23 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3853614963470936188}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 352869542701766065}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 2453557696411160144}
+      addedObject: {fileID: 7933083765815749358}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -4787825859187840058}
   m_SourcePrefab: {fileID: 100100000, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
 --- !u!1 &8639132309101339543 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}
   m_PrefabInstance: {fileID: 8873556647685447366}
   m_PrefabAsset: {fileID: 0}
---- !u!208 &2453557696411160144
+--- !u!208 &7933083765815749358
 NavMeshObstacle:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -173,12 +228,32 @@ NavMeshObstacle:
   m_Enabled: 1
   serializedVersion: 3
   m_Shape: 1
-  m_Extents: {x: 0.5, y: 0.75, z: 5}
+  m_Extents: {x: 0.5, y: 1, z: 5}
   m_MoveThreshold: 0.1
   m_Carve: 0
   m_CarveOnlyStationary: 1
-  m_Center: {x: 0, y: 0.5, z: 0}
+  m_Center: {x: 0, y: 0, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &-4787825859187840058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8639132309101339543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 1
+  m_Area: 1
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 0
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!4 &8984555623327054125 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: a7edd4919ba8ae84f8e9c167c43b733b, type: 3}

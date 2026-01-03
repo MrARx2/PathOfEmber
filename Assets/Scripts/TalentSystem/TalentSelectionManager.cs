@@ -36,13 +36,13 @@ public class TalentSelectionManager : MonoBehaviour
     {
         // Auto-find references if not set
         if (xpSystem == null)
-            xpSystem = FindObjectOfType<XPSystem>();
+            xpSystem = FindFirstObjectByType<XPSystem>();
         
         if (prayerWheelUI == null)
-            prayerWheelUI = FindObjectOfType<PrayerWheelUI>();
+            prayerWheelUI = FindFirstObjectByType<PrayerWheelUI>();
         
         if (prayerWheelController == null)
-            prayerWheelController = FindObjectOfType<PrayerWheelController>();
+            prayerWheelController = FindFirstObjectByType<PrayerWheelController>();
 
         if (autoFindPlayer && playerAbilities == null)
         {

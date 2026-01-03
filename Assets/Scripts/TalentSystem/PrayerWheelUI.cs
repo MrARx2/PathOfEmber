@@ -71,7 +71,7 @@ public class PrayerWheelUI : MonoBehaviour
         if (legendaryButtonRight) legendaryButtonRight.onClick.AddListener(() => SelectTalent(currentTalent2));
 
         // Find wheel controller
-        wheelController = FindObjectOfType<PrayerWheelController>();
+        wheelController = FindFirstObjectByType<PrayerWheelController>();
         if (wheelController != null)
         {
             wheelController.OnSpinComplete += OnSpinComplete;
@@ -80,7 +80,7 @@ public class PrayerWheelUI : MonoBehaviour
         // Find camera setup if not assigned
         if (cameraSetup == null)
         {
-            cameraSetup = FindObjectOfType<PrayerWheelCameraSetup>();
+            cameraSetup = FindFirstObjectByType<PrayerWheelCameraSetup>();
         }
 
         // Hide panels initially
