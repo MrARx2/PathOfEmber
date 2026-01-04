@@ -50,11 +50,16 @@ public class EnemyProjectile : MonoBehaviour
     [SerializeField, Tooltip("Trail width at head")]
     private float trailStartWidth = 0.3f;
 
-    [Header("Collision Layers")]
     [SerializeField, Tooltip("Layers that trigger the projectile impact")] 
     private LayerMask hitLayers;
     [SerializeField, Tooltip("Layers that block the projectile (walls)")] 
     private LayerMask wallLayers;
+
+    [Header("Wall Bounce Settings")]
+    [SerializeField, Tooltip("Maximum number of wall bounces (0 = no bounce, destroy on hit)")]
+    private int maxBounces = 0;
+    private int currentBounces = 0;
+    private bool bounceEnabled = false;
 
     [Header("Performance")]
     [SerializeField, Tooltip("Disable shadows on all child renderers for better performance")]
@@ -263,6 +268,17 @@ public class EnemyProjectile : MonoBehaviour
             lifeTimer = lifetime;
         }
     }
+    
+    /// <summary>
+    /// Enables wall bouncing for this projectile.
+    /// </summary>
+    /// <param name="bounces">Number of times the projectile can bounce off walls.</param>
+    public void EnableBounce(int bounces)
+    {
+        bounceEnabled = true;
+        maxBounces = bounces;
+        currentBounces = 0;
+    }
 
     private void Update()
     {
@@ -277,7 +293,23 @@ public class EnemyProjectile : MonoBehaviour
             RaycastHit hit;
             if (Physics.SphereCast(transform.position, 0.1f, moveDir, out hit, lookAhead, wallLayers, QueryTriggerInteraction.Ignore))
             {
-                // Hit a wall! Spawn explosion VFX and destroy instantly
+                // Check if we can bounce
+                if (bounceEnabled && currentBounces < maxBounces)
+                {
+                    // Reflect direction off the wall surface
+                    Vector3 reflectDir = Vector3.Reflect(moveDir, hit.normal);
+                    reflectDir.y = 0; // Keep horizontal
+                    reflectDir.Normalize();
+                    
+                    SetDirection(reflectDir);
+                    currentBounces++;
+                    
+                    // Move slightly away from wall to prevent double-bounce
+                    transform.position = hit.point + hit.normal * 0.2f;
+                    return;
+                }
+                
+                // No more bounces - spawn explosion VFX and destroy
                 if (wallHitVFXPrefab != null)
                 {
                     GameObject vfx = Instantiate(wallHitVFXPrefab, hit.point, Quaternion.identity);

@@ -20,7 +20,8 @@ namespace EnemyAI
             Repositioning,  // Moving away/sideways for better position
             Aiming,         // Showing aim line, preparing to fire
             Shooting,       // Firing fireball
-            CastingMeteor   // Spawning meteor strike
+            CastingMeteor,  // Spawning meteor strike
+            RageMode        // Charging and firing 360° burst
         }
         
         #endregion
@@ -61,14 +62,50 @@ namespace EnemyAI
         [SerializeField] private float aimLineLength = 25f;
         [SerializeField] private float aimDuration = 1f;
         
-        [Header("=== ANIMATION TRIGGERS ===")]
-        [SerializeField] private string fireballTrigger = "Shoot_FireBall";
-        [SerializeField] private string meteorTrigger = "Summon_Meteor";
+        [Header("=== ANIMATION BOOLEANS ===")]
+        [SerializeField] private string fireballBool = "Shoot_FireBall";
+        [SerializeField] private string meteorBool = "Summon_Meteor";
         [SerializeField] private string walkBool = "Walk";
+        [SerializeField] private float attackAnimationDuration = 0.5f;
         
         [Header("=== REPOSITIONING ===")]
         [SerializeField] private float repositionDistance = 4f;
         [SerializeField] private float repositionTimeout = 2f;
+        
+        [Header("=== RAGE MODE ===")]
+        [SerializeField, Tooltip("Enable rage mode at HP thresholds")]
+        private bool enableRageMode = true;
+        [SerializeField, Tooltip("First rage trigger (0.8 = 80% HP)")]
+        [Range(0f, 1f)]
+        private float rageThreshold1 = 0.8f;
+        [SerializeField, Tooltip("Second rage trigger (0.4 = 40% HP)")]
+        [Range(0f, 1f)]
+        private float rageThreshold2 = 0.4f;
+        [SerializeField, Tooltip("Number of fireballs in 360° burst")]
+        private int rageFireballCount = 12;
+        [SerializeField, Tooltip("Speed of rage mode fireballs (slower = easier to dodge)")]
+        private float rageFireballSpeed = 5f;
+        [SerializeField, Tooltip("Number of wall bounces for rage fireballs")]
+        private int rageFireballBounces = 1;
+        [SerializeField, Tooltip("Duration of charge animation (invulnerable during this)")]
+        private float rageChargeDuration = 2f;
+        [SerializeField, Tooltip("Optional VFX for invulnerability shield")]
+        private GameObject rageShieldVFX;
+        [SerializeField, Tooltip("Prefab for bouncing fireballs (uses regular if not set)")]
+        private GameObject bouncingFireballPrefab;
+        [SerializeField, Tooltip("Animation bool for rage mode")]
+        private string rageModeBool = "RageMode_Charge";
+        
+        [Header("=== BEHAVIOR TUNING ===")]
+        [SerializeField, Tooltip("Force reposition after this many consecutive attacks")]
+        private int attacksBeforeReposition = 3;
+        [SerializeField, Tooltip("Chance to reposition after each attack (0.3 = 30%)")]
+        [Range(0f, 1f)]
+        private float repositionChanceAfterAttack = 0.3f;
+        [SerializeField, Tooltip("Circle-strafe distance from player")]
+        private float circleStrafeRadius = 8f;
+        [SerializeField, Tooltip("Circle-strafe arc angle")]
+        private float circleStrafeAngle = 45f;
         
         #endregion
         
@@ -80,12 +117,31 @@ namespace EnemyAI
         private float stateTimer;
         private float actionPauseTimer;
         
+        // Animation tracking - these track the actual animator bool states
+        private bool isFireballActive = false;
+        private bool isMeteorActive = false;
+        
+        // Animation event flags - set by animation events to signal when to spawn/end
+        private bool pendingAimStart = false;
+        private bool pendingFireballSpawn = false;
+        private bool pendingMeteorSpawn = false;
+        private bool attackAnimationEnded = false;
+        
         // Aim line
         private LineRenderer aimLine;
         private Coroutine aimCoroutine;
         
         // Repositioning
         private Vector3 repositionTarget;
+        
+        // Rage mode tracking
+        private bool ragePhase1Triggered = false;
+        private bool ragePhase2Triggered = false;
+        private int consecutiveAttackCount = 0;
+        private bool isRageModeActive = false;
+        private bool pendingRageFire = false;
+        private bool rageAnimationEnded = false;
+        private GameObject activeShieldVFX;
         
         #endregion
         
@@ -174,6 +230,13 @@ namespace EnemyAI
         {
             float distance = Vector3.Distance(VisualPosition, target.position);
             
+            // Check for rage mode trigger (HP thresholds)
+            if (CheckRageModeThreshold())
+            {
+                StartRageMode();
+                return;
+            }
+            
             // Check if in combat range
             if (distance <= preferredRange + 2f)
             {
@@ -225,19 +288,15 @@ namespace EnemyAI
         {
             bool hasLOS = HasLineOfSightToPlayer();
             
-            // === BOSS COMBAT AI - AGGRESSIVE, HOLDS POSITION ===
+            // === BOSS COMBAT AI - SHOOT FIRST, THINK LATER ===
             
-            // Check if too close - OCCASIONALLY reposition (not always!)
-            if (distance < minRange)
+            // PRIORITY 0: Force reposition after consecutive attacks
+            if (consecutiveAttackCount >= attacksBeforeReposition)
             {
-                // Only reposition sometimes - boss is willing to fight up close
-                if (Random.value < repositionChance)
-                {
-                    if (debugLog) Debug.Log($"[MinibossAI] Too close ({distance:F1}), backing up!");
-                    StartRepositioning();
-                    return;
-                }
-                // Otherwise, keep fighting!
+                if (debugLog) Debug.Log($"[MinibossAI] Forced reposition after {consecutiveAttackCount} attacks");
+                consecutiveAttackCount = 0;
+                StartCircleStrafe(); // Use circle strafe for variety
+                return;
             }
             
             // PRIORITY 1: Attack based on line of sight
@@ -246,7 +305,7 @@ namespace EnemyAI
                 // CAN SEE PLAYER → Use Fireball (direct attack)
                 if (fireballCooldownTimer <= 0 && fireballPrefab != null)
                 {
-                    if (debugLog) Debug.Log("[MinibossAI] Has LOS - Fireball attack!");
+                    if (debugLog) Debug.Log("[MinibossAI] ==> DECISION: Has LOS, cooldown ready - Fireball!");
                     StartFireballAttack();
                     return;
                 }
@@ -278,19 +337,35 @@ namespace EnemyAI
                 }
             }
             
-            // PRIORITY 2: Both attacks on cooldown - hold position or roam
-            if (Random.value < roamChance)
+            // Check if too close - occasionally reposition
+            if (distance < minRange && Random.value < repositionChance)
             {
-                // Occasionally roam to utilize the arena
-                if (debugLog) Debug.Log("[MinibossAI] Roaming to new position");
+                if (debugLog) Debug.Log($"[MinibossAI] Too close ({distance:F1}), backing up!");
+                StartRepositioning();
+                return;
+            }
+            
+            // PRIORITY 2: Both attacks on cooldown - circle-strafe to stay active
+            // Don't just stand still - keep moving to feel more dynamic
+            StartCircleStrafe();
+        }
+        
+        /// <summary>
+        /// Called after each attack completes to handle attack rhythm.
+        /// 70% continue attacking, 30% reposition.
+        /// </summary>
+        private void OnAttackComplete()
+        {
+            consecutiveAttackCount++;
+            
+            // 30% chance to reposition after attack (unless forced by counter)
+            if (consecutiveAttackCount < attacksBeforeReposition && 
+                Random.value < repositionChanceAfterAttack)
+            {
+                if (debugLog) Debug.Log("[MinibossAI] Post-attack reposition (30% chance)");
                 StartRepositioning();
             }
-            else
-            {
-                // DEFAULT: Stand and face the player, wait for cooldowns
-                StopMovement();
-                LookAtTarget();
-            }
+            // Otherwise, continue to next attack (70% chance - handled by returning to Chasing)
         }
         
         private bool HasLineOfSightToPlayer()
@@ -338,6 +413,7 @@ namespace EnemyAI
                 case MinibossState.Aiming:
                 case MinibossState.Shooting:
                 case MinibossState.CastingMeteor:
+                case MinibossState.RageMode:
                     StopMovement();
                     break;
             }
@@ -349,54 +425,117 @@ namespace EnemyAI
         
         private void StartFireballAttack()
         {
+            Debug.Log("[MinibossAI] ==> StartFireballAttack() called!");
             SwitchState(MinibossState.Aiming);
             StartCoroutine(FireballAttackRoutine());
         }
         
         private IEnumerator FireballAttackRoutine()
         {
+            Debug.Log("[MinibossAI] ==> FireballAttackRoutine() STARTED");
+            
             // Stop and face player
             StopMovement();
             LookAtTarget();
             
-            // Show aim line
-            ShowAimLine();
+            // Reset event flags
+            pendingAimStart = false;
+            pendingFireballSpawn = false;
+            attackAnimationEnded = false;
             
-            // Aiming phase - wait for aim duration
-            float elapsed = 0f;
-            while (elapsed < aimDuration)
+            // Set attack animation bool - this triggers the attack animation
+            isFireballActive = true;
+            if (animator != null)
             {
-                // Check for interruption
+                animator.SetBool(fireballBool, true);
+                animator.SetBool(walkBool, false);
+            }
+            
+            // Wait for OnStartAiming event (or timeout)
+            float timeout = 3f;
+            float timer = 0f;
+            while (!pendingAimStart && timer < timeout)
+            {
                 if (health != null && (health.IsDead || health.IsFrozen))
                 {
                     HideAimLine();
+                    ResetAttackState();
                     SwitchState(MinibossState.Chasing);
                     yield break;
                 }
-                
                 LookAtTarget();
-                UpdateAimLine(elapsed / aimDuration);
-                
-                elapsed += Time.deltaTime;
+                timer += Time.deltaTime;
                 yield return null;
             }
             
-            // Fire!
+            // Show aim line (triggered by event or timeout)
+            if (pendingAimStart)
+            {
+                Debug.Log("[MinibossAI] ==> Aiming started from animation event");
+            }
+            else
+            {
+                Debug.LogWarning("[MinibossAI] ==> Aiming started via timeout - add OnStartAiming animation event!");
+            }
+            ShowAimLine();
+            
+            // Wait for OnFireFireball event (or timeout) 
+            timer = 0f;
+            while (!pendingFireballSpawn && timer < timeout)
+            {
+                if (health != null && (health.IsDead || health.IsFrozen))
+                {
+                    HideAimLine();
+                    ResetAttackState();
+                    SwitchState(MinibossState.Chasing);
+                    yield break;
+                }
+                LookAtTarget();
+                timer += Time.deltaTime;
+                yield return null;
+            }
+            
+            // Hide aim line and spawn fireball
             HideAimLine();
             SwitchState(MinibossState.Shooting);
             
-            // Trigger animation
-            if (animator != null)
-                animator.SetTrigger(fireballTrigger);
-            
-            // Spawn projectile
+            if (pendingFireballSpawn)
+            {
+                Debug.Log("[MinibossAI] ==> Fireball spawned from animation event!");
+            }
+            else
+            {
+                Debug.LogWarning("[MinibossAI] ==> Fireball spawned via timeout - add OnFireFireball animation event!");
+            }
             SpawnFireball();
             
             // Reset cooldown
             fireballCooldownTimer = fireballCooldown;
             
+            // Wait for attack animation end event (or timeout)
+            timer = 0f;
+            while (!attackAnimationEnded && timer < timeout)
+            {
+                if (health != null && (health.IsDead || health.IsFrozen))
+                {
+                    ResetAttackState();
+                    SwitchState(MinibossState.Chasing);
+                    yield break;
+                }
+                timer += Time.deltaTime;
+                yield return null;
+            }
+            
+            // Reset attack state
+            ResetAttackState();
+            
+            if (debugLog) Debug.Log("[MinibossAI] ==> Fireball attack complete");
+            
             // Brief pause after attack
-            actionPauseTimer = 0.5f;
+            actionPauseTimer = 0.3f;
+            
+            // Handle attack rhythm (70% attack, 30% reposition)
+            OnAttackComplete();
             
             // Return to chasing
             SwitchState(MinibossState.Chasing);
@@ -404,13 +543,29 @@ namespace EnemyAI
         
         private void SpawnFireball()
         {
-            if (fireballPrefab == null || target == null) return;
+            Debug.Log($"[MinibossAI] SpawnFireball() called - fireballPrefab={fireballPrefab}, target={target}, projectileSpawnPoint={projectileSpawnPoint}");
             
-            Vector3 spawnPos = projectileSpawnPoint.position;
-            Vector3 targetPos = target.position + Vector3.up * 1f;
+            if (fireballPrefab == null)
+            {
+                Debug.LogError("[MinibossAI] SpawnFireball FAILED - fireballPrefab is NULL!");
+                return;
+            }
+            if (target == null)
+            {
+                Debug.LogError("[MinibossAI] SpawnFireball FAILED - target is NULL!");
+                return;
+            }
+            
+            Vector3 spawnPos = projectileSpawnPoint != null ? projectileSpawnPoint.position : transform.position;
+            
+            // Keep trajectory flat (like Sniper does)
+            Vector3 targetPos = target.position;
+            targetPos.y = spawnPos.y;
             Vector3 direction = (targetPos - spawnPos).normalized;
             
+            Debug.Log($"[MinibossAI] Instantiating fireball at {spawnPos}, direction={direction}");
             GameObject proj = Instantiate(fireballPrefab, spawnPos, Quaternion.LookRotation(direction));
+            Debug.Log($"[MinibossAI] Fireball instantiated: {proj.name}");
             
             EnemyProjectile ep = proj.GetComponent<EnemyProjectile>();
             if (ep != null)
@@ -440,24 +595,144 @@ namespace EnemyAI
             StopMovement();
             LookAtTarget();
             
-            // Trigger animation
+            // Set attack animation bool - triggers attack animation
+            isMeteorActive = true;
+            pendingMeteorSpawn = false;
+            attackAnimationEnded = false;
+            
             if (animator != null)
-                animator.SetTrigger(meteorTrigger);
+            {
+                animator.SetBool(meteorBool, true);
+                animator.SetBool(walkBool, false);
+                if (debugLog) Debug.Log($"[MinibossAI] ANIM: Summon_Meteor=TRUE, Walk=FALSE - waiting for animation event...");
+            }
             
-            // Brief cast time
-            yield return new WaitForSeconds(0.3f);
+            // Wait for animation event to spawn meteor
+            float timeout = 3f; // Safety timeout
+            float timer = 0f;
+            while (!pendingMeteorSpawn && timer < timeout)
+            {
+                if (health != null && (health.IsDead || health.IsFrozen))
+                {
+                    ResetAttackState();
+                    SwitchState(MinibossState.Chasing);
+                    yield break;
+                }
+                LookAtTarget(); // Keep facing player during cast
+                timer += Time.deltaTime;
+                yield return null;
+            }
             
-            // Spawn meteor strike at player's current position
-            SpawnMeteor();
+            // Spawn the meteor (either from event or timeout)
+            if (pendingMeteorSpawn)
+            {
+                SpawnMeteor();
+                if (debugLog) Debug.Log($"[MinibossAI] Meteor spawned from animation event!");
+            }
+            else if (timer >= timeout)
+            {
+                SpawnMeteor();
+                if (debugLog) Debug.LogWarning($"[MinibossAI] Meteor spawned via timeout - add OnSummonMeteor animation event!");
+            }
             
             // Reset cooldown
             meteorCooldownTimer = meteorCooldown;
             
+            // Wait for attack animation end event
+            timer = 0f;
+            while (!attackAnimationEnded && timer < timeout)
+            {
+                if (health != null && (health.IsDead || health.IsFrozen))
+                {
+                    ResetAttackState();
+                    SwitchState(MinibossState.Chasing);
+                    yield break;
+                }
+                timer += Time.deltaTime;
+                yield return null;
+            }
+            
+            // Reset attack state
+            ResetAttackState();
+            
+            if (debugLog) Debug.Log($"[MinibossAI] Meteor attack complete");
+            
             // Pause after casting
-            actionPauseTimer = 1f;
+            actionPauseTimer = 0.5f;
+            
+            // Handle attack rhythm (70% attack, 30% reposition)
+            OnAttackComplete();
             
             // Return to chasing
             SwitchState(MinibossState.Chasing);
+        }
+        
+        /// <summary>
+        /// Resets all attack-related state flags and animator bools.
+        /// </summary>
+        private void ResetAttackState()
+        {
+            isFireballActive = false;
+            isMeteorActive = false;
+            pendingAimStart = false;
+            pendingFireballSpawn = false;
+            pendingMeteorSpawn = false;
+            attackAnimationEnded = false;
+            
+            if (animator != null)
+            {
+                // Reset attack bools
+                animator.SetBool(fireballBool, false);
+                animator.SetBool(meteorBool, false);
+                // Force Walk = true briefly to ensure Animator transitions out of attack state
+                animator.SetBool(walkBool, true);
+            }
+            
+            Debug.Log("[MinibossAI] ResetAttackState: All attack bools reset, Walk=true");
+        }
+        
+        #endregion
+        
+        #region Animation Event Callbacks
+        
+        /// <summary>
+        /// Called by EnemyAnimationRelay when the aiming phase should start.
+        /// This triggers showing the aim line.
+        /// </summary>
+        public void StartAimingFromEvent()
+        {
+            Debug.Log("[MinibossAI] Animation event: StartAimingFromEvent()");
+            pendingAimStart = true;
+        }
+        
+        /// <summary>
+        /// Called by EnemyAnimationRelay when the fireball animation event fires.
+        /// This triggers the actual fireball spawn at the perfect animation frame.
+        /// </summary>
+        public void FireFireballFromEvent()
+        {
+            Debug.Log("[MinibossAI] Animation event: FireFireballFromEvent()");
+            pendingFireballSpawn = true;
+        }
+        
+        /// <summary>
+        /// Called by EnemyAnimationRelay when the meteor animation event fires.
+        /// This triggers the actual meteor spawn at the perfect animation frame.
+        /// </summary>
+        public void SummonMeteorFromEvent()
+        {
+            if (debugLog) Debug.Log("[MinibossAI] Animation event: SummonMeteorFromEvent()");
+            pendingMeteorSpawn = true;
+        }
+        
+        /// <summary>
+        /// Called by EnemyAnimationRelay when the attack animation ends.
+        /// This signals the AI to return to normal behavior.
+        /// </summary>
+        public void OnAttackAnimationEnd()
+        {
+            if (debugLog) Debug.Log("[MinibossAI] Animation event: OnAttackAnimationEnd()");
+            attackAnimationEnded = true;
         }
         
         private void SpawnMeteor()
@@ -582,6 +857,229 @@ namespace EnemyAI
             }
         }
         
+        /// <summary>
+        /// Circle-strafe movement around the player at fixed distance.
+        /// </summary>
+        private void StartCircleStrafe()
+        {
+            if (!agent.isOnNavMesh || target == null) return;
+            
+            Vector3 toPlayer = target.position - transform.position;
+            toPlayer.y = 0;
+            float currentDist = toPlayer.magnitude;
+            
+            // Pick random direction (left or right)
+            float strafeDir = Random.value > 0.5f ? 1f : -1f;
+            float angle = circleStrafeAngle * strafeDir;
+            
+            // Calculate strafe position around player
+            Vector3 toUs = -toPlayer.normalized;
+            Vector3 rotated = Quaternion.AngleAxis(angle, Vector3.up) * toUs;
+            Vector3 strafePos = target.position + rotated * circleStrafeRadius;
+            
+            // Check NavMesh validity
+            UnityEngine.AI.NavMeshHit navHit;
+            if (UnityEngine.AI.NavMesh.SamplePosition(strafePos, out navHit, 3f, UnityEngine.AI.NavMesh.AllAreas))
+            {
+                agent.SetDestination(navHit.position);
+                repositionTarget = navHit.position;
+                SwitchState(MinibossState.Repositioning);
+                if (debugLog) Debug.Log($"[MinibossAI] Circle-strafe to {navHit.position}");
+            }
+            else
+            {
+                // Failed - use normal reposition
+                StartRepositioning();
+            }
+        }
+        
+        #endregion
+        
+        #region Rage Mode
+        
+        /// <summary>
+        /// Checks if HP has crossed a rage mode threshold.
+        /// Returns true ONLY when HP drops to or below 80% or 40% (configurable).
+        /// Each threshold can only trigger ONCE per fight.
+        /// </summary>
+        private bool CheckRageModeThreshold()
+        {
+            if (!enableRageMode || health == null) return false;
+            
+            // Don't check if already in rage mode
+            if (isRageModeActive) return false;
+            
+            float hpPercent = (float)health.CurrentHealth / health.MaxHealth;
+            
+            // Check first threshold (default 80% HP) - must be BELOW threshold
+            if (!ragePhase1Triggered && hpPercent <= rageThreshold1 && hpPercent < 1.0f)
+            {
+                ragePhase1Triggered = true;
+                Debug.Log($"[MinibossAI] RAGE MODE THRESHOLD 1 HIT! HP={hpPercent:P0}, threshold={rageThreshold1:P0}");
+                return true;
+            }
+            
+            // Check second threshold (default 40% HP) - must be BELOW threshold AND phase 1 must be done
+            if (ragePhase1Triggered && !ragePhase2Triggered && hpPercent <= rageThreshold2)
+            {
+                ragePhase2Triggered = true;
+                Debug.Log($"[MinibossAI] RAGE MODE THRESHOLD 2 HIT! HP={hpPercent:P0}, threshold={rageThreshold2:P0}");
+                return true;
+            }
+            
+            return false;
+        }
+        
+        private void StartRageMode()
+        {
+            // Safety: Don't start if already in rage mode
+            if (isRageModeActive || currentState == MinibossState.RageMode)
+            {
+                if (debugLog) Debug.LogWarning("[MinibossAI] StartRageMode called but already in rage mode!");
+                return;
+            }
+            
+            Debug.Log($"[MinibossAI] STARTING RAGE MODE! Phase1={ragePhase1Triggered}, Phase2={ragePhase2Triggered}");
+            SwitchState(MinibossState.RageMode);
+            StartCoroutine(RageModeRoutine());
+        }
+        
+        private IEnumerator RageModeRoutine()
+        {
+            if (debugLog) Debug.Log("[MinibossAI] === RAGE MODE STARTED ===");
+            
+            // Stop and face player
+            StopMovement();
+            LookAtTarget();
+            
+            // Reset event flags
+            pendingRageFire = false;
+            rageAnimationEnded = false;
+            isRageModeActive = true;
+            
+            // Set animation bool
+            if (animator != null)
+            {
+                animator.SetBool(rageModeBool, true);
+                animator.SetBool(walkBool, false);
+            }
+            
+            // Show shield VFX (invulnerability indicator)
+            if (rageShieldVFX != null)
+            {
+                activeShieldVFX = Instantiate(rageShieldVFX, transform.position, Quaternion.identity, transform);
+            }
+            
+            // Wait for charge duration (invulnerable during this)
+            float timer = 0f;
+            float timeout = rageChargeDuration + 1f;
+            while (!pendingRageFire && timer < timeout)
+            {
+                if (health != null && health.IsDead)
+                {
+                    EndRageMode();
+                    yield break;
+                }
+                LookAtTarget();
+                timer += Time.deltaTime;
+                yield return null;
+            }
+            
+            // Fire 360° fireball burst!
+            Spawn360FireballBurst();
+            
+            // Wait for animation to end
+            timer = 0f;
+            while (!rageAnimationEnded && timer < 2f)
+            {
+                if (health != null && health.IsDead)
+                {
+                    EndRageMode();
+                    yield break;
+                }
+                timer += Time.deltaTime;
+                yield return null;
+            }
+            
+            // End rage mode
+            EndRageMode();
+            
+            if (debugLog) Debug.Log("[MinibossAI] === RAGE MODE ENDED ===");
+            
+            // Reposition to cover after rage (flee behavior)
+            consecutiveAttackCount = 0; // Reset counter
+            StartRepositioning();
+        }
+        
+        private void Spawn360FireballBurst()
+        {
+            if (debugLog) Debug.Log($"[MinibossAI] Spawning {rageFireballCount} fireballs in 360° pattern!");
+            
+            GameObject prefabToUse = bouncingFireballPrefab != null ? bouncingFireballPrefab : fireballPrefab;
+            if (prefabToUse == null) return;
+            
+            Vector3 spawnPos = projectileSpawnPoint != null ? projectileSpawnPoint.position : transform.position;
+            float angleStep = 360f / rageFireballCount;
+            
+            for (int i = 0; i < rageFireballCount; i++)
+            {
+                float angle = i * angleStep;
+                Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * Vector3.forward;
+                direction.y = 0;
+                direction.Normalize();
+                
+                GameObject proj = Instantiate(prefabToUse, spawnPos, Quaternion.LookRotation(direction));
+                
+                EnemyProjectile ep = proj.GetComponent<EnemyProjectile>();
+                if (ep != null)
+                {
+                    ep.SetDirection(direction);
+                    ep.SetSpeed(rageFireballSpeed); // Use slower rage fireball speed
+                    ep.SetDamage(fireballDamage);
+                    
+                    // Enable bouncing with configurable count
+                    ep.EnableBounce(rageFireballBounces);
+                }
+            }
+        }
+        
+        private void EndRageMode()
+        {
+            isRageModeActive = false;
+            
+            // Clear animation
+            if (animator != null)
+            {
+                animator.SetBool(rageModeBool, false);
+            }
+            
+            // Destroy shield VFX
+            if (activeShieldVFX != null)
+            {
+                Destroy(activeShieldVFX);
+                activeShieldVFX = null;
+            }
+        }
+        
+        // Animation event callbacks for rage mode
+        public void RageModeStartFromEvent()
+        {
+            if (debugLog) Debug.Log("[MinibossAI] Animation event: RageModeStartFromEvent()");
+            // Could trigger additional VFX here
+        }
+        
+        public void RageModeFireFromEvent()
+        {
+            if (debugLog) Debug.Log("[MinibossAI] Animation event: RageModeFireFromEvent()");
+            pendingRageFire = true;
+        }
+        
+        public void RageModeEndFromEvent()
+        {
+            if (debugLog) Debug.Log("[MinibossAI] Animation event: RageModeEndFromEvent()");
+            rageAnimationEnded = true;
+        }
+        
         #endregion
         
         #region Aim Line
@@ -618,6 +1116,9 @@ namespace EnemyAI
         {
             if (!showAimLine || aimLine == null) return;
             aimLine.enabled = true;
+            Debug.Log($"[MinibossAI] ShowAimLine() - aimLine.enabled = {aimLine.enabled}");
+            // Start coroutine to update aim line (like Sniper does)
+            StartCoroutine(UpdateAimLineRoutine());
         }
         
         private void HideAimLine()
@@ -626,24 +1127,56 @@ namespace EnemyAI
             aimLine.enabled = false;
         }
         
-        private void UpdateAimLine(float t)
+        /// <summary>
+        /// Coroutine that updates aim line positions while it's enabled.
+        /// Matches Sniper's UpdateAimLineRoutine approach.
+        /// </summary>
+        private IEnumerator UpdateAimLineRoutine()
         {
-            if (aimLine == null || !aimLine.enabled) return;
+            float elapsed = 0f;
+            float maxAimTime = aimDuration + 0.5f; // Safety timeout
             
-            // Lerp color
-            Color currentColor = Color.Lerp(aimLineStartColor, aimLineEndColor, t);
-            aimLine.startColor = currentColor;
-            aimLine.endColor = new Color(currentColor.r, currentColor.g, currentColor.b, 0f);
-            
-            // Update positions
-            Vector3 startPos = projectileSpawnPoint != null ? projectileSpawnPoint.position : transform.position;
-            Vector3 direction = (target.position - startPos).normalized;
-            direction.y = 0; // Keep flat
-            
-            Vector3 endPos = startPos + direction * aimLineLength;
-            
-            aimLine.SetPosition(0, startPos);
-            aimLine.SetPosition(1, endPos);
+            while (aimLine != null && aimLine.enabled && target != null && elapsed < maxAimTime)
+            {
+                // Check for interruption
+                if (health != null && (health.IsDead || health.IsFrozen))
+                {
+                    HideAimLine();
+                    yield break;
+                }
+                
+                // Exit if we left aiming state
+                if (currentState != MinibossState.Aiming)
+                {
+                    yield break; // Don't hide - might be transitioning to shooting
+                }
+                
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / aimDuration);
+                
+                // Lerp color
+                Color currentColor = Color.Lerp(aimLineStartColor, aimLineEndColor, t);
+                aimLine.startColor = currentColor;
+                aimLine.endColor = new Color(currentColor.r, currentColor.g, currentColor.b, 0f);
+                
+                // Update positions
+                Vector3 startPos = projectileSpawnPoint != null ? projectileSpawnPoint.position : transform.position;
+                Vector3 direction = (target.position - startPos).normalized;
+                direction.y = 0; // Keep flat
+                
+                Vector3 endPos = startPos + direction * aimLineLength;
+                
+                aimLine.SetPosition(0, startPos);
+                aimLine.SetPosition(1, endPos);
+                
+                // Debug first call
+                if (t < 0.05f)
+                {
+                    Debug.Log($"[MinibossAI] UpdateAimLineRoutine: start={startPos}, end={endPos}, direction={direction}");
+                }
+                
+                yield return null;
+            }
         }
         
         #endregion
@@ -654,9 +1187,12 @@ namespace EnemyAI
         {
             if (animator == null) return;
             
-            // Walking animation based on movement
-            bool isWalking = agent != null && agent.velocity.magnitude > 0.1f;
-            animator.SetBool(walkBool, isWalking);
+            // USER LOGIC: Walk = true ONLY when NOT attacking
+            // If either attack bool is active, Walk must be false
+            bool shouldWalk = !isFireballActive && !isMeteorActive && 
+                              agent != null && agent.velocity.magnitude > 0.1f;
+            
+            animator.SetBool(walkBool, shouldWalk);
             
             // Speed parameter from base class
             if (!string.IsNullOrEmpty(speedParameter))
