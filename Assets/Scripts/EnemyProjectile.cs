@@ -227,6 +227,8 @@ public class EnemyProjectile : MonoBehaviour
     {
         if (dir.sqrMagnitude > 1e-6f)
         {
+            // Flatten to horizontal (keep constant Y height)
+            dir.y = 0;
             moveDir = dir.normalized;
             transform.forward = moveDir;
         }
@@ -337,14 +339,17 @@ public class EnemyProjectile : MonoBehaviour
         if (other == null) return;
         // Note: Projectile can still hit during fade-out!
         
-        // 1. Check if the object is in our hit layers
-        if (((1 << other.gameObject.layer) & hitLayers) == 0) return;
+        // Always allow hitting Player (safety fallback even if layer mask is wrong)
+        bool isPlayer = other.CompareTag("Player");
+        
+        // 1. Check if the object is in our hit layers OR is the player
+        if (!isPlayer && ((1 << other.gameObject.layer) & hitLayers) == 0) return;
 
         // 2. Ignore enemies specifically (extra safety)
         if (other.CompareTag("Enemy")) return;
         
-        // 3. Ignore triggers if they aren't the player
-        if (other.isTrigger && !other.CompareTag("Player")) return;
+        // 3. Ignore non-player triggers
+        if (other.isTrigger && !isPlayer) return;
 
         bool isValidHit = false;
 

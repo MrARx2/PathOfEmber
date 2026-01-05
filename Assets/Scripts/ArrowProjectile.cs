@@ -28,11 +28,21 @@ public class ArrowProjectile : MonoBehaviour
     [SerializeField] private int maxBounces = 2;
     [SerializeField] private LayerMask wallLayers;
     
+    [Header("Wall Hit VFX")]
+    [SerializeField, Tooltip("VFX prefab to spawn when arrow hits a wall and can't bounce")]
+    private GameObject wallHitVFXPrefab;
+    [SerializeField, Tooltip("How long the VFX lasts before auto-destroy")]
+    private float wallHitVFXDuration = 1f;
+    
     [Header("Trail Fade Effect")]
     [SerializeField, Tooltip("Duration of the smooth trail fade")]
     private float trailFadeDuration = 0.3f;
     [SerializeField, Tooltip("Detach trail on destroy for lingering effect")]
     private bool detachTrailOnDestroy = true;
+    
+    [Header("Trail Colors")]
+    [SerializeField] private Color freezeTrailColor = new Color(0.2f, 0.8f, 1f, 1f); // Cyan
+    [SerializeField] private Color venomTrailColor = new Color(0.6f, 0.2f, 0.8f, 1f); // Purple
     
     private int bounceCount = 0;
     private Vector3 moveDir = Vector3.forward;
@@ -40,6 +50,7 @@ public class ArrowProjectile : MonoBehaviour
     private Rigidbody rb;
     private TrailRenderer[] trails;
     private float[] initialTrailWidths;
+    private Color[] originalTrailColors;
 
     #region Public Properties
     public int Damage => damage;
@@ -120,11 +131,70 @@ public class ArrowProjectile : MonoBehaviour
         // Cache trail renderers for fade effect
         trails = GetComponentsInChildren<TrailRenderer>();
         initialTrailWidths = new float[trails.Length];
+        originalTrailColors = new Color[trails.Length];
         for (int i = 0; i < trails.Length; i++)
         {
             if (trails[i] != null)
             {
                 initialTrailWidths[i] = trails[i].widthMultiplier;
+                originalTrailColors[i] = trails[i].startColor;
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Apply trail color based on current effects. Call after setting effects.
+    /// </summary>
+    public void ApplyTrailColor()
+    {
+        if (trails == null) return;
+        
+        // Both effects - create gradient from freeze to venom
+        if (hasFreezeEffect && hasVenomEffect)
+        {
+            for (int i = 0; i < trails.Length; i++)
+            {
+                if (trails[i] != null)
+                {
+                    trails[i].startColor = freezeTrailColor; // Cyan at start
+                    trails[i].endColor = new Color(venomTrailColor.r, venomTrailColor.g, venomTrailColor.b, 0.3f); // Purple fading out
+                }
+            }
+            return;
+        }
+        
+        // Single effect
+        if (hasFreezeEffect)
+        {
+            ApplySingleColor(freezeTrailColor);
+            return;
+        }
+        
+        if (hasVenomEffect)
+        {
+            ApplySingleColor(venomTrailColor);
+            return;
+        }
+        
+        // No effects - restore original colors
+        for (int i = 0; i < trails.Length; i++)
+        {
+            if (trails[i] != null && originalTrailColors != null && i < originalTrailColors.Length)
+            {
+                trails[i].startColor = originalTrailColors[i];
+                trails[i].endColor = new Color(originalTrailColors[i].r, originalTrailColors[i].g, originalTrailColors[i].b, 0f);
+            }
+        }
+    }
+    
+    private void ApplySingleColor(Color color)
+    {
+        for (int i = 0; i < trails.Length; i++)
+        {
+            if (trails[i] != null)
+            {
+                trails[i].startColor = color;
+                trails[i].endColor = new Color(color.r, color.g, color.b, 0f);
             }
         }
     }
@@ -133,6 +203,8 @@ public class ArrowProjectile : MonoBehaviour
     {
         if (dir.sqrMagnitude > 1e-6f)
         {
+            // Flatten to horizontal (keep constant Y)
+            dir.y = 0;
             moveDir = dir.normalized;
             transform.forward = moveDir;
         }
@@ -158,24 +230,23 @@ public class ArrowProjectile : MonoBehaviour
         float lookAhead = Mathf.Max(moveDistance * 2f, 0.5f);
         
         // Check for wall collision using SphereCast for reliable detection
-        if (hasBouncing && wallLayers != 0)
+        // ALWAYS check walls, not just when bouncing
+        if (wallLayers != 0)
         {
-            // Debug: draw raycast
-            Debug.DrawRay(transform.position, moveDir * lookAhead, bounceCount < maxBounces ? Color.cyan : Color.red, 0.1f);
-            
             RaycastHit hit;
             // Use SphereCast for more reliable detection (catches edges better)
             if (Physics.SphereCast(transform.position, 0.1f, moveDir, out hit, lookAhead, wallLayers, QueryTriggerInteraction.Ignore))
             {
-                if (bounceCount < maxBounces)
+                // If bouncing is enabled and we have bounces left, bounce
+                if (hasBouncing && bounceCount < maxBounces)
                 {
-                    // Hit a wall! Bounce!
                     HandleBounce(hit);
                     return; // Skip normal movement this frame
                 }
                 else
                 {
-                    // Max bounces reached - destroy on wall hit
+                    // No bouncing or max bounces reached - spawn VFX and destroy
+                    SpawnWallHitVFX(hit.point);
                     GracefulDestroy();
                     return;
                 }
@@ -207,6 +278,15 @@ public class ArrowProjectile : MonoBehaviour
         
         // Move to hit point + small offset in reflected direction
         transform.position = hit.point + newDir * 0.1f;
+    }
+    
+    private void SpawnWallHitVFX(Vector3 hitPoint)
+    {
+        if (wallHitVFXPrefab != null)
+        {
+            GameObject vfx = Instantiate(wallHitVFXPrefab, hitPoint, Quaternion.identity);
+            Destroy(vfx, wallHitVFXDuration);
+        }
     }
 
     private void OnTriggerEnter(Collider other)

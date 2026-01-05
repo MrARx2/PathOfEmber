@@ -183,6 +183,44 @@ namespace EnemyAI
                 minibossAI.RageModeEndFromEvent();
             }
         }
+        
+        /// <summary>
+        /// Called by animation event when fireball attack animation STARTS.
+        /// Add this at the START of the Shoot_FireBall animation.
+        /// This makes the miniboss lock onto and face the player.
+        /// </summary>
+        public void OnFireballAttackStart()
+        {
+            if (minibossAI != null)
+            {
+                minibossAI.LockOntoPlayerFromEvent();
+            }
+        }
+        
+        /// <summary>
+        /// Called by animation event when meteor attack animation STARTS.
+        /// Add this at the START of the Summon_Meteor animation.
+        /// This makes the miniboss lock onto and face the player.
+        /// </summary>
+        public void OnMeteorAttackStart()
+        {
+            if (minibossAI != null)
+            {
+                minibossAI.LockOntoPlayerFromEvent();
+            }
+        }
+        
+        /// <summary>
+        /// Generic method to lock miniboss facing onto the player.
+        /// Can be called at any animation frame where you want the boss to snap to face player.
+        /// </summary>
+        public void OnLockOntoPlayer()
+        {
+            if (minibossAI != null)
+            {
+                minibossAI.LockOntoPlayerFromEvent();
+            }
+        }
 
         #endregion
     }

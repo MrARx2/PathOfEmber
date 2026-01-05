@@ -9,7 +9,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 621320281365395007}
-  m_Layer: 0
+  - component: {fileID: 4123547106378472888}
+  - component: {fileID: 2898226192066288601}
+  m_Layer: 11
   m_Name: freeze potion
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -34,6 +36,50 @@ Transform:
   - {fileID: 8814441197664314142}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4123547106378472888
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3498488311820036920}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d3012fafdd58b94181c8f1da2d725df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MagneticPotion
+  potionType: 0
+  magnetSpeed: 5
+  riseDuration: 1.5
+  riseStartHeight: -0.5
+  riseEndHeight: 0.2
+  idleDuration: 1.5
+  bobSpeed: 2
+  bobHeight: 0.2
+  effectMeteorPrefab: {fileID: 3236490940164730494, guid: 76a450dfb0b6fc744b4f51ce7c5298a5, type: 3}
+  enemySearchRadius: 8
+  debugLog: 0
+--- !u!65 &2898226192066288601
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3498488311820036920}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.15, y: 0.5, z: 0.15}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &7005729824216803807
 GameObject:
   m_ObjectHideFlags: 0
@@ -44,7 +90,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8814441197664314142}
   - component: {fileID: 3141895330036860442}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Trail
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -193,9 +239,17 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 621320281365395007}
     m_Modifications:
+    - target: {fileID: 939597537536790913, guid: 5451a036b021777489fb706809e0fc59, type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
     - target: {fileID: 2739101484284021725, guid: 5451a036b021777489fb706809e0fc59, type: 3}
       propertyPath: m_Name
       value: potion
+      objectReference: {fileID: 0}
+    - target: {fileID: 2739101484284021725, guid: 5451a036b021777489fb706809e0fc59, type: 3}
+      propertyPath: m_Layer
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 3263120597425508711, guid: 5451a036b021777489fb706809e0fc59, type: 3}
       propertyPath: m_LocalPosition.x
@@ -237,6 +291,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8618049105590962683, guid: 5451a036b021777489fb706809e0fc59, type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -255,9 +313,21 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 621320281365395007}
     m_Modifications:
+    - target: {fileID: 2838232719265931911, guid: 3256e870c9c50294aaeb72a43d52cee4, type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
     - target: {fileID: 4364277411734426086, guid: 3256e870c9c50294aaeb72a43d52cee4, type: 3}
       propertyPath: m_Name
       value: freeze potion-vfx
+      objectReference: {fileID: 0}
+    - target: {fileID: 4364277411734426086, guid: 3256e870c9c50294aaeb72a43d52cee4, type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 7263410867833257185, guid: 3256e870c9c50294aaeb72a43d52cee4, type: 3}
+      propertyPath: m_Layer
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 7427706416654031694, guid: 3256e870c9c50294aaeb72a43d52cee4, type: 3}
       propertyPath: m_LocalPosition.x
@@ -298,6 +368,10 @@ PrefabInstance:
     - target: {fileID: 7427706416654031694, guid: 3256e870c9c50294aaeb72a43d52cee4, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7534908681704197459, guid: 3256e870c9c50294aaeb72a43d52cee4, type: 3}
+      propertyPath: m_Layer
+      value: 11
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6878851280718606120}
   - component: {fileID: 2499251076280241542}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Trail
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -160,7 +160,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7596386844113692757}
-  m_Layer: 0
+  - component: {fileID: 3705266590116278104}
+  - component: {fileID: 6377158691849078465}
+  m_Layer: 11
   m_Name: venom potion
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -185,6 +187,50 @@ Transform:
   - {fileID: 8129101714860548140}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3705266590116278104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5828422131497855360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d3012fafdd58b94181c8f1da2d725df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MagneticPotion
+  potionType: 1
+  magnetSpeed: 5
+  riseDuration: 1.5
+  riseStartHeight: -0.5
+  riseEndHeight: 0.2
+  idleDuration: 1.5
+  bobSpeed: 2
+  bobHeight: 0.2
+  effectMeteorPrefab: {fileID: 3236490940164730494, guid: 76a450dfb0b6fc744b4f51ce7c5298a5, type: 3}
+  enemySearchRadius: 8
+  debugLog: 0
+--- !u!65 &6377158691849078465
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5828422131497855360}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.15, y: 0.5, z: 0.15}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1241549028091720765
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -193,9 +239,17 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 7596386844113692757}
     m_Modifications:
+    - target: {fileID: 395351209930475438, guid: aa9e1b9d464afda46935b019aed7dfc6, type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
     - target: {fileID: 5192731431646052282, guid: aa9e1b9d464afda46935b019aed7dfc6, type: 3}
       propertyPath: m_Name
       value: venom potion-vfx
+      objectReference: {fileID: 0}
+    - target: {fileID: 5192731431646052282, guid: aa9e1b9d464afda46935b019aed7dfc6, type: 3}
+      propertyPath: m_Layer
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 7055593276005110801, guid: aa9e1b9d464afda46935b019aed7dfc6, type: 3}
       propertyPath: m_LocalPosition.x
@@ -237,6 +291,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8155007731863892906, guid: aa9e1b9d464afda46935b019aed7dfc6, type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -255,6 +313,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 7596386844113692757}
     m_Modifications:
+    - target: {fileID: 2961474336337094936, guid: 7315f235b396d084a801b4913970b778, type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 6019674209887187298, guid: 7315f235b396d084a801b4913970b778, type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
     - target: {fileID: 8343162206596067716, guid: 7315f235b396d084a801b4913970b778, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.047437623
@@ -310,6 +376,10 @@ PrefabInstance:
     - target: {fileID: 8683799342142663486, guid: 7315f235b396d084a801b4913970b778, type: 3}
       propertyPath: m_Name
       value: potion
+      objectReference: {fileID: 0}
+    - target: {fileID: 8683799342142663486, guid: 7315f235b396d084a801b4913970b778, type: 3}
+      propertyPath: m_Layer
+      value: 11
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

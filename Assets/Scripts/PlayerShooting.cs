@@ -420,6 +420,9 @@ public class PlayerShooting : MonoBehaviour
                 projectile.FreezeDuration = abilities.FreezeDuration;
                 projectile.VenomDamagePerSecond = abilities.VenomDamagePerSecond;
                 projectile.VenomDuration = abilities.VenomDuration;
+                
+                // Apply trail color based on freeze/venom effects
+                projectile.ApplyTrailColor();
             }
         }
 

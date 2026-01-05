@@ -11,6 +11,7 @@ public class PlayerAbilities : MonoBehaviour
     [SerializeField] private PlayerMovement playerMovement;
     [SerializeField] private PlayerShooting playerShooting;
     [SerializeField] private PlayerHealth playerHealth;
+    [SerializeField] private PotionSpawner potionSpawner;
     #endregion
 
     #region Common Abilities (60% - Green)
@@ -48,6 +49,12 @@ public class PlayerAbilities : MonoBehaviour
 
     [SerializeField, Tooltip("Stacks: +100 damage/s per stack")]
     private int maximumVenomStacks = 0;
+
+    [SerializeField, Tooltip("Spawns freeze potions that trigger freeze meteors")]
+    private bool hasFreezePotionTalent = false;
+
+    [SerializeField, Tooltip("Spawns venom potions that trigger venom meteors")]
+    private bool hasVenomPotionTalent = false;
     #endregion
 
     #region Legendary Abilities (10% - Red)
@@ -110,6 +117,8 @@ public class PlayerAbilities : MonoBehaviour
     public int VenomDamagePerSecond => currentVenomDamagePerSecond;
     public float VenomDuration => venomDuration;
     public float TripleShotAngle => tripleShotAngle;
+    public bool HasFreezePotionTalent => hasFreezePotionTalent;
+    public bool HasVenomPotionTalent => hasVenomPotionTalent;
     #endregion
 
     private void Awake()
@@ -121,6 +130,8 @@ public class PlayerAbilities : MonoBehaviour
             playerShooting = GetComponent<PlayerShooting>();
         if (playerHealth == null)
             playerHealth = GetComponent<PlayerHealth>();
+        if (potionSpawner == null)
+            potionSpawner = GetComponent<PotionSpawner>();
     }
 
     private void Start()
@@ -144,6 +155,12 @@ public class PlayerAbilities : MonoBehaviour
         if (isInitialized && Application.isPlaying)
         {
             ApplyToScripts();
+            
+            // Sync potion talents with PotionSpawner (handles both enable AND disable)
+            if (potionSpawner != null)
+            {
+                potionSpawner.SyncWithAbilities(hasFreezePotionTalent, hasVenomPotionTalent);
+            }
         }
     }
 
@@ -277,6 +294,22 @@ public class PlayerAbilities : MonoBehaviour
         Debug.Log($"[PlayerAbilities] Maximum Venom granted. Total stacks: {maximumVenomStacks}, Damage: {currentVenomDamagePerSecond}/s");
     }
 
+    public void GrantFreezePotionTalent()
+    {
+        hasFreezePotionTalent = true;
+        if (potionSpawner != null)
+            potionSpawner.EnableFreezePotion();
+        Debug.Log("[PlayerAbilities] Freeze Potion Talent granted.");
+    }
+
+    public void GrantVenomPotionTalent()
+    {
+        hasVenomPotionTalent = true;
+        if (potionSpawner != null)
+            potionSpawner.EnableVenomPotion();
+        Debug.Log("[PlayerAbilities] Venom Potion Talent granted.");
+    }
+
     // ===== LEGENDARY =====
     public void GrantMultishot()
     {
@@ -363,6 +396,12 @@ public class PlayerAbilities : MonoBehaviour
     [ContextMenu("Debug: Grant Maximum Venom (+100 dmg/s)")]
     public void DebugGrantMaximumVenom() => GrantMaximumVenom();
 
+    [ContextMenu("Debug: Grant Freeze Potion Talent")]
+    public void DebugGrantFreezePotionTalent() => GrantFreezePotionTalent();
+
+    [ContextMenu("Debug: Grant Venom Potion Talent")]
+    public void DebugGrantVenomPotionTalent() => GrantVenomPotionTalent();
+
     [ContextMenu("Debug: Grant Multishot")]
     public void DebugGrantMultishot() => GrantMultishot();
 
@@ -395,6 +434,10 @@ public class PlayerAbilities : MonoBehaviour
         hasTripleShot = false;
         maxHpPlusPlusStacks = 0;
         attackSpeedStacks = 0;
+        hasFreezePotionTalent = false;
+        hasVenomPotionTalent = false;
+        if (potionSpawner != null)
+            potionSpawner.DisableAllPotions();
         RecalculateAllStats();
         Debug.Log("[PlayerAbilities] All abilities reset.");
     }

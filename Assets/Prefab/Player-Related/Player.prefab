@@ -530,6 +530,7 @@ GameObject:
   - component: {fileID: 5513056487160396226}
   - component: {fileID: 1585443831915513852}
   - component: {fileID: 146785748151357686}
+  - component: {fileID: 4367472333348583234}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -647,30 +648,33 @@ MonoBehaviour:
   playerMovement: {fileID: 5513056487160396226}
   playerShooting: {fileID: 1585443831915513852}
   playerHealth: {fileID: 146785748151357686}
+  potionSpawner: {fileID: 4367472333348583234}
   movementSpeedStacks: 0
   hasOneTimeShield: 0
   maxHpPlusStacks: 0
   hazardResistanceStacks: 0
   hasPiercing: 0
-  hasBouncingBullets: 0
+  hasBouncingArrows: 0
   hasFreezeShot: 0
   hasVenomShot: 0
   maximumFreezeStacks: 0
   maximumVenomStacks: 0
+  hasFreezePotionTalent: 0
+  hasVenomPotionTalent: 0
   hasMultishot: 0
   hasTripleShot: 0
   maxHpPlusPlusStacks: 0
   attackSpeedStacks: 0
   baseFreezeDuration: 2
   freezeDurationPerStack: 2
-  baseVenomDamage: 150
-  venomDamagePerStack: 250
+  baseVenomDamage: 20
+  venomDamagePerStack: 100
   venomDuration: 3
   tripleShotAngle: 25
   currentMoveSpeedMultiplier: 1
   currentAttackSpeedMultiplier: 1
   currentFreezeDuration: 2
-  currentVenomDamagePerSecond: 150
+  currentVenomDamagePerSecond: 20
 --- !u!114 &5513056487160396226
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -708,7 +712,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerShooting
   projectilePrefab: {fileID: 2342183619598123401, guid: bb475046dfda9b741ae932cb52686e31, type: 3}
   fireRate: 1
-  attackRange: 3
+  attackRange: 4
   firePoint: {fileID: 1916462511477002239}
   projectileSpeed: 18
   muzzleOffset: 0.25
@@ -777,6 +781,28 @@ MonoBehaviour:
   OnHealthChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4367472333348583234
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4974152351425029856}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e354e569acea27c44beee6e7b2521fb2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PotionSpawner
+  freezePotionEnabled: 0
+  freezePotionPrefab: {fileID: 3498488311820036920, guid: 52f2ceb751dcb6241a1b4b466c0d386a, type: 3}
+  freezeSpawnInterval: 8
+  venomPotionEnabled: 0
+  venomPotionPrefab: {fileID: 5828422131497855360, guid: 0392801b67d98bd40ace75fb92fbcd81, type: 3}
+  venomSpawnInterval: 8
+  spawnRadius: 2.5
+  spawnHeight: 0.5
+  spawnTimeVariance: 3
+  debugLog: 0
 --- !u!1 &5163994657104118202
 GameObject:
   m_ObjectHideFlags: 0

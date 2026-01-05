@@ -48,6 +48,8 @@ namespace EnemyAI
         [SerializeField] private Transform projectileSpawnPoint;
         [SerializeField] private float fireballSpeed = 15f;
         [SerializeField] private int fireballDamage = 30;
+        [SerializeField, Tooltip("Fixed Y height for fireball spawn (0 = use spawn point height)")]
+        private float fireballSpawnHeight = 1.5f;
         [SerializeField] private float fireballCooldown = 2f;
         
         [Header("=== METEOR ATTACK ===")]
@@ -214,7 +216,10 @@ namespace EnemyAI
                 case MinibossState.Aiming:
                 case MinibossState.Shooting:
                 case MinibossState.CastingMeteor:
-                    // These are handled by coroutines
+                case MinibossState.RageMode:
+                    // Attack states - ensure movement is stopped (handled by coroutines)
+                    StopMovement();
+                    LookAtTarget();
                     break;
             }
             
@@ -229,6 +234,12 @@ namespace EnemyAI
         private void UpdateChasing()
         {
             float distance = Vector3.Distance(VisualPosition, target.position);
+            
+            // Let NavMesh handle rotation during movement (face movement direction)
+            if (agent != null && !agent.updateRotation)
+            {
+                agent.updateRotation = true;
+            }
             
             // Check for rage mode trigger (HP thresholds)
             if (CheckRageModeThreshold())
@@ -253,6 +264,12 @@ namespace EnemyAI
         private void UpdateRepositioning()
         {
             stateTimer -= Time.deltaTime;
+            
+            // Let NavMesh handle rotation during movement (face movement direction)
+            if (agent != null && !agent.updateRotation)
+            {
+                agent.updateRotation = true;
+            }
             
             // Check if reached destination or timed out
             bool reached = !agent.pathPending && agent.remainingDistance <= 1f;
@@ -403,11 +420,13 @@ namespace EnemyAI
             {
                 case MinibossState.Chasing:
                     if (agent.isOnNavMesh) agent.isStopped = false;
+                    if (agent != null) agent.updateRotation = true; // Face movement direction
                     break;
                     
                 case MinibossState.Repositioning:
                     PickRepositionTarget();
                     stateTimer = repositionTimeout;
+                    if (agent != null) agent.updateRotation = true; // Face movement direction
                     break;
                     
                 case MinibossState.Aiming:
@@ -415,6 +434,7 @@ namespace EnemyAI
                 case MinibossState.CastingMeteor:
                 case MinibossState.RageMode:
                     StopMovement();
+                    if (agent != null) agent.updateRotation = false; // Let LookAtTarget control facing
                     break;
             }
         }
@@ -558,14 +578,19 @@ namespace EnemyAI
             
             Vector3 spawnPos = projectileSpawnPoint != null ? projectileSpawnPoint.position : transform.position;
             
-            // Keep trajectory flat (like Sniper does)
+            // Override Y with configurable spawn height (if set)
+            if (fireballSpawnHeight > 0)
+            {
+                spawnPos.y = fireballSpawnHeight;
+            }
+            
+            // Keep trajectory flat (horizontal only)
             Vector3 targetPos = target.position;
             targetPos.y = spawnPos.y;
             Vector3 direction = (targetPos - spawnPos).normalized;
             
-            Debug.Log($"[MinibossAI] Instantiating fireball at {spawnPos}, direction={direction}");
+            if (debugLog) Debug.Log($"[MinibossAI] Spawning fireball at height {spawnPos.y}");
             GameObject proj = Instantiate(fireballPrefab, spawnPos, Quaternion.LookRotation(direction));
-            Debug.Log($"[MinibossAI] Fireball instantiated: {proj.name}");
             
             EnemyProjectile ep = proj.GetComponent<EnemyProjectile>();
             if (ep != null)
@@ -733,6 +758,26 @@ namespace EnemyAI
         {
             if (debugLog) Debug.Log("[MinibossAI] Animation event: OnAttackAnimationEnd()");
             attackAnimationEnded = true;
+        }
+        
+        /// <summary>
+        /// Called by EnemyAnimationRelay at the START of attack animations.
+        /// Instantly snaps the miniboss to face the player for precise aiming.
+        /// </summary>
+        public void LockOntoPlayerFromEvent()
+        {
+            if (target == null) return;
+            
+            // Instantly snap to face player
+            Vector3 lookDir = (target.position - transform.position);
+            lookDir.y = 0;
+            
+            if (lookDir.sqrMagnitude > 0.01f)
+            {
+                transform.rotation = Quaternion.LookRotation(lookDir);
+            }
+            
+            if (debugLog) Debug.Log("[MinibossAI] Animation event: LockOntoPlayer - snapped to face player");
         }
         
         private void SpawnMeteor()

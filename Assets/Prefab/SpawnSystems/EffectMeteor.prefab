@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3236490940164730494
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3447183289900364265}
+  - component: {fileID: 5810408518885345719}
+  m_Layer: 0
+  m_Name: EffectMeteor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3447183289900364265
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3236490940164730494}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5810408518885345719
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3236490940164730494}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f93e31bb0b48ebe4d9dad5749798654d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EffectMeteor
+  effectType: 1
+  impactDamage: 100
+  impactRadius: 1
+  damageLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  freezeDuration: 2
+  venomDamagePerSecond: 50
+  venomDuration: 3
+  meteorPrefab: {fileID: 6991140784959675198, guid: 73bbef45fbe43954faf13acd8e82024b, type: 3}
+  fallHeight: 15
+  fallDuration: 0.5
+  explosionPrefab: {fileID: 8031422183763085148, guid: ebe381c506696304f87ed31429a4058e, type: 3}
+  explosionDuration: 1
+  freezeColor: {r: 0.2, g: 0.8, b: 1, a: 1}
+  venomColor: {r: 0.6, g: 0.2, b: 0.8, a: 1}
+  debugLog: 0
