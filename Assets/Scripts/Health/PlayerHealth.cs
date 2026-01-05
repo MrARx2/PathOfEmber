@@ -248,13 +248,56 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
         Debug.Log($"[PlayerHealth] Fire state: {(onFire ? "ON FIRE" : "not on fire")}");
     }
+    
+    /// <summary>
+    /// Sets the on-fire state for a specific duration (called by EnemyProjectile DoT).
+    /// </summary>
+    public void SetOnFire(bool onFire, float duration)
+    {
+        SetOnFire(onFire);
+        
+        if (onFire && duration > 0)
+        {
+            // Auto-clear fire effect after duration
+            if (fireEffectCoroutine != null)
+                StopCoroutine(fireEffectCoroutine);
+            fireEffectCoroutine = StartCoroutine(ClearFireAfterDuration(duration));
+        }
+    }
+    
+    private Coroutine fireEffectCoroutine;
+    
+    private IEnumerator ClearFireAfterDuration(float duration)
+    {
+        yield return new WaitForSeconds(duration);
+        SetOnFire(false);
+    }
 
     /// <summary>
     /// Applies damage over time. If initialDamage > 0, that amount is applied immediately
     /// with camera shake, then the DoT ticks follow without shake.
+    /// If one-time shield blocks the initial hit, no DoT is applied.
     /// </summary>
     public void ApplyDamageOverTime(int damagePerTick, float tickInterval, int totalTicks, int initialDamage = 0)
     {
+        // If invulnerable, no damage or DoT
+        if (isInvulnerable) return;
+        
+        // If one-time shield is active, it will block this entire attack (including DoT)
+        if (hasOneTimeShield)
+        {
+            hasOneTimeShield = false;
+            if (shieldEffect != null)
+                shieldEffect.SetActive(false);
+            
+            var abilities = GetComponent<PlayerAbilities>();
+            if (abilities != null)
+                abilities.OnShieldConsumed();
+            
+            Debug.Log("[PlayerHealth] One-Time Shield blocked damage AND DoT!");
+            return; // Shield consumed, no damage or DoT applied
+        }
+        
         // Apply initial impact damage with camera shake
         if (initialDamage > 0)
         {

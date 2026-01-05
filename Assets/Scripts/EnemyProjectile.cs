@@ -369,6 +369,9 @@ public class EnemyProjectile : MonoBehaviour
                     // Use damage as initial hit, or fallback to first tick damage if damage is 0
                     int initialHitDamage = damage > 0 ? damage : dotDamagePerTick;
                     playerHealth.ApplyDamageOverTime(dotDamagePerTick, dotTickInterval, dotTotalTicks, initialHitDamage);
+                    
+                    // Set player on fire for the duration of the DoT
+                    playerHealth.SetOnFire(true, dotTickInterval * dotTotalTicks);
                 }
                 else
                 {

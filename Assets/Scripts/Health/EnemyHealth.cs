@@ -81,6 +81,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private float knockbackCollisionRadius = 0.5f;
 
     private bool isDead = false;
+    private bool isInvulnerable = false;
     private Coroutine dotCoroutine;
     private Coroutine freezeCoroutine;
     private Coroutine hitFlashCoroutine;
@@ -106,6 +107,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     public int MaxHealth => maxHealth;
     public bool IsFrozen => isFrozen;
     public bool IsVenomed => isVenomed;
+    public bool IsInvulnerable => isInvulnerable;
 
     private void Awake()
     {
@@ -246,6 +248,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     public void TakeDamage(int damage)
     {
         if (isDead) return;
+        if (isInvulnerable) return;
         if (damage <= 0) return;
 
         currentHealth -= damage;
@@ -350,6 +353,14 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         if (currentHealth > maxHealth) currentHealth = maxHealth;
 
         OnHealthChanged?.Invoke((float)currentHealth / maxHealth);
+    }
+    
+    /// <summary>
+    /// Sets the invulnerability state. Used by MinibossAI during rage mode.
+    /// </summary>
+    public void SetInvulnerable(bool invulnerable)
+    {
+        isInvulnerable = invulnerable;
     }
 
     public void ApplyDamageOverTime(int damagePerTick, float tickInterval, int totalTicks)

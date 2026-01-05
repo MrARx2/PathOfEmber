@@ -93,8 +93,16 @@ namespace EnemyAI
         private float rageChargeDuration = 2f;
         [SerializeField, Tooltip("Optional VFX for invulnerability shield")]
         private GameObject rageShieldVFX;
+        [SerializeField, Tooltip("Height offset for shield VFX placement")]
+        private float shieldVFXHeightOffset = 1f;
+        [SerializeField, Tooltip("Tint color for shield VFX")]
+        private Color shieldVFXTint = Color.white;
         [SerializeField, Tooltip("Prefab for bouncing fireballs (uses regular if not set)")]
         private GameObject bouncingFireballPrefab;
+        [SerializeField, Tooltip("Enable tint color for rage fireballs")]
+        private bool tintRageFireballs = true;
+        [SerializeField, Tooltip("Tint color for rage mode fireballs")]
+        private Color rageFireballTint = Color.red;
         [SerializeField, Tooltip("Animation bool for rage mode")]
         private string rageModeBool = "RageMode_Charge";
         
@@ -1002,6 +1010,10 @@ namespace EnemyAI
             rageAnimationEnded = false;
             isRageModeActive = true;
             
+            // Make invulnerable during rage charge
+            if (health != null)
+                health.SetInvulnerable(true);
+            
             // Set animation bool
             if (animator != null)
             {
@@ -1012,7 +1024,20 @@ namespace EnemyAI
             // Show shield VFX (invulnerability indicator)
             if (rageShieldVFX != null)
             {
-                activeShieldVFX = Instantiate(rageShieldVFX, transform.position, Quaternion.identity, transform);
+                Vector3 shieldPos = transform.position + Vector3.up * shieldVFXHeightOffset;
+                activeShieldVFX = Instantiate(rageShieldVFX, shieldPos, Quaternion.identity, transform);
+                
+                // Apply tint color to all renderers
+                var renderers = activeShieldVFX.GetComponentsInChildren<Renderer>();
+                foreach (var rend in renderers)
+                {
+                    if (rend.material != null)
+                    {
+                        rend.material.color = shieldVFXTint;
+                        if (rend.material.HasProperty("_EmissionColor"))
+                            rend.material.SetColor("_EmissionColor", shieldVFXTint);
+                    }
+                }
             }
             
             // Wait for charge duration (invulnerable during this)
@@ -1079,11 +1104,34 @@ namespace EnemyAI
                 if (ep != null)
                 {
                     ep.SetDirection(direction);
-                    ep.SetSpeed(rageFireballSpeed); // Use slower rage fireball speed
+                    ep.SetSpeed(rageFireballSpeed);
                     ep.SetDamage(fireballDamage);
                     
                     // Enable bouncing with configurable count
                     ep.EnableBounce(rageFireballBounces);
+                }
+                
+                // Apply tint color to rage fireballs
+                if (tintRageFireballs)
+                {
+                    var renderers = proj.GetComponentsInChildren<Renderer>();
+                    foreach (var rend in renderers)
+                    {
+                        if (rend.material != null)
+                        {
+                            rend.material.color = rageFireballTint;
+                            if (rend.material.HasProperty("_EmissionColor"))
+                                rend.material.SetColor("_EmissionColor", rageFireballTint * 2f);
+                        }
+                    }
+                    
+                    // Also tint trail if present
+                    var trail = proj.GetComponentInChildren<TrailRenderer>();
+                    if (trail != null)
+                    {
+                        trail.startColor = rageFireballTint;
+                        trail.endColor = new Color(rageFireballTint.r, rageFireballTint.g, rageFireballTint.b, 0f);
+                    }
                 }
             }
         }
@@ -1091,6 +1139,10 @@ namespace EnemyAI
         private void EndRageMode()
         {
             isRageModeActive = false;
+            
+            // Remove invulnerability
+            if (health != null)
+                health.SetInvulnerable(false);
             
             // Clear animation
             if (animator != null)

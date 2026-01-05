@@ -845,11 +845,15 @@ MonoBehaviour:
   rageFireballSpeed: 2
   rageFireballBounces: 2
   rageChargeDuration: 3
-  rageShieldVFX: {fileID: 9116693322662566799, guid: 1d551fd9157fb874cbea01349fdae905, type: 3}
+  rageShieldVFX: {fileID: 3597349390109535566, guid: 4095cbabc721c864fa5f69e706496271, type: 3}
+  shieldVFXHeightOffset: 0.2
+  shieldVFXTint: {r: 1, g: 0, b: 0, a: 1}
   bouncingFireballPrefab: {fileID: 7452087413518597415, guid: d61a5155f8e7b93429b2c0468125b66e, type: 3}
+  tintRageFireballs: 1
+  rageFireballTint: {r: 1, g: 0, b: 0, a: 1}
   rageModeBool: RageMode_Charge
   attacksBeforeReposition: 3
-  repositionChanceAfterAttack: 0.3
+  repositionChanceAfterAttack: 0.4
   circleStrafeRadius: 8
   circleStrafeAngle: 45
 --- !u!114 &2512225143682197523

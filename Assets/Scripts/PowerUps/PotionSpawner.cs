@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Manages potion spawning for Freeze and Venom Potion talents.
+/// Manages potion spawning for Freeze, Venom, and Invulnerability Potion talents.
 /// Each potion type has its own independent timer with randomized variance.
 /// Attach to the Player GameObject.
 /// </summary>
@@ -23,6 +23,14 @@ public class PotionSpawner : MonoBehaviour
     [SerializeField, Tooltip("Base seconds between venom potion spawns")]
     private float venomSpawnInterval = 8f;
     
+    [Header("Invulnerability Potion")]
+    [SerializeField, Tooltip("Enable invulnerability potion spawning")]
+    private bool invulnerabilityPotionEnabled = false;
+    [SerializeField, Tooltip("Invulnerability potion prefab to spawn")]
+    private GameObject invulnerabilityPotionPrefab;
+    [SerializeField, Tooltip("Base seconds between invulnerability potion spawns")]
+    private float invulnerabilitySpawnInterval = 12f;
+    
     [Header("Spawn Settings")]
     [SerializeField, Tooltip("Radius around player to spawn potions")]
     private float spawnRadius = 2f;
@@ -37,8 +45,10 @@ public class PotionSpawner : MonoBehaviour
     // Independent timers for each potion type
     private float freezeTimer = 0f;
     private float venomTimer = 0f;
+    private float invulnerabilityTimer = 0f;
     private float currentFreezeTarget = 0f;
     private float currentVenomTarget = 0f;
+    private float currentInvulnerabilityTarget = 0f;
     
     private Transform playerTransform;
     
@@ -52,6 +62,7 @@ public class PotionSpawner : MonoBehaviour
         // Set initial random targets
         ResetFreezeTimer();
         ResetVenomTimer();
+        ResetInvulnerabilityTimer();
     }
     
     private void Update()
@@ -77,25 +88,42 @@ public class PotionSpawner : MonoBehaviour
                 ResetVenomTimer();
             }
         }
+        
+        // Invulnerability potion timer
+        if (invulnerabilityPotionEnabled && invulnerabilityPotionPrefab != null)
+        {
+            invulnerabilityTimer += Time.deltaTime;
+            if (invulnerabilityTimer >= currentInvulnerabilityTarget)
+            {
+                SpawnPotion(invulnerabilityPotionPrefab, "Invulnerability");
+                ResetInvulnerabilityTimer();
+            }
+        }
     }
     
     private void ResetFreezeTimer()
     {
         freezeTimer = 0f;
         currentFreezeTarget = freezeSpawnInterval + Random.Range(-spawnTimeVariance, spawnTimeVariance);
-        currentFreezeTarget = Mathf.Max(1f, currentFreezeTarget); // Minimum 1 second
+        currentFreezeTarget = Mathf.Max(1f, currentFreezeTarget);
     }
     
     private void ResetVenomTimer()
     {
         venomTimer = 0f;
         currentVenomTarget = venomSpawnInterval + Random.Range(-spawnTimeVariance, spawnTimeVariance);
-        currentVenomTarget = Mathf.Max(1f, currentVenomTarget); // Minimum 1 second
+        currentVenomTarget = Mathf.Max(1f, currentVenomTarget);
+    }
+    
+    private void ResetInvulnerabilityTimer()
+    {
+        invulnerabilityTimer = 0f;
+        currentInvulnerabilityTarget = invulnerabilitySpawnInterval + Random.Range(-spawnTimeVariance, spawnTimeVariance);
+        currentInvulnerabilityTarget = Mathf.Max(1f, currentInvulnerabilityTarget);
     }
     
     private void SpawnPotion(GameObject prefab, string type)
     {
-        // Random position in a circle around the player
         Vector2 randomCircle = Random.insideUnitCircle * spawnRadius;
         Vector3 spawnPos = playerTransform.position + new Vector3(randomCircle.x, spawnHeight, randomCircle.y);
         
@@ -107,9 +135,6 @@ public class PotionSpawner : MonoBehaviour
     
     #region Public Methods (Called by PlayerAbilities)
     
-    /// <summary>
-    /// Enable freeze potion spawning. Timer starts immediately.
-    /// </summary>
     public void EnableFreezePotion()
     {
         freezePotionEnabled = true;
@@ -117,9 +142,6 @@ public class PotionSpawner : MonoBehaviour
         if (debugLog) Debug.Log("[PotionSpawner] Freeze Potion talent activated!");
     }
     
-    /// <summary>
-    /// Disable freeze potion spawning.
-    /// </summary>
     public void DisableFreezePotion()
     {
         freezePotionEnabled = false;
@@ -127,9 +149,6 @@ public class PotionSpawner : MonoBehaviour
         if (debugLog) Debug.Log("[PotionSpawner] Freeze Potion talent deactivated!");
     }
     
-    /// <summary>
-    /// Enable venom potion spawning. Timer starts immediately.
-    /// </summary>
     public void EnableVenomPotion()
     {
         venomPotionEnabled = true;
@@ -137,9 +156,6 @@ public class PotionSpawner : MonoBehaviour
         if (debugLog) Debug.Log("[PotionSpawner] Venom Potion talent activated!");
     }
     
-    /// <summary>
-    /// Disable venom potion spawning.
-    /// </summary>
     public void DisableVenomPotion()
     {
         venomPotionEnabled = false;
@@ -147,10 +163,24 @@ public class PotionSpawner : MonoBehaviour
         if (debugLog) Debug.Log("[PotionSpawner] Venom Potion talent deactivated!");
     }
     
+    public void EnableInvulnerabilityPotion()
+    {
+        invulnerabilityPotionEnabled = true;
+        ResetInvulnerabilityTimer();
+        if (debugLog) Debug.Log("[PotionSpawner] Invulnerability Potion talent activated!");
+    }
+    
+    public void DisableInvulnerabilityPotion()
+    {
+        invulnerabilityPotionEnabled = false;
+        invulnerabilityTimer = 0f;
+        if (debugLog) Debug.Log("[PotionSpawner] Invulnerability Potion talent deactivated!");
+    }
+    
     /// <summary>
     /// Sync with PlayerAbilities boolean states.
     /// </summary>
-    public void SyncWithAbilities(bool freezeEnabled, bool venomEnabled)
+    public void SyncWithAbilities(bool freezeEnabled, bool venomEnabled, bool invulnerabilityEnabled)
     {
         // Handle freeze
         if (freezeEnabled && !freezePotionEnabled)
@@ -163,15 +193,19 @@ public class PotionSpawner : MonoBehaviour
             EnableVenomPotion();
         else if (!venomEnabled && venomPotionEnabled)
             DisableVenomPotion();
+            
+        // Handle invulnerability
+        if (invulnerabilityEnabled && !invulnerabilityPotionEnabled)
+            EnableInvulnerabilityPotion();
+        else if (!invulnerabilityEnabled && invulnerabilityPotionEnabled)
+            DisableInvulnerabilityPotion();
     }
     
-    /// <summary>
-    /// Disable all potion spawning. Used when resetting abilities.
-    /// </summary>
     public void DisableAllPotions()
     {
         DisableFreezePotion();
         DisableVenomPotion();
+        DisableInvulnerabilityPotion();
     }
     
     #endregion
@@ -190,6 +224,12 @@ public class PotionSpawner : MonoBehaviour
     [ContextMenu("Debug: Disable Venom Potion")]
     private void DebugDisableVenomPotion() => DisableVenomPotion();
     
+    [ContextMenu("Debug: Enable Invulnerability Potion")]
+    private void DebugEnableInvulnerabilityPotion() => EnableInvulnerabilityPotion();
+    
+    [ContextMenu("Debug: Disable Invulnerability Potion")]
+    private void DebugDisableInvulnerabilityPotion() => DisableInvulnerabilityPotion();
+    
     [ContextMenu("Debug: Spawn Freeze Potion Now")]
     private void DebugSpawnFreezeNow()
     {
@@ -206,6 +246,15 @@ public class PotionSpawner : MonoBehaviour
             SpawnPotion(venomPotionPrefab, "Venom");
         else
             Debug.LogWarning("[PotionSpawner] Venom potion prefab not assigned!");
+    }
+    
+    [ContextMenu("Debug: Spawn Invulnerability Potion Now")]
+    private void DebugSpawnInvulnerabilityNow()
+    {
+        if (invulnerabilityPotionPrefab != null)
+            SpawnPotion(invulnerabilityPotionPrefab, "Invulnerability");
+        else
+            Debug.LogWarning("[PotionSpawner] Invulnerability potion prefab not assigned!");
     }
     
     #endregion

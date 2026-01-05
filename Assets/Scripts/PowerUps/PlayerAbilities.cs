@@ -16,16 +16,16 @@ public class PlayerAbilities : MonoBehaviour
 
     #region Common Abilities (60% - Green)
     [Header("Common Abilities (Green)")]
-    [SerializeField, Tooltip("Stacks: x1.1 movement speed per stack")]
+    [SerializeField, Range(0, 10), Tooltip("Stacks: x1.1 movement speed per stack")]
     private int movementSpeedStacks = 0;
 
     [SerializeField, Tooltip("Blocks one hit then disappears")]
     private bool hasOneTimeShield = false;
 
-    [SerializeField, Tooltip("Stacks: +10% max HP per stack")]
+    [SerializeField, Range(0, 10), Tooltip("Stacks: +10% max HP per stack")]
     private int maxHpPlusStacks = 0;
 
-    [SerializeField, Tooltip("Stacks: 25% fire damage reduction per stack (max 3 = 75%)")]
+    [SerializeField, Range(0, 3), Tooltip("Stacks: 25% fire damage reduction per stack (max 3 = 75%)")]
     private int hazardResistanceStacks = 0;
     private const int MAX_HAZARD_RESISTANCE_STACKS = 3;
     #endregion
@@ -44,10 +44,10 @@ public class PlayerAbilities : MonoBehaviour
     [SerializeField, Tooltip("Arrows apply poison DoT")]
     private bool hasVenomShot = false;
 
-    [SerializeField, Tooltip("Stacks: +1s freeze duration per stack")]
+    [SerializeField, Range(0, 10), Tooltip("Stacks: +1s freeze duration per stack")]
     private int maximumFreezeStacks = 0;
 
-    [SerializeField, Tooltip("Stacks: +100 damage/s per stack")]
+    [SerializeField, Range(0, 10), Tooltip("Stacks: +100 damage/s per stack")]
     private int maximumVenomStacks = 0;
 
     [SerializeField, Tooltip("Spawns freeze potions that trigger freeze meteors")]
@@ -55,6 +55,9 @@ public class PlayerAbilities : MonoBehaviour
 
     [SerializeField, Tooltip("Spawns venom potions that trigger venom meteors")]
     private bool hasVenomPotionTalent = false;
+
+    [SerializeField, Tooltip("Spawns invulnerability potions that give 2s invulnerability")]
+    private bool hasInvulnerabilityPotionTalent = false;
     #endregion
 
     #region Legendary Abilities (10% - Red)
@@ -65,10 +68,10 @@ public class PlayerAbilities : MonoBehaviour
     [SerializeField, Tooltip("Fires 3 projectiles in a spread")]
     private bool hasTripleShot = false;
 
-    [SerializeField, Tooltip("Stacks: +30% max HP per stack")]
+    [SerializeField, Range(0, 10), Tooltip("Stacks: +30% max HP per stack")]
     private int maxHpPlusPlusStacks = 0;
 
-    [SerializeField, Tooltip("Stacks: x1.2 attack speed per stack")]
+    [SerializeField, Range(0, 10), Tooltip("Stacks: x1.2 attack speed per stack")]
     private int attackSpeedStacks = 0;
     #endregion
 
@@ -119,6 +122,7 @@ public class PlayerAbilities : MonoBehaviour
     public float TripleShotAngle => tripleShotAngle;
     public bool HasFreezePotionTalent => hasFreezePotionTalent;
     public bool HasVenomPotionTalent => hasVenomPotionTalent;
+    public bool HasInvulnerabilityPotionTalent => hasInvulnerabilityPotionTalent;
     #endregion
 
     private void Awake()
@@ -159,7 +163,7 @@ public class PlayerAbilities : MonoBehaviour
             // Sync potion talents with PotionSpawner (handles both enable AND disable)
             if (potionSpawner != null)
             {
-                potionSpawner.SyncWithAbilities(hasFreezePotionTalent, hasVenomPotionTalent);
+                potionSpawner.SyncWithAbilities(hasFreezePotionTalent, hasVenomPotionTalent, hasInvulnerabilityPotionTalent);
             }
         }
     }
@@ -310,6 +314,14 @@ public class PlayerAbilities : MonoBehaviour
         Debug.Log("[PlayerAbilities] Venom Potion Talent granted.");
     }
 
+    public void GrantInvulnerabilityPotionTalent()
+    {
+        hasInvulnerabilityPotionTalent = true;
+        if (potionSpawner != null)
+            potionSpawner.EnableInvulnerabilityPotion();
+        Debug.Log("[PlayerAbilities] Invulnerability Potion Talent granted.");
+    }
+
     // ===== LEGENDARY =====
     public void GrantMultishot()
     {
@@ -402,6 +414,9 @@ public class PlayerAbilities : MonoBehaviour
     [ContextMenu("Debug: Grant Venom Potion Talent")]
     public void DebugGrantVenomPotionTalent() => GrantVenomPotionTalent();
 
+    [ContextMenu("Debug: Grant Invulnerability Potion Talent")]
+    public void DebugGrantInvulnerabilityPotionTalent() => GrantInvulnerabilityPotionTalent();
+
     [ContextMenu("Debug: Grant Multishot")]
     public void DebugGrantMultishot() => GrantMultishot();
 
@@ -436,6 +451,7 @@ public class PlayerAbilities : MonoBehaviour
         attackSpeedStacks = 0;
         hasFreezePotionTalent = false;
         hasVenomPotionTalent = false;
+        hasInvulnerabilityPotionTalent = false;
         if (potionSpawner != null)
             potionSpawner.DisableAllPotions();
         RecalculateAllStats();

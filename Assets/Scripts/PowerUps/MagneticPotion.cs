@@ -7,7 +7,7 @@ using System.Collections;
 /// </summary>
 public class MagneticPotion : MonoBehaviour
 {
-    public enum PotionType { Freeze, Venom }
+    public enum PotionType { Freeze, Venom, Invulnerability }
     
     [Header("Potion Settings")]
     [SerializeField] private PotionType potionType = PotionType.Freeze;
@@ -28,11 +28,15 @@ public class MagneticPotion : MonoBehaviour
     [SerializeField] private float bobSpeed = 3f;
     [SerializeField] private float bobHeight = 0.15f;
     
-    [Header("Meteor Settings")]
+    [Header("Meteor Settings (Freeze/Venom only)")]
     [SerializeField, Tooltip("EffectMeteor prefab to spawn on nearest enemy")]
     private GameObject effectMeteorPrefab;
     [SerializeField, Tooltip("Maximum range to search for enemies")]
     private float enemySearchRadius = 30f;
+    
+    [Header("Invulnerability Settings")]
+    [SerializeField, Tooltip("Duration of invulnerability when collected")]
+    private float invulnerabilityDuration = 2f;
     
     [Header("Debug")]
     [SerializeField] private bool debugLog = false;
@@ -146,27 +150,63 @@ public class MagneticPotion : MonoBehaviour
     
     private void OnCollected()
     {
-        if (isCollected) return; // Prevent double collection
+        if (isCollected) return;
         isCollected = true;
         
         if (debugLog)
             Debug.Log($"[MagneticPotion] {potionType} potion collected!");
         
-        // Find nearest enemy
-        Transform nearestEnemy = FindNearestEnemy();
-        
-        if (nearestEnemy != null)
+        // Handle based on potion type
+        if (potionType == PotionType.Invulnerability)
         {
-            SpawnMeteorOnEnemy(nearestEnemy);
+            // Apply invulnerability to player
+            ApplyInvulnerabilityToPlayer();
         }
         else
         {
-            if (debugLog)
-                Debug.Log("[MagneticPotion] No enemies found, potion consumed without effect");
+            // Freeze/Venom - spawn meteor on nearest enemy
+            Transform nearestEnemy = FindNearestEnemy();
+            
+            if (nearestEnemy != null)
+            {
+                SpawnMeteorOnEnemy(nearestEnemy);
+            }
+            else
+            {
+                if (debugLog)
+                    Debug.Log("[MagneticPotion] No enemies found, potion consumed without effect");
+            }
         }
         
         // Destroy potion
         Destroy(gameObject);
+    }
+    
+    private void ApplyInvulnerabilityToPlayer()
+    {
+        if (playerTransform == null) return;
+        
+        // Try to find PlayerHealth on the player (check self and children)
+        PlayerHealth playerHealth = playerTransform.GetComponent<PlayerHealth>();
+        if (playerHealth == null)
+            playerHealth = playerTransform.GetComponentInChildren<PlayerHealth>();
+        if (playerHealth == null)
+            playerHealth = playerTransform.GetComponentInParent<PlayerHealth>();
+        
+        // Fallback: find any PlayerHealth in scene
+        if (playerHealth == null)
+            playerHealth = Object.FindFirstObjectByType<PlayerHealth>();
+        
+        if (playerHealth != null)
+        {
+            playerHealth.SetInvulnerable(invulnerabilityDuration);
+            if (debugLog)
+                Debug.Log($"[MagneticPotion] Applied {invulnerabilityDuration}s invulnerability to player!");
+        }
+        else
+        {
+            Debug.LogWarning("[MagneticPotion] Could not find PlayerHealth component anywhere!");
+        }
     }
     
     private Transform FindNearestEnemy()
