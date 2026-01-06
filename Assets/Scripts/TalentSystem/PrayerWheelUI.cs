@@ -29,16 +29,17 @@ public class PrayerWheelUI : MonoBehaviour
     [SerializeField] private Image wheel2TalentIcon;
     [SerializeField] private TextMeshProUGUI wheel2NameText; // Textbox above wheel
 
-    [Header("Selection Buttons (6 Total)")]
-    // Common
-    [SerializeField] private Button commonButtonLeft;
-    [SerializeField] private Button commonButtonRight;
-    // Rare
-    [SerializeField] private Button rareButtonLeft;
-    [SerializeField] private Button rareButtonRight;
-    // Legendary
-    [SerializeField] private Button legendaryButtonLeft;
-    [SerializeField] private Button legendaryButtonRight;
+    [Header("Selection Buttons (2 Total)")]
+    [SerializeField, Tooltip("Left wheel selection button")]
+    private Button buttonLeft;
+    [SerializeField, Tooltip("Right wheel selection button")]
+    private Button buttonRight;
+
+    [Header("Talent Name Text Boxes")]
+    [SerializeField, Tooltip("Text showing left wheel talent name (positioned above wheel)")]
+    private TextMeshProUGUI talentNameLeft;
+    [SerializeField, Tooltip("Text showing right wheel talent name (positioned above wheel)")]
+    private TextMeshProUGUI talentNameRight;
 
     [Header("Rarity Indicators")]
     [SerializeField] private Image wheel1RarityGlow;
@@ -50,9 +51,13 @@ public class PrayerWheelUI : MonoBehaviour
     [Header("Events")]
     public UnityEvent<TalentData> OnTalentSelected;
 
-    [Header("3D Wheel Camera")]
-    [SerializeField, Tooltip("Reference to camera setup for 3D wheels (auto-found if null)")]
-    private PrayerWheelCameraSetup cameraSetup;
+    [Header("Prayer Wheel Display")]
+    [SerializeField, Tooltip("Reference to prayer wheel display controller (auto-found if null)")]
+    private PrayerWheelDisplay prayerWheelDisplay;
+
+    [Header("UI Position Offsets")]
+    [SerializeField, Tooltip("Y offset for button positioning (positive = up)")]
+    private float buttonYOffset = 100f;
 
     private TalentData currentTalent1;
     private TalentData currentTalent2;
@@ -61,26 +66,20 @@ public class PrayerWheelUI : MonoBehaviour
     private void Awake()
     {
         // Setup button listeners
-        if (commonButtonLeft) commonButtonLeft.onClick.AddListener(() => SelectTalent(currentTalent1));
-        if (commonButtonRight) commonButtonRight.onClick.AddListener(() => SelectTalent(currentTalent2));
-        
-        if (rareButtonLeft) rareButtonLeft.onClick.AddListener(() => SelectTalent(currentTalent1));
-        if (rareButtonRight) rareButtonRight.onClick.AddListener(() => SelectTalent(currentTalent2));
-
-        if (legendaryButtonLeft) legendaryButtonLeft.onClick.AddListener(() => SelectTalent(currentTalent1));
-        if (legendaryButtonRight) legendaryButtonRight.onClick.AddListener(() => SelectTalent(currentTalent2));
+        if (buttonLeft) buttonLeft.onClick.AddListener(() => SelectTalent(currentTalent1));
+        if (buttonRight) buttonRight.onClick.AddListener(() => SelectTalent(currentTalent2));
 
         // Find wheel controller
-        wheelController = FindFirstObjectByType<PrayerWheelController>();
+        wheelController = FindObjectOfType<PrayerWheelController>();
         if (wheelController != null)
         {
             wheelController.OnSpinComplete += OnSpinComplete;
         }
 
-        // Find camera setup if not assigned
-        if (cameraSetup == null)
+        // Find prayer wheel display if not assigned
+        if (prayerWheelDisplay == null)
         {
-            cameraSetup = FindFirstObjectByType<PrayerWheelCameraSetup>();
+            prayerWheelDisplay = FindObjectOfType<PrayerWheelDisplay>();
         }
 
         // Hide panels initially
@@ -96,29 +95,60 @@ public class PrayerWheelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Shows the wheel UI and starts spinning.
+    /// Shows the wheel UI with talents already placed on slots.
+    /// Call Spin() separately to start the spinning animation.
     /// </summary>
-    public void ShowAndSpin()
+    public void Show()
     {
+        Debug.Log("[PrayerWheelUI] Show() called!");
+        
         if (wheelPanel != null) wheelPanel.SetActive(true);
         if (spinningPanel != null) spinningPanel.SetActive(true);
         if (selectionPanel != null) selectionPanel.SetActive(false);
 
-        // Show 3D wheels
-        if (cameraSetup != null)
+        // Show 3D wheels (this also handles game pause)
+        if (prayerWheelDisplay != null)
         {
-            cameraSetup.ShowWheels();
+            prayerWheelDisplay.Show();
+        }
+        else
+        {
+            Debug.LogWarning("[PrayerWheelUI] prayerWheelDisplay is NULL!");
         }
 
-        // Pause game
-        Time.timeScale = 0f;
+        // Prepare talents on slots immediately so player sees them
+        if (wheelController != null)
+        {
+            wheelController.PrepareTalents();
+        }
+        else
+        {
+            Debug.LogWarning("[PrayerWheelUI] wheelController is NULL! Cannot prepare talents.");
+        }
 
-        // Start the spin
+        Debug.Log("[PrayerWheelUI] Wheels shown with talents. Waiting for spin trigger.");
+    }
+
+    /// <summary>
+    /// Starts the spin animation. Call after Show().
+    /// </summary>
+    public void Spin()
+    {
         if (wheelController != null)
         {
             wheelController.StartSpin();
         }
     }
+
+    /// <summary>
+    /// Shows the wheel UI and immediately starts spinning (legacy method).
+    /// </summary>
+    public void ShowAndSpin()
+    {
+        Show();
+        Spin();
+    }
+
 
     private void OnSpinComplete(TalentData talent1, TalentData talent2)
     {
@@ -142,89 +172,84 @@ public class PrayerWheelUI : MonoBehaviour
         // Convert to Screen Space
         // Note: Assuming buttons are children of a Screen Space - Overlay canvas or similar.
         // If Camera is null, we can't position dynamically.
-        if (cameraSetup != null && cameraSetup.WheelCamera != null && mainCanvas != null)
+        // For button positioning, use main camera since we're no longer using a separate wheel camera
+        Camera mainCam = Camera.main;
+        if (mainCam != null && mainCanvas != null)
         {
-            Camera cam = cameraSetup.WheelCamera;
             Camera uiCam = (mainCanvas.renderMode == RenderMode.ScreenSpaceOverlay) ? null : mainCanvas.worldCamera;
             
-            Vector3 screenPosLeft = cam.WorldToScreenPoint(worldPosLeft);
-            Vector3 screenPosRight = cam.WorldToScreenPoint(worldPosRight);
+            Vector3 screenPosLeft = mainCam.WorldToScreenPoint(worldPosLeft);
+            Vector3 screenPosRight = mainCam.WorldToScreenPoint(worldPosRight);
             
-            // Check rarity to activate correct buttons
-            TalentData.TalentRarity rarity = talent1 != null ? talent1.rarity : TalentData.TalentRarity.Common;
-            
-            Button btnLeft = null;
-            Button btnRight = null;
-
-            switch (rarity)
+            // Position and Activate Left Button
+            if (buttonLeft != null)
             {
-                case TalentData.TalentRarity.Common:
-                    btnLeft = commonButtonLeft; btnRight = commonButtonRight;
-                    break;
-                case TalentData.TalentRarity.Rare:
-                    btnLeft = rareButtonLeft; btnRight = rareButtonRight;
-                    break;
-                case TalentData.TalentRarity.Legendary:
-                    btnLeft = legendaryButtonLeft; btnRight = legendaryButtonRight;
-                    break;
-            }
-
-            // Position and Activate Left
-            if (btnLeft != null)
-            {
-                RectTransform btnRect = btnLeft.GetComponent<RectTransform>();
-                RectTransform parentRect = btnLeft.transform.parent as RectTransform;
+                RectTransform btnRect = buttonLeft.GetComponent<RectTransform>();
+                RectTransform parentRect = buttonLeft.transform.parent as RectTransform;
 
                 if (parentRect != null && btnRect != null)
                 {
-                    btnLeft.gameObject.SetActive(true);
+                    buttonLeft.gameObject.SetActive(true);
                     Vector2 localPoint;
                     if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPosLeft, uiCam, out localPoint))
                     {
+                        // Apply Y offset
+                        localPoint.y += buttonYOffset;
                         btnRect.localPosition = localPoint;
-                        Debug.Log($"[PrayerWheelUI] BtnLeft World: {worldPosLeft}, Screen: {screenPosLeft}, Local: {localPoint} (Rel to {parentRect.name})");
                     }
                 }
             }
 
-            // Position and Activate Right
-            if (btnRight != null)
+            // Position and Activate Right Button
+            if (buttonRight != null)
             {
-                RectTransform btnRect = btnRight.GetComponent<RectTransform>();
-                RectTransform parentRect = btnRight.transform.parent as RectTransform;
+                RectTransform btnRect = buttonRight.GetComponent<RectTransform>();
+                RectTransform parentRect = buttonRight.transform.parent as RectTransform;
                 
                 if (parentRect != null && btnRect != null)
                 {
-                    btnRight.gameObject.SetActive(true);
+                    buttonRight.gameObject.SetActive(true);
                     Vector2 localPoint;
                     if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPosRight, uiCam, out localPoint))
                     {
+                        // Apply Y offset
+                        localPoint.y += buttonYOffset;
                         btnRect.localPosition = localPoint;
-                        Debug.Log($"[PrayerWheelUI] BtnRight World: {worldPosRight}, Screen: {screenPosRight}, Local: {localPoint} (Rel to {parentRect.name})");
                     }
                 }
+            }
+
+            // Show Talent Name Text Boxes (fixed positions - just update text)
+            if (talentNameLeft != null)
+            {
+                talentNameLeft.gameObject.SetActive(true);
+                talentNameLeft.text = talent1 != null ? talent1.talentName : "";
+            }
+
+            if (talentNameRight != null)
+            {
+                talentNameRight.gameObject.SetActive(true);
+                talentNameRight.text = talent2 != null ? talent2.talentName : "";
             }
         }
         else
         {
-             Debug.LogWarning("[PrayerWheelUI] Canvas or Helper Camera missing, cannot snap buttons.");
+             Debug.LogWarning("[PrayerWheelUI] Canvas or Camera missing, cannot position UI elements.");
         }
 
-        // Update Name Texts
+        // Update legacy Name Texts (if still used)
         if (wheel1NameText != null) wheel1NameText.text = talent1 != null ? talent1.talentName : "";
         if (wheel2NameText != null) wheel2NameText.text = talent2 != null ? talent2.talentName : "";
         
-        Debug.Log("[PrayerWheelUI] UI Updated and Buttons Positioned");
+        Debug.Log("[PrayerWheelUI] UI Updated and Elements Positioned");
     }
 
     private void SetButtonsActive(bool active)
     {
-        if (commonButtonLeft) commonButtonLeft.gameObject.SetActive(active);
-        if (commonButtonRight) commonButtonRight.gameObject.SetActive(active);
-        if (rareButtonLeft) rareButtonLeft.gameObject.SetActive(active);
-        if (rareButtonRight) rareButtonRight.gameObject.SetActive(active);
-        if (legendaryButtonLeft) legendaryButtonLeft.gameObject.SetActive(active);
-        if (legendaryButtonRight) legendaryButtonRight.gameObject.SetActive(active);
+        if (buttonLeft) buttonLeft.gameObject.SetActive(active);
+        if (buttonRight) buttonRight.gameObject.SetActive(active);
+        if (talentNameLeft) talentNameLeft.gameObject.SetActive(active);
+        if (talentNameRight) talentNameRight.gameObject.SetActive(active);
     }
 
     private void UpdateTalentDisplay(TalentData talent, Image icon, TextMeshProUGUI nameText, 
@@ -274,16 +299,17 @@ public class PrayerWheelUI : MonoBehaviour
             return;
         }
 
-        Debug.Log($"[PrayerWheelUI] Talent selected: {talent.talentName}");
+        Debug.Log("========================================");
+        Debug.Log($"[PrayerWheelUI] TALENT SELECTED: {talent.talentName}");
+        Debug.Log($"[PrayerWheelUI] Rarity: {talent.rarity}");
+        Debug.Log($"[PrayerWheelUI] Description: {talent.description}");
+        Debug.Log("========================================");
 
         // Fire event
         OnTalentSelected?.Invoke(talent);
 
-        // Hide UI
+        // Hide UI (this also handles game resume via PrayerWheelDisplay.Hide())
         HideAll();
-
-        // Resume game
-        Time.timeScale = 1f;
     }
 
     /// <summary>
@@ -297,10 +323,10 @@ public class PrayerWheelUI : MonoBehaviour
         if (spinningPanel != null) spinningPanel.SetActive(false);
         if (selectionPanel != null) selectionPanel.SetActive(false);
 
-        // Hide 3D wheels
-        if (cameraSetup != null)
+        // Hide 3D wheels (this also handles game resume)
+        if (prayerWheelDisplay != null)
         {
-            cameraSetup.HideWheels();
+            prayerWheelDisplay.Hide();
         }
     }
 
@@ -312,4 +338,18 @@ public class PrayerWheelUI : MonoBehaviour
         HideAll();
         Time.timeScale = 1f;
     }
+
+    #region Debug Methods
+    [ContextMenu("Debug: Show (With Talents)")]
+    public void DebugShow() => Show();
+
+    [ContextMenu("Debug: Spin")]
+    public void DebugSpin() => Spin();
+
+    [ContextMenu("Debug: Show And Spin")]
+    public void DebugShowAndSpin() => ShowAndSpin();
+
+    [ContextMenu("Debug: Hide All")]
+    public void DebugHideAll() => HideAll();
+    #endregion
 }
