@@ -89,6 +89,8 @@ namespace EnemyAI
         private float rageFireballSpeed = 5f;
         [SerializeField, Tooltip("Number of wall bounces for rage fireballs")]
         private int rageFireballBounces = 1;
+        [SerializeField, Tooltip("Fixed Y height for rage fireball spawn")]
+        private float rageFireballSpawnHeight = 0.2f;
         [SerializeField, Tooltip("Duration of charge animation (invulnerable during this)")]
         private float rageChargeDuration = 2f;
         [SerializeField, Tooltip("Optional VFX for invulnerability shield")]
@@ -1098,7 +1100,9 @@ namespace EnemyAI
                 direction.y = 0;
                 direction.Normalize();
                 
-                GameObject proj = Instantiate(prefabToUse, spawnPos, Quaternion.LookRotation(direction));
+                // Use fixed spawn height for rage fireballs
+                Vector3 fixedSpawnPos = new Vector3(spawnPos.x, rageFireballSpawnHeight, spawnPos.z);
+                GameObject proj = Instantiate(prefabToUse, fixedSpawnPos, Quaternion.LookRotation(direction));
                 
                 EnemyProjectile ep = proj.GetComponent<EnemyProjectile>();
                 if (ep != null)
