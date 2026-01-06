@@ -89,6 +89,7 @@ public class PrayerWheelController : MonoBehaviour
     private TalentData chosenTalent1;
     private TalentData chosenTalent2;
     private bool isSpinning = false;
+    private bool talentsPrepared = false; // Tracks if talents were already assigned via PrepareTalents()
 
     // Events
     public event System.Action<TalentData, TalentData> OnSpinComplete;
@@ -190,8 +191,16 @@ public class PrayerWheelController : MonoBehaviour
         
         // ... (logging) ...
 
-        // Step 2: Assign talents
-        AssignTalentsToWheels();
+        // Step 2: Assign talents (only if not already prepared)
+        if (!talentsPrepared)
+        {
+            AssignTalentsToWheels();
+        }
+        else
+        {
+            Debug.Log("[PrayerWheelController] Using pre-assigned talents.");
+        }
+        talentsPrepared = false; // Reset for next spin cycle
 
         // Step 3: Pick random socket
         currentSocketIndex = Random.Range(0, 5);
@@ -312,8 +321,38 @@ public class PrayerWheelController : MonoBehaviour
 
     // ... (existing code)
 
+    /// <summary>
+    /// Prepares talents on the wheel slots immediately (call before spin to show icons early).
+    /// </summary>
+    public void PrepareTalents()
+    {
+        if (talentDatabase == null)
+        {
+            Debug.LogError("[PrayerWheelController] TalentDatabase not assigned!");
+            return;
+        }
+        
+        Debug.Log("[PrayerWheelController] PrepareTalents() called - assigning icons to slots...");
+        AssignTalentsToWheels();
+        talentsPrepared = true; // Mark as prepared so spin won't re-assign
+        
+        // Debug: Check if icons were assigned
+        int iconsAssigned = 0;
+        for (int r = 0; r < 3; r++)
+        {
+            for (int s = 0; s < 5; s++)
+            {
+                if (wheel1Talents[r, s]?.icon != null) iconsAssigned++;
+                if (wheel2Talents[r, s]?.icon != null) iconsAssigned++;
+            }
+        }
+        Debug.Log($"[PrayerWheelController] Talents prepared. Total icons assigned: {iconsAssigned}");
+    }
+
     private void AssignTalentsToWheels()
     {
+        Debug.Log($"[PrayerWheelController] AssignTalentsToWheels() CALLED! Stack: {System.Environment.StackTrace}");
+        
         // For each rarity, get talents and distribute without repetition
         AssignRarityTalents(TalentData.TalentRarity.Common, 0);
         AssignRarityTalents(TalentData.TalentRarity.Rare, 1);
@@ -447,17 +486,27 @@ public class PrayerWheelController : MonoBehaviour
                 commonTinted = true;
             }
 
-            // 50% - Rare gets blue tint 
+            // 50% - Rare gets blue tint, turn off common
             if (progress >= 0.50f && !rareTinted && currentRarity >= TalentData.TalentRarity.Rare)
             {
+                // Turn off common tint
+                DisableEmission(wheel1.commonFloor?.floorMaterial);
+                DisableEmission(wheel2.commonFloor?.floorMaterial);
+                
+                // Apply rare tint
                 ApplyTint(wheel1.rareFloor?.floorMaterial, rareTintColor);
                 ApplyTint(wheel2.rareFloor?.floorMaterial, rareTintColor);
                 rareTinted = true;
             }
 
-            // 75% - Legendary gets yellow tint 
+            // 75% - Legendary gets yellow tint, turn off rare
             if (progress >= 0.75f && !legendaryTinted && currentRarity == TalentData.TalentRarity.Legendary)
             {
+                // Turn off rare tint
+                DisableEmission(wheel1.rareFloor?.floorMaterial);
+                DisableEmission(wheel2.rareFloor?.floorMaterial);
+                
+                // Apply legendary tint
                 ApplyTint(wheel1.legendaryFloor?.floorMaterial, legendaryTintColor);
                 ApplyTint(wheel2.legendaryFloor?.floorMaterial, legendaryTintColor);
                 legendaryTinted = true;
