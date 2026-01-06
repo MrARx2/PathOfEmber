@@ -48,10 +48,14 @@ namespace Hazards
 
         private void HandleVisuals()
         {
-            if (scrollTexture && _renderer != null)
+            if (scrollTexture && _renderer != null && _renderer.material != null)
             {
-                Vector2 offset = Time.time * scrollSpeed;
-                _renderer.material.SetTextureOffset(texturePropertyName, offset);
+                // Only set offset if the shader has this property
+                if (_renderer.material.HasProperty(texturePropertyName))
+                {
+                    Vector2 offset = Time.time * scrollSpeed;
+                    _renderer.material.SetTextureOffset(texturePropertyName, offset);
+                }
             }
         }
 

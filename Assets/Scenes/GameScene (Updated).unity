@@ -4743,6 +4743,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+--- !u!4 &770129403 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5065112007464412149, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
+  m_PrefabInstance: {fileID: 886833667}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &799341323 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 235566004105004019, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
@@ -4894,6 +4899,14 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6946856339458567174, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
+      propertyPath: target
+      value: 
+      objectReference: {fileID: 57923298}
+    - target: {fileID: 6946856339458567174, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
+      propertyPath: modelTransform
+      value: 
+      objectReference: {fileID: 770129403}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4973,6 +4986,14 @@ PrefabInstance:
     - target: {fileID: 2054984530339975720, guid: bcd5dcb30e2c77441ba8b8155b84622d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5973116302978020894, guid: bcd5dcb30e2c77441ba8b8155b84622d, type: 3}
+      propertyPath: tideSpeed
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5973116302978020894, guid: bcd5dcb30e2c77441ba8b8155b84622d, type: 3}
+      propertyPath: tideHeight
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 7420046628643080392, guid: bcd5dcb30e2c77441ba8b8155b84622d, type: 3}
       propertyPath: m_Name

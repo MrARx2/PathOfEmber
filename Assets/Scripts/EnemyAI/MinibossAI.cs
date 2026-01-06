@@ -39,10 +39,6 @@ namespace EnemyAI
         [Range(0f, 1f)]
         private float repositionChance = 0.15f;
         
-        [SerializeField, Tooltip("Chance to move to a new position while fighting")]
-        [Range(0f, 1f)]
-        private float roamChance = 0.1f;
-        
         [Header("=== FIREBALL ATTACK ===")]
         [SerializeField] private GameObject fireballPrefab;
         [SerializeField] private Transform projectileSpawnPoint;
@@ -68,7 +64,6 @@ namespace EnemyAI
         [SerializeField] private string fireballBool = "Shoot_FireBall";
         [SerializeField] private string meteorBool = "Summon_Meteor";
         [SerializeField] private string walkBool = "Walk";
-        [SerializeField] private float attackAnimationDuration = 0.5f;
         
         [Header("=== REPOSITIONING ===")]
         [SerializeField] private float repositionDistance = 4f;

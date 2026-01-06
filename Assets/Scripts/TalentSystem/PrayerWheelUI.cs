@@ -70,7 +70,7 @@ public class PrayerWheelUI : MonoBehaviour
         if (buttonRight) buttonRight.onClick.AddListener(() => SelectTalent(currentTalent2));
 
         // Find wheel controller
-        wheelController = FindObjectOfType<PrayerWheelController>();
+        wheelController = FindFirstObjectByType<PrayerWheelController>();
         if (wheelController != null)
         {
             wheelController.OnSpinComplete += OnSpinComplete;
@@ -79,7 +79,7 @@ public class PrayerWheelUI : MonoBehaviour
         // Find prayer wheel display if not assigned
         if (prayerWheelDisplay == null)
         {
-            prayerWheelDisplay = FindObjectOfType<PrayerWheelDisplay>();
+            prayerWheelDisplay = FindFirstObjectByType<PrayerWheelDisplay>();
         }
 
         // Hide panels initially

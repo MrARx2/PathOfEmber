@@ -49,8 +49,7 @@ public class PrayerWheelCameraSetup : MonoBehaviour
     private Vector3 wheelDefaultRotation = Vector3.zero;
 
     [Header("Animation")]
-    [SerializeField, Tooltip("Duration for fade in/out")]
-    private float fadeDuration = 0.3f;
+    // Note: Fade animation not currently implemented - fadeDuration removed
 
     private Camera mainCamera;
     private GameObject wheelCameraObject;
