@@ -79,6 +79,7 @@ MonoBehaviour:
   agentAcceleration: 0.2
   pathRecalculationInterval: 0.5
   enableObstacleRaycast: 1
+  raycastHeight: 0.1
   obstacleAvoidanceDistance: 3
   obstacleAvoidanceRays: 8
   obstacleLayerMask:
@@ -124,7 +125,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
   maxHealth: 150
-  xpReward: 10
+  xpReward: 18
   modelTransform: {fileID: 7900245869590481414}
   currentHealth: 0
   HealthBarPoint: {fileID: 0}

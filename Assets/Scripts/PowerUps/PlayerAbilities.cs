@@ -35,8 +35,8 @@ public class PlayerAbilities : MonoBehaviour
     [SerializeField, Tooltip("Arrows pass through enemies")]
     private bool hasPiercing = false;
 
-    [SerializeField, Tooltip("Arrows bounce off walls")]
-    private bool hasBouncingArrows = false;
+    [SerializeField, Range(0, 10), Tooltip("Stacks: +1 bounce per stack (0 = no bouncing)")]
+    private int bouncingArrowsStacks = 0;
 
     [SerializeField, Tooltip("Arrows freeze enemies for 1s")]
     private bool hasFreezeShot = false;
@@ -62,11 +62,11 @@ public class PlayerAbilities : MonoBehaviour
 
     #region Legendary Abilities (10% - Red)
     [Header("Legendary Abilities (Red)")]
-    [SerializeField, Tooltip("Fires 2x the current projectile count")]
-    private bool hasMultishot = false;
+    [SerializeField, Range(0, 10), Tooltip("Stacks: +1 additional arrow per stack")]
+    private int multishotStacks = 0;
 
-    [SerializeField, Tooltip("Fires 3 projectiles in a spread")]
-    private bool hasTripleShot = false;
+    [SerializeField, Range(0, 10), Tooltip("Stacks: +2 arrows per stack (1, 3, 5, 7...)")]
+    private int tripleshotStacks = 0;
 
     [SerializeField, Range(0, 10), Tooltip("Stacks: +30% max HP per stack")]
     private int maxHpPlusPlusStacks = 0;
@@ -108,11 +108,12 @@ public class PlayerAbilities : MonoBehaviour
 
     #region Public Properties
     public bool HasPiercing => hasPiercing;
-    public bool HasBouncingArrows => hasBouncingArrows;
+    public bool HasBouncingArrows => bouncingArrowsStacks > 0;
+    public int BouncingArrowsStacks => bouncingArrowsStacks;
     public bool HasFreezeShot => hasFreezeShot;
     public bool HasVenomShot => hasVenomShot;
-    public bool HasMultishot => hasMultishot;
-    public bool HasTripleShot => hasTripleShot;
+    public int MultishotStacks => multishotStacks;
+    public int TripleshotStacks => tripleshotStacks;
     public bool HasOneTimeShield => hasOneTimeShield;
     public int HazardResistanceStacks => hazardResistanceStacks;
     
@@ -196,8 +197,8 @@ public class PlayerAbilities : MonoBehaviour
         if (playerShooting != null)
         {
             playerShooting.SetTempoMultiplier(currentAttackSpeedMultiplier);
-            playerShooting.SetMultishotEnabled(hasMultishot);
-            playerShooting.SetTripleShotEnabled(hasTripleShot, tripleShotAngle);
+            playerShooting.SetMultishotStacks(multishotStacks);
+            playerShooting.SetTripleshotStacks(tripleshotStacks, tripleShotAngle);
         }
 
         if (playerHealth != null)
@@ -238,11 +239,16 @@ public class PlayerAbilities : MonoBehaviour
     {
         if (playerHealth != null)
         {
-            // Heal 20% of max HP
-            int healAmount = Mathf.RoundToInt(playerHealth.MaxHealth * 0.2f);
+            // Random heal between 30% and 100% of max HP
+            float healPercent = Random.Range(0.30f, 1.00f);
+            int healAmount = Mathf.RoundToInt(playerHealth.MaxHealth * healPercent);
             playerHealth.Heal(healAmount);
+            Debug.Log($"[PlayerAbilities] Health Heal granted! Healed {healPercent * 100f:F0}% ({healAmount} HP)");
         }
-        Debug.Log("[PlayerAbilities] Health Heal granted.");
+        else
+        {
+            Debug.LogWarning("[PlayerAbilities] Health Heal - PlayerHealth is null!");
+        }
     }
 
     public void GrantHazardResistance()
@@ -268,8 +274,8 @@ public class PlayerAbilities : MonoBehaviour
 
     public void GrantBouncingArrows()
     {
-        hasBouncingArrows = true;
-        Debug.Log("[PlayerAbilities] Bouncing Arrows granted.");
+        bouncingArrowsStacks++;
+        Debug.Log($"[PlayerAbilities] Bouncing Arrows granted. Total stacks: {bouncingArrowsStacks} (max bounces)");
     }
 
     public void GrantFreezeShot()
@@ -325,16 +331,17 @@ public class PlayerAbilities : MonoBehaviour
     // ===== LEGENDARY =====
     public void GrantMultishot()
     {
-        hasMultishot = true;
+        multishotStacks++;
         ApplyToScripts();
-        Debug.Log("[PlayerAbilities] Multishot granted.");
+        Debug.Log($"[PlayerAbilities] Multishot granted. Total stacks: {multishotStacks}, Arrows: {1 + multishotStacks}");
     }
 
     public void GrantTripleShot()
     {
-        hasTripleShot = true;
+        tripleshotStacks++;
         ApplyToScripts();
-        Debug.Log("[PlayerAbilities] Triple Shot granted.");
+        int totalArrows = 1 + (tripleshotStacks * 2);
+        Debug.Log($"[PlayerAbilities] Triple Shot granted. Total stacks: {tripleshotStacks}, Arrows per burst: {totalArrows}");
     }
 
     public void GrantMaxHpPlusPlus()
@@ -440,13 +447,13 @@ public class PlayerAbilities : MonoBehaviour
         maxHpPlusStacks = 0;
         hazardResistanceStacks = 0;
         hasPiercing = false;
-        hasBouncingArrows = false;
+        bouncingArrowsStacks = 0;
         hasFreezeShot = false;
         hasVenomShot = false;
         maximumFreezeStacks = 0;
         maximumVenomStacks = 0;
-        hasMultishot = false;
-        hasTripleShot = false;
+        multishotStacks = 0;
+        tripleshotStacks = 0;
         maxHpPlusPlusStacks = 0;
         attackSpeedStacks = 0;
         hasFreezePotionTalent = false;

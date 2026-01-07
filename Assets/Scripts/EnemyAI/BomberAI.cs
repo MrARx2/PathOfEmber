@@ -227,6 +227,17 @@ namespace EnemyAI
                 }
             }
 
+            // Award 50% XP for self-destruct (partial reward even if player didn't kill bomber)
+            if (XPSystem.Instance != null && health != null)
+            {
+                int partialXP = Mathf.RoundToInt(health.XpReward * 0.5f);
+                if (partialXP > 0)
+                {
+                    XPSystem.Instance.AddXP(partialXP);
+                    Debug.Log($"[BomberAI] Self-destruct: Awarded {partialXP} XP (50% of {health.XpReward})");
+                }
+            }
+
             // Destroy self
             Destroy(gameObject);
         }

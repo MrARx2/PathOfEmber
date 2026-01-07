@@ -108,6 +108,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     public bool IsFrozen => isFrozen;
     public bool IsVenomed => isVenomed;
     public bool IsInvulnerable => isInvulnerable;
+    public int XpReward => xpReward;
 
     private void Awake()
     {
@@ -493,6 +494,13 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         
         // Clear any visual effects
         ClearTint();
+        ClearEmission();
+        
+        // Trigger death animation
+        if (animator != null)
+        {
+            animator.SetTrigger("Die");
+        }
         
         // Disable AI/movement immediately
         if (navAgent != null && navAgent.isOnNavMesh)

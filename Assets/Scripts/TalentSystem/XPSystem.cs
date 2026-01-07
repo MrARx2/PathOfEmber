@@ -14,7 +14,7 @@ public class XPSystem : MonoBehaviour
     [SerializeField] private int maxXP = 100;
     [SerializeField] private int level = 1;
     [SerializeField, Tooltip("XP required increases by this percentage each level")]
-    private float xpScalingPercent = 25f;
+    private float xpScalingPercent = 15f;
 
     [Header("UI References")]
     [SerializeField, Tooltip("XP bar fill image (Image.fillAmount)")]

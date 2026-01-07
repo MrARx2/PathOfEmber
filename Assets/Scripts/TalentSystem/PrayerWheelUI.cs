@@ -59,6 +59,10 @@ public class PrayerWheelUI : MonoBehaviour
     [SerializeField, Tooltip("Y offset for button positioning (positive = up)")]
     private float buttonYOffset = 100f;
 
+    [Header("Other UI to Hide")]
+    [SerializeField, Tooltip("Canvas to hide during prayer wheel (e.g., enemy health bars, damage numbers)")]
+    private Canvas systemsCanvasToHide;
+
     private TalentData currentTalent1;
     private TalentData currentTalent2;
     private PrayerWheelController wheelController;
@@ -124,6 +128,12 @@ public class PrayerWheelUI : MonoBehaviour
         else
         {
             Debug.LogWarning("[PrayerWheelUI] wheelController is NULL! Cannot prepare talents.");
+        }
+
+        // Hide systems canvas (enemy health bars, damage numbers, etc.)
+        if (systemsCanvasToHide != null)
+        {
+            systemsCanvasToHide.gameObject.SetActive(false);
         }
 
         Debug.Log("[PrayerWheelUI] Wheels shown with talents. Waiting for spin trigger.");
@@ -327,6 +337,12 @@ public class PrayerWheelUI : MonoBehaviour
         if (prayerWheelDisplay != null)
         {
             prayerWheelDisplay.Hide();
+        }
+
+        // Show systems canvas again
+        if (systemsCanvasToHide != null)
+        {
+            systemsCanvasToHide.gameObject.SetActive(true);
         }
     }
 

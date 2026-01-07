@@ -57,11 +57,30 @@ public class TalentSelectionManager : MonoBehaviour
         if (xpSystem != null)
         {
             xpSystem.OnXPFilled.AddListener(OnXPFilled);
+            Debug.Log("[TalentSelectionManager] Subscribed to XPSystem.OnXPFilled");
+        }
+        else
+        {
+            Debug.LogWarning("[TalentSelectionManager] XPSystem is NULL - cannot subscribe!");
         }
 
         if (prayerWheelUI != null)
         {
             prayerWheelUI.OnTalentSelected.AddListener(OnTalentSelected);
+            Debug.Log("[TalentSelectionManager] Subscribed to PrayerWheelUI.OnTalentSelected");
+        }
+        else
+        {
+            Debug.LogError("[TalentSelectionManager] PrayerWheelUI is NULL - TALENTS WILL NOT BE APPLIED!");
+        }
+
+        if (playerAbilities != null)
+        {
+            Debug.Log($"[TalentSelectionManager] PlayerAbilities found on: {playerAbilities.gameObject.name}");
+        }
+        else
+        {
+            Debug.LogError("[TalentSelectionManager] PlayerAbilities is NULL - CANNOT APPLY TALENTS!");
         }
     }
 
@@ -82,35 +101,74 @@ public class TalentSelectionManager : MonoBehaviour
     {
         talentActions = new Dictionary<string, System.Action>
         {
-            // Common Talents
+            // ===== COMMON TALENTS =====
             { "MovementSpeed", () => playerAbilities?.GrantMovementSpeed() },
+            { "Speed", () => playerAbilities?.GrantMovementSpeed() }, // Alias
+            
             { "OneTimeShield", () => playerAbilities?.GrantOneTimeShield() },
+            { "Shield", () => playerAbilities?.GrantOneTimeShield() }, // Alias
+            
             { "MaxHpPlus", () => playerAbilities?.GrantMaxHpPlus() },
+            { "MaxHP+", () => playerAbilities?.GrantMaxHpPlus() }, // Alias
+            { "HealthPlus", () => playerAbilities?.GrantMaxHpPlus() }, // Alias
+            
             { "HealthHeal", () => playerAbilities?.GrantHealthHeal() },
+            { "Heal", () => playerAbilities?.GrantHealthHeal() }, // Alias
+            
             { "HazardResistance", () => playerAbilities?.GrantHazardResistance() },
-            { "FreezePotion", () => SpawnPotion("Freeze") },
-            { "VenomPotion", () => SpawnPotion("Venom") },
+            { "FireResistance", () => playerAbilities?.GrantHazardResistance() }, // Alias
 
-            // Rare Talents
+            // ===== RARE TALENTS =====
             { "Piercing", () => playerAbilities?.GrantPiercing() },
+            { "Pierce", () => playerAbilities?.GrantPiercing() }, // Alias
+            
             { "BouncingBullets", () => playerAbilities?.GrantBouncingArrows() },
+            { "BouncingArrows", () => playerAbilities?.GrantBouncingArrows() }, // Alias
             { "Ricochet", () => playerAbilities?.GrantBouncingArrows() }, // Alias
+            { "Bounce", () => playerAbilities?.GrantBouncingArrows() }, // Alias
+            
             { "FreezeShot", () => playerAbilities?.GrantFreezeShot() },
+            { "Freeze", () => playerAbilities?.GrantFreezeShot() }, // Alias
+            
             { "VenomShot", () => playerAbilities?.GrantVenomShot() },
+            { "Venom", () => playerAbilities?.GrantVenomShot() }, // Alias
+            { "Poison", () => playerAbilities?.GrantVenomShot() }, // Alias
+            
             { "MaximumFreeze", () => playerAbilities?.GrantMaximumFreeze() },
             { "MaxFreeze", () => playerAbilities?.GrantMaximumFreeze() }, // Alias
+            
             { "MaximumVenom", () => playerAbilities?.GrantMaximumVenom() },
             { "MaxVenom", () => playerAbilities?.GrantMaximumVenom() }, // Alias
 
-            // Legendary Talents
+            // ===== POTION TALENTS (enable spawning system) =====
+            { "FreezePotionTalent", () => playerAbilities?.GrantFreezePotionTalent() },
+            { "FreezePotion", () => playerAbilities?.GrantFreezePotionTalent() }, // Alias
+            
+            { "VenomPotionTalent", () => playerAbilities?.GrantVenomPotionTalent() },
+            { "VenomPotion", () => playerAbilities?.GrantVenomPotionTalent() }, // Alias
+            { "PoisonPotion", () => playerAbilities?.GrantVenomPotionTalent() }, // Alias
+            
+            { "InvulnerabilityPotionTalent", () => playerAbilities?.GrantInvulnerabilityPotionTalent() },
+            { "InvulnerabilityPotion", () => playerAbilities?.GrantInvulnerabilityPotionTalent() }, // FIXED: was calling wrong method!
+            { "InvulnPotion", () => playerAbilities?.GrantInvulnerabilityPotionTalent() }, // Alias
+            { "InvulnerabilityPotion2S", () => playerAbilities?.GrantInvulnerabilityPotionTalent() }, // Alias
+
+            // ===== LEGENDARY TALENTS =====
             { "Multishot", () => playerAbilities?.GrantMultishot() },
             { "MultiShot", () => playerAbilities?.GrantMultishot() }, // Alias
+            { "DoubleShot", () => playerAbilities?.GrantMultishot() }, // Alias
+            
             { "TripleShot", () => playerAbilities?.GrantTripleShot() },
+            { "Triple", () => playerAbilities?.GrantTripleShot() }, // Alias
+            
             { "MaxHpPlusPlus", () => playerAbilities?.GrantMaxHpPlusPlus() },
             { "MaxHP+++", () => playerAbilities?.GrantMaxHpPlusPlus() }, // Alias
+            { "MaxHPPlusPlus", () => playerAbilities?.GrantMaxHpPlusPlus() }, // Alias
+            
             { "AttackSpeed", () => playerAbilities?.GrantAttackSpeed() },
-            { "InvulnerabilityPotion", () => playerAbilities?.GrantInvulnerabilityPotion() },
-            { "InvulnerabilityPotion2S", () => playerAbilities?.GrantInvulnerabilityPotion() }, // Alias
+            { "AttackSpeedPlus", () => playerAbilities?.GrantAttackSpeed() }, // Alias
+            { "FireRate", () => playerAbilities?.GrantAttackSpeed() }, // Alias - matches FireRate.asset
+            { "FireRate+", () => playerAbilities?.GrantAttackSpeed() }, // Alias
         };
     }
 
@@ -136,7 +194,10 @@ public class TalentSelectionManager : MonoBehaviour
             return;
         }
 
-        Debug.Log($"[TalentSelectionManager] Applying talent: {talent.talentName} (ID: {talent.talentId})");
+        // Trim whitespace/tabs from talentId to prevent data entry issues
+        string talentId = talent.talentId?.Trim() ?? "";
+        
+        Debug.Log($"[TalentSelectionManager] Applying talent: {talent.talentName} (ID: '{talentId}')");
 
         if (playerAbilities == null)
         {
@@ -145,7 +206,7 @@ public class TalentSelectionManager : MonoBehaviour
         }
 
         // Look up and execute the talent action
-        if (talentActions.TryGetValue(talent.talentId, out System.Action action))
+        if (talentActions.TryGetValue(talentId, out System.Action action))
         {
             action.Invoke();
             Debug.Log($"[TalentSelectionManager] Talent '{talent.talentName}' applied successfully!");
@@ -153,22 +214,6 @@ public class TalentSelectionManager : MonoBehaviour
         else
         {
             Debug.LogWarning($"[TalentSelectionManager] No action found for talent ID: {talent.talentId}");
-        }
-    }
-
-    private void SpawnPotion(string potionType)
-    {
-        // TODO: Implement potion spawning near player
-        Debug.Log($"[TalentSelectionManager] Would spawn {potionType} potion near player");
-        
-        // For now, apply effect directly
-        if (potionType == "Freeze" && playerAbilities != null)
-        {
-            playerAbilities.GrantFreezeShot();
-        }
-        else if (potionType == "Venom" && playerAbilities != null)
-        {
-            playerAbilities.GrantVenomShot();
         }
     }
 

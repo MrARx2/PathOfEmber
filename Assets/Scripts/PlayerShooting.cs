@@ -41,10 +41,16 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField, Tooltip("Float parameter name used on both Animators to scale shooting speed (optional)")] private string shootingTempoParam = "ShootingTempo";
 
     [Header("Power-Up Abilities")]
-    [SerializeField, Tooltip("If enabled, fires 2x the projectile count")] private bool multishotEnabled = false;
-    [SerializeField, Tooltip("Delay between multishot bursts in seconds")] private float multishotDelay = 0.1f;
-    [SerializeField, Tooltip("If enabled, fires 3 projectiles in a spread")] private bool tripleshotEnabled = false;
-    [SerializeField, Tooltip("Angle spread for triple shot")] private float tripleshotAngle = 25f;
+    [SerializeField, Tooltip("Number of multishot stacks (0 = 1 arrow, 1 = 2 arrows, etc)")]
+    private int multishotStacks = 0;
+    [SerializeField, Tooltip("Max total duration for multishot bursts")]
+    private float maxMultishotDuration = 0.2f;
+    [SerializeField, Tooltip("Base delay between multishot bursts")]
+    private float baseMultishotDelay = 0.1f;
+    [SerializeField, Tooltip("Number of tripleshot stacks (0 = 1 arrow, 1 = 3 arrows, 2 = 6 arrows, etc)")]
+    private int tripleshotStacks = 0;
+    [SerializeField, Tooltip("Angle spread for triple shot")]
+    private float tripleshotAngle = 25f;
 
     [Header("Layers (Optional)")]
     [SerializeField, Tooltip("Name of the Player layer to ignore vs projectile")] private string playerLayerName = "Player";
@@ -352,13 +358,16 @@ public class PlayerShooting : MonoBehaviour
             RotateVisualTowards(dir);
         }
 
+        // Calculate total bursts based on multishot stacks (0 = 1 burst, 1 = 2 bursts, etc)
+        int totalBursts = 1 + multishotStacks;
+        
         // Fire first burst immediately
         FireBurst(origin, dir);
 
-        // If multishot is enabled, fire second burst after delay
-        if (multishotEnabled)
+        // Fire additional bursts with compressed timing
+        if (totalBursts > 1)
         {
-            StartCoroutine(MultishotDelayRoutine(origin, dir));
+            StartCoroutine(MultishotBurstRoutine(origin, dir, totalBursts - 1));
         }
 
         float effectiveRate = fireRate * Mathf.Max(0.01f, shootingTempo);
@@ -367,24 +376,41 @@ public class PlayerShooting : MonoBehaviour
         SetShootingState(false);
     }
 
-    private System.Collections.IEnumerator MultishotDelayRoutine(Vector3 origin, Vector3 dir)
+    private System.Collections.IEnumerator MultishotBurstRoutine(Vector3 origin, Vector3 dir, int additionalBursts)
     {
-        yield return new WaitForSeconds(multishotDelay);
-        FireBurst(origin, dir);
+        // Calculate delay: compress into maxMultishotDuration, but never exceed baseMultishotDelay
+        float delay = Mathf.Min(baseMultishotDelay, maxMultishotDuration / additionalBursts);
+        
+        for (int i = 0; i < additionalBursts; i++)
+        {
+            yield return new WaitForSeconds(delay);
+            FireBurst(origin, dir);
+        }
     }
 
     private void FireBurst(Vector3 origin, Vector3 dir)
     {
-        if (tripleshotEnabled)
+        // Calculate arrows per burst: 0 stacks = 1, 1 stack = 3, 2 stacks = 5, etc (always odd)
+        int arrowCount = 1 + (tripleshotStacks * 2);
+        
+        if (arrowCount == 1)
         {
-            // Fire 3 projectiles: center, left, right
+            // Single arrow
             FireProjectile(origin, dir);
-            FireProjectile(origin, Quaternion.Euler(0, -tripleshotAngle, 0) * dir);
-            FireProjectile(origin, Quaternion.Euler(0, tripleshotAngle, 0) * dir);
         }
         else
         {
-            FireProjectile(origin, dir);
+            // Spread arrows evenly across the angle
+            float totalSpread = tripleshotAngle * 2f; // Full spread from -angle to +angle
+            float angleStep = arrowCount > 1 ? totalSpread / (arrowCount - 1) : 0f;
+            float startAngle = -tripleshotAngle;
+            
+            for (int i = 0; i < arrowCount; i++)
+            {
+                float angle = startAngle + (angleStep * i);
+                Vector3 spreadDir = Quaternion.Euler(0, angle, 0) * dir;
+                FireProjectile(origin, spreadDir);
+            }
         }
     }
 
@@ -415,6 +441,7 @@ public class PlayerShooting : MonoBehaviour
             {
                 projectile.IsPiercing = abilities.HasPiercing;
                 projectile.HasBouncing = abilities.HasBouncingArrows;
+                projectile.MaxBounces = abilities.BouncingArrowsStacks;
                 projectile.HasFreezeEffect = abilities.HasFreezeShot;
                 projectile.HasVenomEffect = abilities.HasVenomShot;
                 projectile.FreezeDuration = abilities.FreezeDuration;
@@ -634,20 +661,23 @@ public class PlayerShooting : MonoBehaviour
     }
 
     /// <summary>
-    /// Enables or disables multishot (fires 2x projectiles).
+    /// Sets the number of multishot stacks (0 = 1 arrow, 1 = 2 arrows, etc).
     /// </summary>
-    public void SetMultishotEnabled(bool enabled)
+    public void SetMultishotStacks(int stacks)
     {
-        multishotEnabled = enabled;
+        multishotStacks = Mathf.Max(0, stacks);
+        Debug.Log($"[PlayerShooting] Multishot stacks set to {multishotStacks} (total bursts: {1 + multishotStacks})");
     }
 
     /// <summary>
-    /// Enables or disables triple shot (fires 3 projectiles in a spread).
+    /// Sets the number of tripleshot stacks (0 = 1 arrow, 1 = 3 arrows, 2 = 5 arrows, etc).
     /// </summary>
-    public void SetTripleShotEnabled(bool enabled, float angle = 25f)
+    public void SetTripleshotStacks(int stacks, float angle = 25f)
     {
-        tripleshotEnabled = enabled;
+        tripleshotStacks = Mathf.Max(0, stacks);
         tripleshotAngle = angle;
+        int arrowCount = 1 + (tripleshotStacks * 2);
+        Debug.Log($"[PlayerShooting] Tripleshot stacks set to {tripleshotStacks} (arrows per burst: {arrowCount})");
     }
     #endregion
 }

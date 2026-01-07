@@ -45,7 +45,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.15
-  m_Speed: 0.2
+  m_Speed: 0.25
   m_Acceleration: 1
   avoidancePriority: 50
   m_AngularSpeed: 120
@@ -71,13 +71,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI.ChaserAI
   target: {fileID: 0}
   modelTransform: {fileID: 2204907571803602135}
-  moveSpeed: 0.2
+  moveSpeed: 0.25
   attackRange: 0.2
   stoppingDistanceMultiplier: 0.2
   agentRadius: 0.25
   agentAcceleration: 1
   pathRecalculationInterval: 0.5
   enableObstacleRaycast: 1
+  raycastHeight: 0.1
   obstacleAvoidanceDistance: 3
   obstacleAvoidanceRays: 8
   obstacleLayerMask:
