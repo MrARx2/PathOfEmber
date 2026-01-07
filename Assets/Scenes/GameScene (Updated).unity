@@ -5607,7 +5607,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7420046628643080392, guid: bcd5dcb30e2c77441ba8b8155b84622d, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5741,6 +5741,9 @@ MonoBehaviour:
   verticalOffset: -1.3
   pauseGameWhenVisible: 1
   wheelLayer: 0
+  useSmoothSlowdown: 1
+  fallbackSlowdownDuration: 0.4
+  fallbackResumeDuration: 0.25
 --- !u!114 &1246689980 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1681347285293982752, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
@@ -6426,6 +6429,54 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+--- !u!1 &1924618433
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1924618435}
+  - component: {fileID: 1924618434}
+  m_Layer: 0
+  m_Name: TimeScaleManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1924618434
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1924618433}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29cf668464945814f999885e6ca198ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TimeScaleManager
+  slowdownDuration: 0.4
+  resumeDuration: 0.25
+  targetSlowedTimeScale: 0.002
+  easingType: 1
+--- !u!4 &1924618435
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1924618433}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.99551, y: 0, z: 2.5627}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &2004693923
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6885,14 +6936,15 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 330585546}
   - {fileID: 140909529}
+  - {fileID: 470439001}
   - {fileID: 241913751}
   - {fileID: 504720377}
   - {fileID: 7835594598272111968}
+  - {fileID: 1924618435}
   - {fileID: 71150678}
   - {fileID: 2004693923}
   - {fileID: 1344630859}
   - {fileID: 1514125264}
-  - {fileID: 470439001}
   - {fileID: 118729509}
   - {fileID: 735265273}
   - {fileID: 57923296}

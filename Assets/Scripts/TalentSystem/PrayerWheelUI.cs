@@ -66,6 +66,7 @@ public class PrayerWheelUI : MonoBehaviour
     private TalentData currentTalent1;
     private TalentData currentTalent2;
     private PrayerWheelController wheelController;
+    private bool isInSelectionMode = false; // Track if buttons need continuous positioning
 
     private void Awake()
     {
@@ -95,6 +96,18 @@ public class PrayerWheelUI : MonoBehaviour
         if (wheelController != null)
         {
             wheelController.OnSpinComplete -= OnSpinComplete;
+        }
+    }
+
+    /// <summary>
+    /// Continuously update button positions to track 3D wheel positions.
+    /// This ensures buttons stay aligned during smooth slowdown when camera is moving.
+    /// </summary>
+    private void LateUpdate()
+    {
+        if (isInSelectionMode && wheelController != null)
+        {
+            UpdateButtonPositions();
         }
     }
 
@@ -172,17 +185,48 @@ public class PrayerWheelUI : MonoBehaviour
         if (spinningPanel != null) spinningPanel.SetActive(false);
         if (selectionPanel != null) selectionPanel.SetActive(true);
 
-        // Hide all selection buttons first
-        SetButtonsActive(false);
+        // Activate buttons (positions will be updated in LateUpdate)
+        if (buttonLeft != null) buttonLeft.gameObject.SetActive(true);
+        if (buttonRight != null) buttonRight.gameObject.SetActive(true);
+
+        // Show Talent Name Text Boxes
+        if (talentNameLeft != null)
+        {
+            talentNameLeft.gameObject.SetActive(true);
+            talentNameLeft.text = talent1 != null ? talent1.talentName : "";
+        }
+
+        if (talentNameRight != null)
+        {
+            talentNameRight.gameObject.SetActive(true);
+            talentNameRight.text = talent2 != null ? talent2.talentName : "";
+        }
+
+        // Update legacy Name Texts (if still used)
+        if (wheel1NameText != null) wheel1NameText.text = talent1 != null ? talent1.talentName : "";
+        if (wheel2NameText != null) wheel2NameText.text = talent2 != null ? talent2.talentName : "";
+
+        // Enable continuous position updates
+        isInSelectionMode = true;
+        
+        // Initial position update
+        UpdateButtonPositions();
+        
+        Debug.Log("[PrayerWheelUI] UI Updated and Elements Positioned");
+    }
+
+    /// <summary>
+    /// Updates button positions to match the 3D wheel socket positions.
+    /// Called continuously during selection to track camera movement.
+    /// </summary>
+    private void UpdateButtonPositions()
+    {
+        if (wheelController == null) return;
 
         // Get winning positions from 3D world
         Vector3 worldPosLeft = wheelController.GetWinningSocketPosition(1);
         Vector3 worldPosRight = wheelController.GetWinningSocketPosition(2);
         
-        // Convert to Screen Space
-        // Note: Assuming buttons are children of a Screen Space - Overlay canvas or similar.
-        // If Camera is null, we can't position dynamically.
-        // For button positioning, use main camera since we're no longer using a separate wheel camera
         Camera mainCam = Camera.main;
         if (mainCam != null && mainCanvas != null)
         {
@@ -191,67 +235,40 @@ public class PrayerWheelUI : MonoBehaviour
             Vector3 screenPosLeft = mainCam.WorldToScreenPoint(worldPosLeft);
             Vector3 screenPosRight = mainCam.WorldToScreenPoint(worldPosRight);
             
-            // Position and Activate Left Button
-            if (buttonLeft != null)
+            // Position Left Button
+            if (buttonLeft != null && buttonLeft.gameObject.activeSelf)
             {
                 RectTransform btnRect = buttonLeft.GetComponent<RectTransform>();
                 RectTransform parentRect = buttonLeft.transform.parent as RectTransform;
 
                 if (parentRect != null && btnRect != null)
                 {
-                    buttonLeft.gameObject.SetActive(true);
                     Vector2 localPoint;
                     if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPosLeft, uiCam, out localPoint))
                     {
-                        // Apply Y offset
                         localPoint.y += buttonYOffset;
                         btnRect.localPosition = localPoint;
                     }
                 }
             }
 
-            // Position and Activate Right Button
-            if (buttonRight != null)
+            // Position Right Button
+            if (buttonRight != null && buttonRight.gameObject.activeSelf)
             {
                 RectTransform btnRect = buttonRight.GetComponent<RectTransform>();
                 RectTransform parentRect = buttonRight.transform.parent as RectTransform;
                 
                 if (parentRect != null && btnRect != null)
                 {
-                    buttonRight.gameObject.SetActive(true);
                     Vector2 localPoint;
                     if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPosRight, uiCam, out localPoint))
                     {
-                        // Apply Y offset
                         localPoint.y += buttonYOffset;
                         btnRect.localPosition = localPoint;
                     }
                 }
             }
-
-            // Show Talent Name Text Boxes (fixed positions - just update text)
-            if (talentNameLeft != null)
-            {
-                talentNameLeft.gameObject.SetActive(true);
-                talentNameLeft.text = talent1 != null ? talent1.talentName : "";
-            }
-
-            if (talentNameRight != null)
-            {
-                talentNameRight.gameObject.SetActive(true);
-                talentNameRight.text = talent2 != null ? talent2.talentName : "";
-            }
         }
-        else
-        {
-             Debug.LogWarning("[PrayerWheelUI] Canvas or Camera missing, cannot position UI elements.");
-        }
-
-        // Update legacy Name Texts (if still used)
-        if (wheel1NameText != null) wheel1NameText.text = talent1 != null ? talent1.talentName : "";
-        if (wheel2NameText != null) wheel2NameText.text = talent2 != null ? talent2.talentName : "";
-        
-        Debug.Log("[PrayerWheelUI] UI Updated and Elements Positioned");
     }
 
     private void SetButtonsActive(bool active)
@@ -327,6 +344,9 @@ public class PrayerWheelUI : MonoBehaviour
     /// </summary>
     public void HideAll()
     {
+        // Stop continuous position updates
+        isInSelectionMode = false;
+        
         SetButtonsActive(false); // Explicitly hide separate buttons
         
         if (wheelPanel != null) wheelPanel.SetActive(false);
@@ -352,7 +372,17 @@ public class PrayerWheelUI : MonoBehaviour
     public void CancelSelection()
     {
         HideAll();
-        Time.timeScale = 1f;
+        
+        // Use smooth resume if TimeScaleManager is available
+        if (TimeScaleManager.Instance != null && TimeScaleManager.Instance.IsSlowed)
+        {
+            TimeScaleManager.Instance.SmoothResume();
+        }
+        else
+        {
+            // Fallback to instant resume
+            Time.timeScale = 1f;
+        }
     }
 
     #region Debug Methods

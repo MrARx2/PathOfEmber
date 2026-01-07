@@ -48,6 +48,16 @@ public class PrayerWheelDisplay : MonoBehaviour
     [SerializeField, Tooltip("Layer to set wheels to (use Default = 0 for main camera visibility)")]
     private int wheelLayer = 0;
 
+    [Header("Smooth Time Transition (Archero 2 Style)")]
+    [SerializeField, Tooltip("Use smooth slowdown instead of instant freeze for better game feel")]
+    private bool useSmoothSlowdown = true;
+    
+    [SerializeField, Tooltip("Fallback slowdown duration if TimeScaleManager not found")]
+    private float fallbackSlowdownDuration = 0.4f;
+    
+    [SerializeField, Tooltip("Fallback resume duration if TimeScaleManager not found")]
+    private float fallbackResumeDuration = 0.25f;
+
     // State
     private bool isVisible = false;
     private float previousTimeScale = 1f;
@@ -103,6 +113,19 @@ public class PrayerWheelDisplay : MonoBehaviour
         Time.timeScale = 1f;
         
         Debug.Log($"[PrayerWheelDisplay] Initialized. Wheel1: {(prayerWheel1 != null ? prayerWheel1.name : "NULL")}, Wheel2: {(prayerWheel2 != null ? prayerWheel2.name : "NULL")}");
+    }
+
+    /// <summary>
+    /// Continuously updates wheel positions while visible.
+    /// This ensures wheels stay in front of camera during smooth slowdown when player/camera is still moving.
+    /// </summary>
+    private void LateUpdate()
+    {
+        // Only update positions while wheels are visible
+        if (isVisible)
+        {
+            UpdateWheelPositions();
+        }
     }
 
     private void FixWheelLayers()
@@ -167,8 +190,28 @@ public class PrayerWheelDisplay : MonoBehaviour
         if (pauseGameWhenVisible && isInitialized)
         {
             previousTimeScale = Time.timeScale;
-            Time.timeScale = 0f;
-            Debug.Log("[PrayerWheelDisplay] Game paused.");
+            
+            if (useSmoothSlowdown)
+            {
+                // Use smooth Archero 2-style slowdown
+                if (TimeScaleManager.Instance != null)
+                {
+                    TimeScaleManager.Instance.SmoothSlowdown();
+                    Debug.Log("[PrayerWheelDisplay] Smooth slowdown started.");
+                }
+                else
+                {
+                    // Fallback: start coroutine for smooth transition
+                    StartCoroutine(SmoothTimeTransition(0f, fallbackSlowdownDuration));
+                    Debug.Log("[PrayerWheelDisplay] Fallback smooth slowdown started.");
+                }
+            }
+            else
+            {
+                // Legacy instant freeze
+                Time.timeScale = 0f;
+                Debug.Log("[PrayerWheelDisplay] Game paused (instant).");
+            }
         }
 
         Debug.Log("[PrayerWheelDisplay] Wheels shown.");
@@ -190,8 +233,27 @@ public class PrayerWheelDisplay : MonoBehaviour
         // Resume game if we paused it (only if initialized to avoid startup issues)
         if (pauseGameWhenVisible && isInitialized)
         {
-            Time.timeScale = previousTimeScale;
-            Debug.Log("[PrayerWheelDisplay] Game resumed.");
+            if (useSmoothSlowdown)
+            {
+                // Use smooth Archero 2-style resume
+                if (TimeScaleManager.Instance != null)
+                {
+                    TimeScaleManager.Instance.SmoothResume();
+                    Debug.Log("[PrayerWheelDisplay] Smooth resume started.");
+                }
+                else
+                {
+                    // Fallback: start coroutine for smooth transition
+                    StartCoroutine(SmoothTimeTransition(previousTimeScale, fallbackResumeDuration));
+                    Debug.Log("[PrayerWheelDisplay] Fallback smooth resume started.");
+                }
+            }
+            else
+            {
+                // Legacy instant resume
+                Time.timeScale = previousTimeScale;
+                Debug.Log("[PrayerWheelDisplay] Game resumed (instant).");
+            }
         }
 
         Debug.Log("[PrayerWheelDisplay] Wheels hidden.");
@@ -393,6 +455,36 @@ public class PrayerWheelDisplay : MonoBehaviour
     {
         isVisible = false; // Reset state so Show() works
         Show();
+    }
+    #endregion
+
+    #region Smooth Time Transition Fallback
+    /// <summary>
+    /// Fallback smooth time transition when TimeScaleManager is not available.
+    /// Uses unscaledDeltaTime to work correctly during time manipulation.
+    /// </summary>
+    private System.Collections.IEnumerator SmoothTimeTransition(float targetTimeScale, float duration)
+    {
+        float startTimeScale = Time.timeScale;
+        float elapsed = 0f;
+        float originalFixedDelta = 0.02f; // Default fixed timestep
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            
+            // Cubic ease-out for natural feel
+            float easedT = 1f - Mathf.Pow(1f - t, 3f);
+            
+            Time.timeScale = Mathf.Lerp(startTimeScale, targetTimeScale, easedT);
+            Time.fixedDeltaTime = originalFixedDelta * Mathf.Max(Time.timeScale, 0.01f);
+            
+            yield return null;
+        }
+
+        Time.timeScale = targetTimeScale;
+        Time.fixedDeltaTime = originalFixedDelta * Mathf.Max(targetTimeScale, 0.01f);
     }
     #endregion
 }
