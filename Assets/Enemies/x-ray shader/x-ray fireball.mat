@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-4746869482333761265
+--- !u!114 &-2424786813391131888
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: x-ray
+  m_Name: x-ray fireball
   m_Shader: {fileID: -6465566751694194690, guid: 50fdc73804091ab47a3d2ceffeb5a632, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -66,10 +66,10 @@ Material:
     - _SrcBlend: 5
     - _SrcBlendAlpha: 1
     - _Surface: 1
-    - _ZTest: 4
+    - _ZTest: 5
     - _ZWrite: 0
     - _ZWriteControl: 0
-    - _fresnel_power: 1.85
+    - _fresnel_power: 0.91
     m_Colors:
     - _Color: {r: 1, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []
