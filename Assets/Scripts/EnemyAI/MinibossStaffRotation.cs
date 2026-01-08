@@ -57,8 +57,13 @@ namespace EnemyAI
             // Set target rotation based on state
             targetRotation = isAttacking ? attackRotation : walkingRotation;
 
-            // Force set rotation (overrides animation)
-            staffTransform.localRotation = Quaternion.Euler(targetRotation);
+            // Smoothly blend to target rotation using rotationSpeed
+            Quaternion target = Quaternion.Euler(targetRotation);
+            staffTransform.localRotation = Quaternion.Lerp(
+                staffTransform.localRotation, 
+                target, 
+                rotationSpeed * Time.deltaTime
+            );
         }
 
         private bool IsInAttackState()

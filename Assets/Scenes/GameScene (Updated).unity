@@ -172,6 +172,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4347114780483123299, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
+      propertyPath: fireRate
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4347114780483123299, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
+      propertyPath: shootingTempo
+      value: 1.5
+      objectReference: {fileID: 0}
     - target: {fileID: 8209237199643502871, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
       propertyPath: m_Name
       value: Player
@@ -5057,6 +5065,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 113679407793028421, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
+      propertyPath: destroyDelay
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 423688363483775734, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 66.834816
@@ -5485,6 +5497,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -157.5948
       objectReference: {fileID: 0}
+    - target: {fileID: 8052058579008061073, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
+      propertyPath: destroyDelay
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8986183839203828268, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: -13.237465
@@ -5593,13 +5609,13 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5973116302978020894, guid: bcd5dcb30e2c77441ba8b8155b84622d, type: 3}
-      propertyPath: tideSpeed
-      value: 0.1
+    - target: {fileID: 6791592239534112224, guid: bcd5dcb30e2c77441ba8b8155b84622d, type: 3}
+      propertyPath: spawnVFXPositionOffset.x
+      value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5973116302978020894, guid: bcd5dcb30e2c77441ba8b8155b84622d, type: 3}
-      propertyPath: tideHeight
-      value: 0.1
+    - target: {fileID: 6791592239534112224, guid: bcd5dcb30e2c77441ba8b8155b84622d, type: 3}
+      propertyPath: spawnVFXPositionOffset.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7420046628643080392, guid: bcd5dcb30e2c77441ba8b8155b84622d, type: 3}
       propertyPath: m_Name
@@ -5607,7 +5623,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7420046628643080392, guid: bcd5dcb30e2c77441ba8b8155b84622d, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -211,6 +211,11 @@ MonoBehaviour:
   useGlobalRegistry: 1
   showGizmos: 1
   gizmoColor: {r: 0, g: 1, b: 1, a: 1}
+  useSpawnIndicator: 1
+  indicatorPrefab: {fileID: 2007081276863176460, guid: 15c90b2cbb9825547808b0d2ca1fcce2, type: 3}
+  indicatorDuration: 0.5
+  spawnStagger: 0.15
+  spawnVFXPrefab: {fileID: 6270883829170812278, guid: e29d07466e93316459fbe430a227c5cc, type: 3}
 --- !u!1 &5965248338649303234
 GameObject:
   m_ObjectHideFlags: 0
