@@ -6,7 +6,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "TalentDatabase", menuName = "Path of Ember/Talent Database")]
 public class TalentDatabase : ScriptableObject
 {
-    [Header("Common Talents (60% chance)")]
+    [Header("Common Talents (50% chance)")]
     [Tooltip("Talents in the Common tier")]
     public TalentData[] commonTalents;
 
@@ -14,7 +14,7 @@ public class TalentDatabase : ScriptableObject
     [Tooltip("Talents in the Rare tier")]
     public TalentData[] rareTalents;
 
-    [Header("Legendary Talents (10% chance)")]
+    [Header("Legendary Talents (20% chance)")]
     [Tooltip("Talents in the Legendary tier")]
     public TalentData[] legendaryTalents;
 
@@ -34,13 +34,14 @@ public class TalentDatabase : ScriptableObject
 
     /// <summary>
     /// Rolls for a random rarity based on probability weights.
-    /// Common: 60%, Rare: 30%, Legendary: 10%
+    /// Common: 50%, Rare: 30%, Legendary: 20%
     /// </summary>
     public static TalentData.TalentRarity RollRarity()
     {
         float roll = Random.value;
-        if (roll < 0.60f) return TalentData.TalentRarity.Common;
-        if (roll < 0.90f) return TalentData.TalentRarity.Rare;
+        if (roll < 0.50f) return TalentData.TalentRarity.Common;
+        if (roll < 0.80f) return TalentData.TalentRarity.Rare;
         return TalentData.TalentRarity.Legendary;
     }
 }
+

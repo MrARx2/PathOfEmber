@@ -47,6 +47,19 @@ public class SpawnArea : MonoBehaviour
     [SerializeField, Tooltip("If true, uses the global SpawnAreaRegistry to track spawns across chunk recycling")]
     private bool useGlobalRegistry = true;
 
+    [Header("Second Wave (Bonus)")]
+    [SerializeField, Tooltip("If true, spawns a 2nd wave of enemies after first wave is cleared")]
+    private bool enableSecondWave = false;
+    
+    [SerializeField, Tooltip("Enemy prefabs for 2nd wave. If empty, uses same prefabs as wave 1")]
+    private GameObject[] wave2EnemyPrefabs;
+    
+    [SerializeField, Tooltip("Number of enemies in 2nd wave (uses random volume positions)")]
+    private int wave2EnemyCount = 3;
+    
+    [SerializeField, Tooltip("Delay before 2nd wave spawns after wave 1 is cleared (seconds)")]
+    private float wave2SpawnDelay = 1f;
+
     [Header("Debug")]
     [SerializeField] private bool showGizmos = true;
     [SerializeField] private Color gizmoColor = Color.red;
@@ -83,9 +96,15 @@ public class SpawnArea : MonoBehaviour
     private bool isSpawning = false; // Prevents double-triggering during spawn sequence
     private List<GameObject> spawnedEnemies = new List<GameObject>();
     private List<GameObject> activeIndicators = new List<GameObject>();
+    
+    // Second wave tracking
+    private int currentWave = 0;
+    private bool wave2Triggered = false;
+    private bool isCheckingForWave2 = false;
 
     public bool HasSpawned => hasSpawned;
     public bool IsSpawning => isSpawning;
+    public int CurrentWave => currentWave;
     public List<GameObject> SpawnedEnemies => spawnedEnemies;
 
     private void Start()
@@ -130,18 +149,113 @@ public class SpawnArea : MonoBehaviour
     
     private void Update()
     {
-        if (hasSpawned && oneTimeSpawn) return;
         if (isSpawning) return; // Don't trigger again while spawn sequence is running
         if (player == null) return;
+        
+        // Check for 2nd wave trigger (if enabled and wave 1 completed)
+        if (enableSecondWave && hasSpawned && currentWave == 1 && !wave2Triggered && !isCheckingForWave2)
+        {
+            if (AllEnemiesDefeated())
+            {
+                isCheckingForWave2 = true;
+                StartCoroutine(TriggerWave2AfterDelay());
+            }
+        }
+        
+        // Don't check for initial spawn if already spawned and oneTimeSpawn is true
+        if (hasSpawned && oneTimeSpawn && (!enableSecondWave || wave2Triggered)) return;
 
         // Use sqrMagnitude instead of Distance to avoid expensive sqrt calculation
         Vector3 checkPosition = GetActivationCenter();
         float distanceSqr = (checkPosition - player.position).sqrMagnitude;
         
-        if (distanceSqr <= activationDistanceSqr)
+        if (distanceSqr <= activationDistanceSqr && !hasSpawned)
         {
             SpawnEnemies();
         }
+    }
+    
+    private IEnumerator TriggerWave2AfterDelay()
+    {
+        Debug.Log($"[SpawnArea] Wave 1 cleared! Spawning wave 2 in {wave2SpawnDelay}s...");
+        yield return new WaitForSeconds(wave2SpawnDelay);
+        
+        wave2Triggered = true;
+        currentWave = 2;
+        spawnedEnemies.Clear(); // Clear references to dead enemies
+        
+        SpawnWave2();
+    }
+    
+    private void SpawnWave2()
+    {
+        if (isSpawning) return;
+        
+        // Use wave 2 prefabs if set, otherwise fall back to wave 1 prefabs
+        GameObject[] prefabsToUse = (wave2EnemyPrefabs != null && wave2EnemyPrefabs.Length > 0) 
+            ? wave2EnemyPrefabs 
+            : enemyPrefabs;
+            
+        if (prefabsToUse == null || prefabsToUse.Length == 0)
+        {
+            Debug.LogWarning("[SpawnArea] No prefabs for wave 2!");
+            return;
+        }
+        
+        StartCoroutine(SpawnWave2Coroutine(prefabsToUse));
+    }
+    
+    private IEnumerator SpawnWave2Coroutine(GameObject[] prefabs)
+    {
+        isSpawning = true;
+        
+        // Collect wave 2 spawn data
+        List<SpawnData> wave2Data = new List<SpawnData>();
+        for (int i = 0; i < wave2EnemyCount; i++)
+        {
+            GameObject prefab = prefabs[Random.Range(0, prefabs.Length)];
+            if (prefab == null) continue;
+            
+            Vector3 spawnPos = volumeArea != null 
+                ? GetRandomPositionInVolume() 
+                : transform.position + Random.insideUnitSphere * 3f;
+            spawnPos.y = transform.position.y; // Keep at spawn area height
+            
+            wave2Data.Add(new SpawnData
+            {
+                prefab = prefab,
+                position = spawnPos,
+                rotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0)
+            });
+        }
+        
+        // Show indicators if enabled
+        if (useSpawnIndicator && indicatorPrefab != null)
+        {
+            foreach (var data in wave2Data)
+            {
+                ShowIndicator(data.position, data.rotation);
+            }
+            Debug.Log($"[SpawnArea] Wave 2: Showing {wave2Data.Count} indicators for {indicatorDuration}s");
+            yield return new WaitForSeconds(indicatorDuration);
+        }
+        
+        // Spawn wave 2 enemies
+        for (int i = 0; i < wave2Data.Count; i++)
+        {
+            var data = wave2Data[i];
+            SpawnEnemyAt(data.prefab, data.position, data.rotation, i);
+            
+            if (spawnStagger > 0 && i < wave2Data.Count - 1)
+            {
+                yield return new WaitForSeconds(spawnStagger);
+            }
+        }
+        
+        ClearIndicators();
+        isSpawning = false;
+        
+        Debug.Log($"[SpawnArea] Wave 2 complete! Spawned {wave2Data.Count} bonus enemies.");
     }
 
     private Vector3 GetActivationCenter()
@@ -448,13 +562,14 @@ public class SpawnArea : MonoBehaviour
     {
         hasSpawned = true;
         isSpawning = false;
+        currentWave = 1; // Mark as wave 1 complete (enables wave 2 detection)
         
         if (useGlobalRegistry)
         {
             SpawnAreaRegistry.Instance.MarkAsSpawned(uniqueId);
         }
         
-        Debug.Log($"[SpawnArea] Spawned {spawnedEnemies.Count} enemies at {gameObject.name} (ID: {uniqueId})");
+        Debug.Log($"[SpawnArea] Wave 1 spawned {spawnedEnemies.Count} enemies at {gameObject.name} (ID: {uniqueId})");
     }
 
     // SpawnAtRandomVolumePositions removed - now handled by SpawnAtRandomVolumePositionsCoroutine

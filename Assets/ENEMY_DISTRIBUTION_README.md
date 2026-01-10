@@ -11,23 +11,23 @@
 
 ## Enemy Distribution Per Chunk (Sorted by Index)
 
-| # | Chunk | Chasers | Bombers | Snipers | Total |
-|---|-------|---------|---------|---------|-------|
-| 01 | FinalMud01 | 1 | 0 | 1 | 2 |
-| 02 | FinalMud02 | 3 | 1 | 1 | 5 |
-| 03 | FinalMud03 | 0 | 0 | 1 | 1 |
-| 04 | FinalMud04 | 2 | 2 | 0 | 4 |
-| 05 | FinalGrass05 | 2 | 2 | 0 | 4 |
-| 06 | FinalGrass06 | 2 | 1 | 1 | 4 |
-| 07 | FinalGrass07 | 2 | 2 | 0 | 4 |
-| 08 | FinalGrass08 | 2 | 2 | 0 | 4 |
-| 09 | FinalGrass09 | 0 | 1 | 4 | 5 |
-| 10 | FinalMud10 | 2 | 2 | 0 | 4 |
-| 11 | FinalMud11 | 1 | 2 | 1 | 4 |
-| 12 | FinalLava12 | 4 | 1 | 0 | 5 |
-| 13 | FinalLava13 | 2 | 2 | 1 | 5 |
-| 14 | FinalLava14 | 2 | 2 | 0 | 4 |
-| 15 | FinalLava15 | 2 | 4 | 0 | 6 |
+| # | Chunk | Chasers | Bombers | Snipers | MiniBoss | Total |
+|---|-------|---------|---------|---------|----------|-------|
+| 01 | FinalMud01 | 3 | 0 | 0 | 0 | 3 |
+| 02 | FinalMud02 | 5 | 0 | 2 | 0 | 7 |
+| 03 | FinalMud03 | 5 | 1 | 2 | 0 | 8 |
+| 04 | FinalMud04 | 3 | 3 | 2 | 0 | 8 |
+| 05 | FinalGrass05 | 4 | 4 | 2 | 0 | 10 |
+| 06 | FinalGrass06 | 7 | 1 | 2 | 0 | 10 |
+| 07 | FinalGrass07 | 4 | 3 | 3 | 0 | 10 |
+| 08 | FinalGrass08 | 4 | 4 | 2 | 0 | 10 |
+| 09 | FinalGrass09 | 0 | 4 | 7 | 0 | 11 |
+| 10 | FinalMud10 | 6 | 1 | 3 | 0 | 10 |
+| 11 | FinalMud11 | 0 | 0 | 0 | 1 | 1 |
+| 12 | FinalLava12 | 8 | 2 | 2 | 0 | 12 |
+| 13 | FinalLava13 | 3 | 6 | 4 | 0 | 13 |
+| 14 | FinalLava14 | 5 | 2 | 2 | 0 | 9 |
+| 15 | FinalLava15 | 6 | 3 | 2 | 0 | 11 |
 
 ---
 
@@ -35,20 +35,51 @@
 
 | Enemy Type | Total Count | Percentage |
 |------------|-------------|------------|
-| **Chaser** | 25 | 42% |
-| **Bomber** | 24 | 40% |
-| **Sniper** | 10 | 17% |
-| **TOTAL** | **59** | 100% |
+| **Chaser** | 63 | 47.4% |
+| **Bomber** | 34 | 25.6% |
+| **Sniper** | 35 | 26.3% |
+| **MiniBoss** | 1 | 0.8% |
+| **TOTAL** | **133** | 100% |
 
-### Chunks with Enemies: 15/15
-### Average Enemies per Chunk: 3.9
+### Chunks: 15
+### Average Enemies per Chunk: 8.9
+
+---
+
+## Zone Breakdown
+
+### Mud Zone (01-04, 10-11)
+| Stat | Value |
+|------|-------|
+| Total Enemies | 37 |
+| Chasers | 22 (59%) |
+| Bombers | 5 (14%) |
+| Snipers | 9 (24%) |
+| MiniBoss | 1 (3%) |
+
+### Grass Zone (05-09)
+| Stat | Value |
+|------|-------|
+| Total Enemies | 51 |
+| Chasers | 19 (37%) |
+| Bombers | 16 (31%) |
+| Snipers | 16 (31%) |
+
+### Lava Zone (12-15)
+| Stat | Value |
+|------|-------|
+| Total Enemies | 45 |
+| Chasers | 22 (49%) |
+| Bombers | 13 (29%) |
+| Snipers | 10 (22%) |
 
 ---
 
 ## Notes
-- FinalGrass09 is sniper-heavy (4 snipers)
-- FinalLava15 has the most enemies (6)
-- Grass zone has most mixed compositions
-- FinalMud01 & FinalMud02 data from Inspector screenshots (nested prefab overrides)
+- FinalGrass09 is sniper-heavy (7 snipers, no chasers)
+- FinalLava13 has the most bombers (6)
+- FinalLava12 has the most chasers (8)
+- FinalMud11 is MiniBoss-only encounter
+- Difficulty ramps up through zones (3 → 7-10 → 9-13 enemies)
 
-*Last Updated: 2026-01-07*
+*Last Updated: 2026-01-10*

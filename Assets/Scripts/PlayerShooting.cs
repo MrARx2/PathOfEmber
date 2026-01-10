@@ -441,7 +441,7 @@ public class PlayerShooting : MonoBehaviour
             {
                 projectile.IsPiercing = abilities.HasPiercing;
                 projectile.HasBouncing = abilities.HasBouncingArrows;
-                projectile.MaxBounces = abilities.BouncingArrowsStacks;
+                projectile.MaxBounces = abilities.BouncingArrowsStacks + 1; // +1 so first stack = 2 bounces minimum
                 projectile.HasFreezeEffect = abilities.HasFreezeShot;
                 projectile.HasVenomEffect = abilities.HasVenomShot;
                 projectile.FreezeDuration = abilities.FreezeDuration;

@@ -139,6 +139,14 @@ public class PotionSpawner : MonoBehaviour
     {
         freezePotionEnabled = true;
         ResetFreezeTimer();
+        
+        // Spawn one immediately so player knows what they picked
+        if (freezePotionPrefab != null)
+        {
+            SpawnPotion(freezePotionPrefab, "Freeze");
+            if (debugLog) Debug.Log("[PotionSpawner] Spawned initial Freeze potion on talent pickup!");
+        }
+        
         if (debugLog) Debug.Log("[PotionSpawner] Freeze Potion talent activated!");
     }
     
@@ -153,6 +161,14 @@ public class PotionSpawner : MonoBehaviour
     {
         venomPotionEnabled = true;
         ResetVenomTimer();
+        
+        // Spawn one immediately so player knows what they picked
+        if (venomPotionPrefab != null)
+        {
+            SpawnPotion(venomPotionPrefab, "Venom");
+            if (debugLog) Debug.Log("[PotionSpawner] Spawned initial Venom potion on talent pickup!");
+        }
+        
         if (debugLog) Debug.Log("[PotionSpawner] Venom Potion talent activated!");
     }
     
@@ -167,6 +183,14 @@ public class PotionSpawner : MonoBehaviour
     {
         invulnerabilityPotionEnabled = true;
         ResetInvulnerabilityTimer();
+        
+        // Spawn one immediately so player knows what they picked
+        if (invulnerabilityPotionPrefab != null)
+        {
+            SpawnPotion(invulnerabilityPotionPrefab, "Invulnerability");
+            if (debugLog) Debug.Log("[PotionSpawner] Spawned initial Invulnerability potion on talent pickup!");
+        }
+        
         if (debugLog) Debug.Log("[PotionSpawner] Invulnerability Potion talent activated!");
     }
     
