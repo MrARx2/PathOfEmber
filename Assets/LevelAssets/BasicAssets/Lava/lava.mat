@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-6151061638400559727
+--- !u!114 &-1998187446059115833
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -37,14 +37,6 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
-    - _noise:
-        m_Texture: {fileID: 2800000, guid: 719509bcfc515654db21b9570e7504c8, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _noise2:
-        m_Texture: {fileID: 2800000, guid: c7106b743d0452b4fad9b11c36619b2f, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -61,18 +53,14 @@ Material:
     m_Floats:
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _angle_offset: 2.39
-    - _angle_offset2: 1.68
-    - _cell_density: 0.69
-    - _cell_density_2: 1.59
-    - _noise_scale: 2.85
-    - _noise_scale_1: 1.25
+    - _lava_power: 0.05
+    - _lava_scale: 7
+    - _twirl_noise_scale: 11
+    - _twirl_strength: 15
     m_Colors:
-    - _a: {r: 0.6132076, g: 0.11158216, b: 0, a: 1}
-    - _b: {r: 0.98039216, g: 0.5281753, b: 0, a: 1}
-    - _c: {r: 0.46226418, g: 0.09030182, b: 0, a: 1}
-    - _color_gradient: {r: -0.67, g: 0.67, b: 0, a: 0}
-    - _noise_st: {r: 0.3, g: 0.3, b: -0.09, a: 0}
-    - _noise_st_1: {r: 0.3, g: 0.3, b: -0.03, a: 0}
+    - _lava_color: {r: 2.447774, g: 0.6366919, b: 0, a: 0.8588235}
+    - _tiling_speed: {r: 0.1, g: 0, b: 0, a: 0}
+    - _twirl_speed: {r: 0.1, g: 0.1, b: 0, a: 0}
+    - _twirl_tiling: {r: 1, g: 1, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
