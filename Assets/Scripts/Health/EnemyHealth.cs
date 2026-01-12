@@ -59,7 +59,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private GameObject hitVFXPrefab;
 
     [Header("Damage Popup Settings")]
-    [SerializeField, Tooltip("Enable floating damage numbers (requires DamagePopupManager in scene)")]
+    [SerializeField, Tooltip("Enable floating damage numbers (requires PopupManager in scene)")]
     private bool showDamagePopup = true;
     [SerializeField, Tooltip("Offset from enemy position for popup spawn")]
     private Vector3 damagePopupOffset = new Vector3(0, 1.5f, 0);
@@ -271,10 +271,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         }
         
         // Spawn damage popup via manager
-        if (showDamagePopup && DamagePopupManager.Instance != null)
+        if (showDamagePopup && PopupManager.Instance != null)
         {
             Vector3 popupPos = VisualCenter + damagePopupOffset;
-            DamagePopupManager.Instance.ShowDamage(damage, popupPos);
+            PopupManager.Instance.ShowDamage(damage, popupPos);
         }
 
         OnDamage?.Invoke(damage);
@@ -496,8 +496,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         ClearTint();
         ClearEmission();
         
-        // Trigger death animation
-        if (animator != null)
+        // Trigger death animation (only if animator has Die parameter)
+        if (animator != null && HasAnimatorParameter(animator, "Die"))
         {
             animator.SetTrigger("Die");
         }
@@ -509,10 +509,16 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             navAgent.enabled = false;
         }
         
-        // Grant XP to player
+        // Grant XP to player and show XP popup
         if (XPSystem.Instance != null && xpReward > 0)
         {
             XPSystem.Instance.AddXP(xpReward);
+            
+            // Show XP popup at enemy position
+            if (PopupManager.Instance != null)
+            {
+                PopupManager.Instance.ShowXP(xpReward, VisualCenter);
+            }
         }
         
         // Invoke death event (for external listeners like HealthBarManager)
@@ -639,4 +645,20 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     [ContextMenu("Debug: Kill Enemy")]
     public void DebugKill() => TakeDamage(currentHealth);
+
+    /// <summary>
+    /// Checks if an animator has a specific parameter.
+    /// Prevents warnings when triggering parameters that don't exist.
+    /// </summary>
+    private bool HasAnimatorParameter(Animator anim, string paramName)
+    {
+        if (anim == null) return false;
+        
+        foreach (AnimatorControllerParameter param in anim.parameters)
+        {
+            if (param.name == paramName)
+                return true;
+        }
+        return false;
+    }
 }
