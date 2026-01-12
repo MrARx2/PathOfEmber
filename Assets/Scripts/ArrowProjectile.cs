@@ -28,6 +28,12 @@ public class ArrowProjectile : MonoBehaviour
     [SerializeField] private int maxBounces = 2;
     [SerializeField] private LayerMask wallLayers;
     
+    [Header("Enemy Detection (SphereCast)")]
+    [SerializeField, Tooltip("Layers containing enemies for SphereCast detection")]
+    private LayerMask enemyLayers;
+    [SerializeField, Tooltip("Radius of SphereCast for enemy detection")]
+    private float enemyDetectionRadius = 0.15f;
+    
     [Header("Wall Hit VFX")]
     [SerializeField, Tooltip("VFX prefab to spawn when arrow hits a wall and can't bounce")]
     private GameObject wallHitVFXPrefab;
@@ -51,6 +57,9 @@ public class ArrowProjectile : MonoBehaviour
     private TrailRenderer[] trails;
     private float[] initialTrailWidths;
     private Color[] originalTrailColors;
+    
+    // Track enemies already hit by this arrow (prevents double-damage from SphereCast + OnTriggerEnter)
+    private System.Collections.Generic.HashSet<Collider> alreadyHitEnemies = new System.Collections.Generic.HashSet<Collider>();
 
     #region Public Properties
     public int Damage => damage;
@@ -113,6 +122,8 @@ public class ArrowProjectile : MonoBehaviour
     private void OnEnable()
     {
         lifeTimer = lifetime;
+        bounceCount = 0;
+        alreadyHitEnemies.Clear(); // Reset for pooled arrows
         if (rb == null) rb = GetComponent<Rigidbody>();
         
         var cols = GetComponentsInChildren<Collider>();
@@ -253,12 +264,96 @@ public class ArrowProjectile : MonoBehaviour
             }
         }
         
+        // SphereCast for enemy detection - catches enemies even at low FPS
+        // This prevents arrows from tunneling through enemies on low-end hardware
+        if (enemyLayers != 0)
+        {
+            RaycastHit[] hits = Physics.SphereCastAll(transform.position, enemyDetectionRadius, moveDir, lookAhead, enemyLayers, QueryTriggerInteraction.Collide);
+            
+            // Sort hits by distance for proper hit order
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            
+            foreach (RaycastHit hit in hits)
+            {
+                if (hit.collider == null) continue;
+                if (hit.collider.CompareTag("Player")) continue;
+                if (alreadyHitEnemies.Contains(hit.collider)) continue;
+                
+                alreadyHitEnemies.Add(hit.collider);
+                
+                // Process this hit through our existing damage logic
+                bool shouldDestroy = ProcessEnemyHit(hit.collider);
+                
+                if (shouldDestroy)
+                {
+                    return; // Arrow destroyed, stop processing
+                }
+            }
+        }
+        
         // Normal movement
         transform.position += moveDir * moveDistance;
 
         lifeTimer -= dt;
         if (lifeTimer <= 0f)
             GracefulDestroy();
+    }
+    
+    /// <summary>
+    /// Processes damage and effects when hitting an enemy via SphereCast.
+    /// Returns true if the arrow should be destroyed.
+    /// </summary>
+    private bool ProcessEnemyHit(Collider other)
+    {
+        // Try to find IDamageable on the object or its parent
+        IDamageable damageable = other.GetComponent<IDamageable>();
+        if (damageable == null)
+            damageable = other.GetComponentInParent<IDamageable>();
+        
+        if (damageable == null)
+            return false; // Not an enemy we can damage
+        
+        // Check if it's an EnemyHealth for knockback support
+        EnemyHealth enemyHealth = other.GetComponent<EnemyHealth>();
+        if (enemyHealth == null)
+            enemyHealth = other.GetComponentInParent<EnemyHealth>();
+        
+        if (enemyHealth != null)
+        {
+            // Use knockback-enabled damage with arrow's direction
+            enemyHealth.TakeDamageWithKnockback(damage, moveDir);
+        }
+        else
+        {
+            // Fallback for other IDamageable types
+            damageable.TakeDamage(damage);
+        }
+        
+        OnHitDamageable?.Invoke(damage);
+
+        // Apply Freeze Effect
+        if (hasFreezeEffect && enemyHealth != null)
+        {
+            enemyHealth.ApplyFreeze(freezeDuration);
+        }
+
+        // Apply Venom Effect (DoT)
+        if (hasVenomEffect && enemyHealth != null)
+        {
+            int totalTicks = Mathf.RoundToInt(venomDuration);
+            enemyHealth.ApplyDamageOverTime(venomDamagePerSecond, 1f, totalTicks);
+        }
+        
+        OnHitAnything?.Invoke();
+        
+        // Only destroy if not piercing
+        if (destroyOnHit && !isPiercing)
+        {
+            GracefulDestroy();
+            return true;
+        }
+        
+        return false;
     }
     
     private void HandleBounce(RaycastHit hit)
@@ -293,6 +388,9 @@ public class ArrowProjectile : MonoBehaviour
     {
         if (other == null) return;
         if (other.CompareTag("Player")) return; // Don't hit the player who shot this
+        
+        // Skip if already hit by SphereCast this arrow's lifetime (prevents double damage)
+        if (alreadyHitEnemies.Contains(other)) return;
         
         // Try to find IDamageable on the object or its parent
         IDamageable damageable = other.GetComponent<IDamageable>();

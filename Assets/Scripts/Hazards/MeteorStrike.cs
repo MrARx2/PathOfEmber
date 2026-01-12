@@ -212,8 +212,7 @@ namespace Hazards
         private void SpawnImpactEffects()
         {
             // All three effects spawn at the SAME TIME on impact
-            Quaternion groundRotation = Quaternion.Euler(90f, 0f, 0f);
-
+            
             // 1. Explosion VFX (destroyed after explosionDuration)
             if (explosionPrefab != null)
             {
@@ -222,18 +221,27 @@ namespace Hazards
                 if (debugLog) Debug.Log($"[MeteorStrike] Explosion VFX spawned, will destroy in {explosionDuration}s");
             }
 
-            // 2. Burn Mark (stays for configured duration)
+            // 2. Burn Mark (stays for configured duration) - random rotation & scale for variety
             if (burnMarkPrefab != null)
             {
-                GameObject burnMark = Instantiate(burnMarkPrefab, _impactPosition, groundRotation);
+                float randomYRotation = Random.Range(0f, 360f);
+                Quaternion decalRotation = Quaternion.Euler(90f, randomYRotation, 0f);
+                GameObject burnMark = Instantiate(burnMarkPrefab, _impactPosition, decalRotation);
+                
+                // Random scale variance ±0.3 from original
+                float scaleVariance = Random.Range(-0.3f, 0.3f);
+                burnMark.transform.localScale *= (1f + scaleVariance);
+                
                 Destroy(burnMark, burnMarkDuration);
                 if (debugLog) Debug.Log($"[MeteorStrike] Burn mark spawned, will last {burnMarkDuration}s");
             }
 
-            // 3. Cracks (stays for configured duration)
+            // 3. Cracks (stays for configured duration) - random Y rotation for variety
             if (cracksPrefab != null)
             {
-                GameObject cracks = Instantiate(cracksPrefab, _impactPosition, groundRotation);
+                float randomYRotation = Random.Range(0f, 360f);
+                Quaternion decalRotation = Quaternion.Euler(90f, randomYRotation, 0f);
+                GameObject cracks = Instantiate(cracksPrefab, _impactPosition, decalRotation);
                 Destroy(cracks, cracksDuration);
                 if (debugLog) Debug.Log($"[MeteorStrike] Cracks spawned, will last {cracksDuration}s");
             }
@@ -258,14 +266,23 @@ namespace Hazards
 
             foreach (Collider hit in hits)
             {
-                // Try to get IDamageable directly on the collider
-                IDamageable damageable = hit.GetComponent<IDamageable>();
+                // Check for EnemyHealth first (for hazard XP tracking)
+                EnemyHealth enemyHealth = hit.GetComponent<EnemyHealth>();
+                if (enemyHealth == null)
+                    enemyHealth = hit.GetComponentInParent<EnemyHealth>();
                 
-                // If not found, try parent (common for hierarchical player setups)
-                if (damageable == null)
+                if (enemyHealth != null)
                 {
-                    damageable = hit.GetComponentInParent<IDamageable>();
+                    // Use hazard damage - grants 50% XP if this is the killing blow
+                    enemyHealth.TakeDamageFromHazard(impactDamage);
+                    if (debugLog) Debug.Log($"[MeteorStrike] Applied {impactDamage} hazard damage to {hit.name}");
+                    continue;
                 }
+                
+                // Fallback to IDamageable for non-enemy targets (player, destructibles, etc.)
+                IDamageable damageable = hit.GetComponent<IDamageable>();
+                if (damageable == null)
+                    damageable = hit.GetComponentInParent<IDamageable>();
 
                 if (damageable != null)
                 {

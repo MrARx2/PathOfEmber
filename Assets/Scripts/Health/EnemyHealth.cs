@@ -4,6 +4,11 @@ using UnityEngine.Events;
 using System.Collections;
 
 /// <summary>
+/// Source of damage for XP calculation purposes.
+/// </summary>
+public enum DamageSource { Player, Hazard }
+
+/// <summary>
 /// Health component for enemies with built-in UI health bar support.
 /// </summary>
 public class EnemyHealth : MonoBehaviour, IDamageable
@@ -96,6 +101,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private bool[] hadEmissionEnabled;
     private bool isStaggered = false;
     private Vector3 knockbackVelocity = Vector3.zero;
+    private DamageSource lastDamageSource = DamageSource.Player;
 
     /// <summary>
     /// Returns the visual center position (modelTransform if set, otherwise this transform).
@@ -246,12 +252,18 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         }
     }
 
-    public void TakeDamage(int damage)
+    // Explicit interface implementation for IDamageable
+    void IDamageable.TakeDamage(int damage) => TakeDamage(damage, DamageSource.Player);
+
+    public void TakeDamage(int damage, DamageSource source = DamageSource.Player)
     {
         if (isDead) return;
         if (isInvulnerable) return;
         if (damage <= 0) return;
 
+        // Track killing blow source for XP calculation
+        lastDamageSource = source;
+        
         currentHealth -= damage;
         if (currentHealth < 0) currentHealth = 0;
 
@@ -282,6 +294,15 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         if (currentHealth <= 0)
             Die();
+    }
+    
+    /// <summary>
+    /// Takes damage from a hazard source (meteors, lava, etc.).
+    /// Enemies killed by hazards grant reduced XP (50%).
+    /// </summary>
+    public void TakeDamageFromHazard(int damage)
+    {
+        TakeDamage(damage, DamageSource.Hazard);
     }
 
     /// <summary>
@@ -510,14 +531,18 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         }
         
         // Grant XP to player and show XP popup
+        // Hazard kills grant 50% XP, player kills grant full XP
         if (XPSystem.Instance != null && xpReward > 0)
         {
-            XPSystem.Instance.AddXP(xpReward);
+            float xpMultiplier = (lastDamageSource == DamageSource.Hazard) ? 0.5f : 1.0f;
+            int xpToGrant = Mathf.RoundToInt(xpReward * xpMultiplier);
+            
+            XPSystem.Instance.AddXP(xpToGrant);
             
             // Show XP popup at enemy position
             if (PopupManager.Instance != null)
             {
-                PopupManager.Instance.ShowXP(xpReward, VisualCenter);
+                PopupManager.Instance.ShowXP(xpToGrant, VisualCenter);
             }
         }
         
