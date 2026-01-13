@@ -1,4 +1,5 @@
 using UnityEngine;
+using Audio;
 
 [RequireComponent(typeof(PlayerMovement))]
 public class PlayerShooting : MonoBehaviour
@@ -55,6 +56,9 @@ public class PlayerShooting : MonoBehaviour
     [Header("Layers (Optional)")]
     [SerializeField, Tooltip("Name of the Player layer to ignore vs projectile")] private string playerLayerName = "Player";
     [SerializeField, Tooltip("Name of the Projectile layer")] private string projectileLayerName = "Projectile";
+
+    [Header("Sound Effects")]
+    [SerializeField] private SoundEvent bowShotSound;
 
     private PlayerMovement movement;
     private PlayerAbilities abilities;
@@ -416,6 +420,10 @@ public class PlayerShooting : MonoBehaviour
 
     private void FireProjectile(Vector3 origin, Vector3 direction)
     {
+        // Play bow shot sound
+        if (bowShotSound != null && AudioManager.Instance != null)
+            AudioManager.Instance.Play(bowShotSound);
+
         Vector3 spawnPos = origin + (direction.sqrMagnitude > 1e-6f ? direction : transform.forward) * Mathf.Max(0f, muzzleOffset);
         Quaternion spawnRot = Quaternion.LookRotation(direction.sqrMagnitude > 1e-6f ? direction : transform.forward, Vector3.up);
         GameObject proj = Instantiate(projectilePrefab, spawnPos, spawnRot);

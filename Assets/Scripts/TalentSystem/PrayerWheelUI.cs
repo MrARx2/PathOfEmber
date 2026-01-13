@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Events;
+using Audio;
 
 /// <summary>
 /// UI controller for displaying prayer wheel results and handling talent selection.
@@ -62,6 +63,9 @@ public class PrayerWheelUI : MonoBehaviour
     [Header("Other UI to Hide")]
     [SerializeField, Tooltip("Canvas to hide during prayer wheel (e.g., enemy health bars, damage numbers)")]
     private Canvas systemsCanvasToHide;
+
+    [Header("Sound Effects")]
+    [SerializeField] private SoundEvent selectionSound;
 
     private TalentData currentTalent1;
     private TalentData currentTalent2;
@@ -331,6 +335,10 @@ public class PrayerWheelUI : MonoBehaviour
         Debug.Log($"[PrayerWheelUI] Rarity: {talent.rarity}");
         Debug.Log($"[PrayerWheelUI] Description: {talent.description}");
         Debug.Log("========================================");
+
+        // Play selection sound
+        if (selectionSound != null && AudioManager.Instance != null)
+            AudioManager.Instance.Play(selectionSound);
 
         // Fire event
         OnTalentSelected?.Invoke(talent);

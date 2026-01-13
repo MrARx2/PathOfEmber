@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using Audio;
 
 namespace Hazards
 {
@@ -72,6 +73,10 @@ namespace Hazards
         [SerializeField, Tooltip("Log debug messages to console.")]
         private bool debugLog = false;
 
+        [Header("=== SOUND EFFECTS ===")]
+        [SerializeField] private SoundEvent meteorFallSound;
+        [SerializeField] private SoundEvent meteorImpactSound;
+
         #endregion
 
         #region Private State
@@ -125,6 +130,10 @@ namespace Hazards
             // STAGE 2: FALLING
             // ============================================
             SpawnFallingMeteor(fallDuration);
+            
+            // Play falling meteor sound
+            if (meteorFallSound != null && AudioManager.Instance != null)
+                AudioManager.Instance.PlayAtPosition(meteorFallSound, _impactPosition);
 
             // Wait for remaining time until impact
             float remainingTime = Mathf.Max(0, warningDuration - Mathf.Max(0, delayBeforeMeteorSpawn));
@@ -143,6 +152,10 @@ namespace Hazards
 
             // Spawn all impact visuals SIMULTANEOUSLY
             SpawnImpactEffects();
+
+            // Play impact sound
+            if (meteorImpactSound != null && AudioManager.Instance != null)
+                AudioManager.Instance.PlayAtPosition(meteorImpactSound, _impactPosition);
 
             // Apply damage to entities in radius
             ApplyImpactDamage();

@@ -75,18 +75,12 @@ namespace Hazards
         [SerializeField, Tooltip("Increase accuracy as depth increases.")]
         private bool accuracyScalesWithDepth = true;
 
-        [Header("=== FIRE DAMAGE (Per Second) ===")]
-        [SerializeField, Tooltip("Apply fire damage while player is in zone.")]
+        [Header("=== FIRE DAMAGE ===")]
+        [SerializeField, Tooltip("Apply fire damage while player is in zone (handled by PlayerHealth).")]
         private bool applyFireDamage = true;
         
-        [SerializeField, Tooltip("Fire damage per second at minimum depth.")]
-        private float fireDamagePerSecond = 20f;
-        
-        [SerializeField, Tooltip("Fire damage multiplier at maximum depth.")]
+        [SerializeField, Tooltip("Fire damage multiplier at maximum depth (passed to PlayerHealth).")]
         private float maxDepthFireDamageMultiplier = 2.0f;
-        
-        [SerializeField, Tooltip("How often to apply damage ticks (internal).")]
-        private float fireDamageTickRate = 4f; // 4 ticks per second
 
         [Header("=== ZONE CONFIGURATION ===")]
         [SerializeField, Tooltip("Which axis defines 'depth' into the zone.")]
@@ -114,7 +108,6 @@ namespace Hazards
         private BoxCollider _zoneCollider;
         private Vector3 _originalSize;
         private Coroutine _spawnRoutine;
-        private Coroutine _fireDamageRoutine;
         private bool _playerInZone;
         private bool _playerInEarlyWarning;
         private float _currentDepth;
@@ -145,19 +138,32 @@ namespace Hazards
                 if (playerObj != null)
                 {
                     player = playerObj.transform;
-                    _playerHealth = playerObj.GetComponent<PlayerHealth>();
-                    _playerAbilities = playerObj.GetComponent<PlayerAbilities>();
                 }
-            }
-            else
-            {
-                _playerHealth = player.GetComponent<PlayerHealth>();
-                _playerAbilities = player.GetComponent<PlayerAbilities>();
             }
 
             if (player == null)
             {
                 Debug.LogError("[HazardZoneMeteors] No player found!");
+                return;
+            }
+            
+            // Find PlayerHealth - check self, children, then parent
+            _playerHealth = player.GetComponent<PlayerHealth>();
+            if (_playerHealth == null)
+                _playerHealth = player.GetComponentInChildren<PlayerHealth>();
+            if (_playerHealth == null)
+                _playerHealth = player.GetComponentInParent<PlayerHealth>();
+            
+            // Find PlayerAbilities similarly
+            _playerAbilities = player.GetComponent<PlayerAbilities>();
+            if (_playerAbilities == null)
+                _playerAbilities = player.GetComponentInChildren<PlayerAbilities>();
+            if (_playerAbilities == null)
+                _playerAbilities = player.GetComponentInParent<PlayerAbilities>();
+            
+            if (_playerHealth == null)
+            {
+                Debug.LogError("[HazardZoneMeteors] PlayerHealth component not found on player or its hierarchy!");
             }
         }
 
@@ -200,11 +206,27 @@ namespace Hazards
                 HandleZoneExpansion();
             }
 
-            // Update depth/intensity
+            // Update depth/intensity and fire damage multiplier
             if (_playerInZone)
             {
                 _currentDepth = CalculatePlayerDepth();
                 _currentIntensity = spawnRateCurve.Evaluate(_currentDepth);
+                
+                // Update fire damage multiplier based on depth (handled by PlayerHealth)
+                if (applyFireDamage && _playerHealth != null)
+                {
+                    float depthMultiplier = Mathf.Lerp(1f, maxDepthFireDamageMultiplier, _currentIntensity);
+                    
+                    // Apply hazard resistance
+                    float resistanceMultiplier = 1f;
+                    if (_playerAbilities != null)
+                    {
+                        int stacks = _playerAbilities.HazardResistanceStacks;
+                        resistanceMultiplier = Mathf.Max(0.25f, 1f - (stacks * 0.25f));
+                    }
+                    
+                    _playerHealth.SetFireDamageMultiplier(depthMultiplier * resistanceMultiplier);
+                }
             }
 
             // Handle meteor spawning (continuous per-second approach)
@@ -268,12 +290,8 @@ namespace Hazards
         {
             if (debugLog) Debug.Log("[HazardZone] Player ENTERED zone");
 
-            if (applyFireDamage && _fireDamageRoutine == null)
-            {
-                _fireDamageRoutine = StartCoroutine(FireDamageRoutine());
-            }
-
-            if (_playerHealth != null)
+            // Fire damage is now handled centrally by PlayerHealth
+            if (applyFireDamage && _playerHealth != null)
             {
                 _playerHealth.SetOnFire(true);
             }
@@ -282,12 +300,6 @@ namespace Hazards
         private void OnPlayerExitZone()
         {
             if (debugLog) Debug.Log("[HazardZone] Player EXITED zone");
-
-            if (_fireDamageRoutine != null)
-            {
-                StopCoroutine(_fireDamageRoutine);
-                _fireDamageRoutine = null;
-            }
 
             if (_playerHealth != null)
             {
@@ -419,46 +431,6 @@ namespace Hazards
 
         #endregion
 
-        #region Fire Damage
-
-        private IEnumerator FireDamageRoutine()
-        {
-            float tickInterval = 1f / Mathf.Max(1f, fireDamageTickRate);
-
-            while (_playerInZone && _playerHealth != null)
-            {
-                // Calculate DPS scaled by depth
-                float depthMultiplier = Mathf.Lerp(1f, maxDepthFireDamageMultiplier, _currentIntensity);
-                float currentDPS = fireDamagePerSecond * depthMultiplier;
-
-                // Calculate resistance reduction
-                float resistanceMultiplier = 1f;
-                if (_playerAbilities != null)
-                {
-                    int stacks = _playerAbilities.HazardResistanceStacks;
-                    resistanceMultiplier = Mathf.Max(0.25f, 1f - (stacks * 0.25f));
-                }
-
-                // Calculate damage per tick from DPS
-                float damagePerTick = (currentDPS * resistanceMultiplier) / fireDamageTickRate;
-                int finalDamage = Mathf.RoundToInt(damagePerTick);
-
-                if (finalDamage > 0)
-                {
-                    _playerHealth.TakeDamage(finalDamage);
-
-                    if (debugLog)
-                    {
-                        Debug.Log($"[HazardZone] Fire tick: {finalDamage} (DPS: {currentDPS:F0}, resist: {resistanceMultiplier:F2})");
-                    }
-                }
-
-                yield return new WaitForSeconds(tickInterval);
-            }
-        }
-
-        #endregion
-
         #region Helpers
 
         private float CalculatePlayerDepth()
@@ -490,9 +462,18 @@ namespace Hazards
         private bool IsPositionInZone(Vector3 worldPosition)
         {
             if (_zoneCollider == null) return false;
+            
+            // Project to XZ plane (ignore Y) for ground-level zone detection
+            // This ensures player is detected even if their Y position differs from collider height
             Vector3 localPos = transform.InverseTransformPoint(worldPosition);
-            Bounds bounds = new Bounds(_zoneCollider.center, _zoneCollider.size);
-            return bounds.Contains(localPos);
+            Vector3 center = _zoneCollider.center;
+            Vector3 halfSize = _zoneCollider.size * 0.5f;
+            
+            // Check only X and Z axes
+            bool inX = localPos.x >= center.x - halfSize.x && localPos.x <= center.x + halfSize.x;
+            bool inZ = localPos.z >= center.z - halfSize.z && localPos.z <= center.z + halfSize.z;
+            
+            return inX && inZ;
         }
 
         private float GetDistanceToZone(Vector3 worldPosition)

@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Audio;
 
 /// <summary>
 /// Spawns enemies when player enters activation distance.
@@ -91,6 +92,9 @@ public class SpawnArea : MonoBehaviour
     
     [SerializeField, Tooltip("Rotation offset for spawn VFX (X=-90 makes it face up for ground effects)")]
     private Vector3 spawnVFXRotationOffset = new Vector3(-90f, 0f, 0f);
+
+    [Header("Sound Effects")]
+    [SerializeField] private SoundEvent spawnSound;
 
     private bool hasSpawned = false;
     private bool isSpawning = false; // Prevents double-triggering during spawn sequence
@@ -480,6 +484,10 @@ public class SpawnArea : MonoBehaviour
             GameObject vfx = Instantiate(spawnVFXPrefab, vfxPos, vfxRotation);
             Destroy(vfx, 3f); // Auto-cleanup VFX
         }
+        
+        // Play spawn sound
+        if (spawnSound != null && AudioManager.Instance != null)
+            AudioManager.Instance.PlayAtPosition(spawnSound, position);
         
         GameObject enemy = Instantiate(prefab, position, rotation);
         enemy.name = $"{prefab.name}_{index}";

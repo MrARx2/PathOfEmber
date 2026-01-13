@@ -4,13 +4,15 @@ using UnityEngine;
 
 namespace Hazards
 {
+    /// <summary>
+    /// Lava hazard that ignites the player. Fire damage is handled centrally by PlayerHealth.
+    /// </summary>
     [RequireComponent(typeof(Collider))]
     public class LavaController : MonoBehaviour
     {
-        [Header("Damage Settings")]
-        [SerializeField] private int damagePerSecond = 10;
-        [SerializeField] private bool ignitePlayer = true;
-        [SerializeField] private float fireTickRate = 1.0f;
+        [Header("Fire Settings")]
+        [SerializeField, Tooltip("Set player on fire when they enter lava")]
+        private bool ignitePlayer = true;
 
         [Header("Visual Settings")]
         [SerializeField] private bool scrollTexture = true;
@@ -24,7 +26,6 @@ namespace Hazards
 
         private Renderer _renderer;
         private Vector3 _initialPosition;
-        private Coroutine _damageCoroutine;
         private PlayerHealth _playerInLava;
 
         private void Start()
@@ -70,54 +71,32 @@ namespace Hazards
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.CompareTag("Player"))
+            if (!ignitePlayer) return;
+            if (!other.CompareTag("Player")) return;
+            
+            // Find PlayerHealth in hierarchy
+            PlayerHealth health = other.GetComponent<PlayerHealth>();
+            if (health == null)
+                health = other.GetComponentInChildren<PlayerHealth>();
+            if (health == null)
+                health = other.GetComponentInParent<PlayerHealth>();
+            
+            if (health != null)
             {
-                PlayerHealth health = other.GetComponent<PlayerHealth>();
-                if (health != null)
-                {
-                    _playerInLava = health;
-                    if (ignitePlayer)
-                    {
-                        health.SetOnFire(true);
-                    }
-                    if (_damageCoroutine == null)
-                    {
-                        _damageCoroutine = StartCoroutine(DamageRoutine(health));
-                    }
-                }
+                _playerInLava = health;
+                // Fire damage is handled centrally by PlayerHealth
+                health.SetOnFire(true);
             }
         }
 
         private void OnTriggerExit(Collider other)
         {
-            if (other.CompareTag("Player"))
+            if (!other.CompareTag("Player")) return;
+            
+            if (_playerInLava != null && other.gameObject == _playerInLava.gameObject)
             {
-                if (_playerInLava != null && other.gameObject == _playerInLava.gameObject)
-                {
-                    if (ignitePlayer)
-                    {
-                        // Optional: Stop fire immediately or let it linger?
-                        // For now, let's stop it when leaving the immediate lava source 
-                        // effectively saying "you are no longer IN the fire".
-                        // Logic in PlayerHealth might keep it on if intended, but SetOnFire(false) toggles the visual.
-                        _playerInLava.SetOnFire(false); 
-                    }
-                    _playerInLava = null;
-                    if (_damageCoroutine != null)
-                    {
-                        StopCoroutine(_damageCoroutine);
-                        _damageCoroutine = null;
-                    }
-                }
-            }
-        }
-
-        private IEnumerator DamageRoutine(PlayerHealth health)
-        {
-            while (health != null && !health.IsDead)
-            {
-                health.TakeDamage(damagePerSecond);
-                yield return new WaitForSeconds(fireTickRate);
+                _playerInLava.SetOnFire(false);
+                _playerInLava = null;
             }
         }
     }

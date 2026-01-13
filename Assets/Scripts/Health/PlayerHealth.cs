@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 using System.Collections;
+using Audio;
 
 public class PlayerHealth : MonoBehaviour, IDamageable
 {
@@ -26,10 +27,16 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private GameObject shieldEffect;
 
     [Header("Fire State")]
-    [SerializeField, Tooltip("Is the player currently on fire (in hazard zone)?")]
+    [SerializeField, Tooltip("Is the player currently on fire?")]
     private bool isOnFire = false;
     [SerializeField, Tooltip("Visual effect shown when player is on fire")]
     private GameObject fireEffect;
+    
+    [Header("Fire Damage (Centralized)")]
+    [SerializeField, Tooltip("Base fire damage per second while on fire")]
+    private int fireDamagePerSecond = 20;
+    [SerializeField, Tooltip("Fire damage tick interval (1 second recommended for sound effects)")]
+    private float fireTickInterval = 1f;
 
     [Header("Animation")]
     [SerializeField] private Animator animator;
@@ -51,6 +58,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField, Tooltip("Enable camera shake when hit")]
     private bool enableCameraShake = true;
 
+    [Header("Sound Effects")]
+    [SerializeField] private SoundEvent hurtSound;
+    [SerializeField] private SoundEvent fireHurtSound;
+    [SerializeField] private SoundEvent healSound;
+    [SerializeField] private SoundEvent deathSound;
+
     [Header("Events")]
     public UnityEvent<int> OnDamage;
     public UnityEvent<int> OnHeal;
@@ -60,6 +73,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private bool isDead = false;
     private Coroutine dotCoroutine;
     private Coroutine hitFlashCoroutine;
+    private Coroutine fireDamageCoroutine;
+    private float fireDamageMultiplier = 1f; // External sources can modify (e.g., hazard zone depth)
+    private int permanentFireSources = 0; // Count of permanent fire sources (HazardZone, Lava)
+    private float fireEndTime = 0f; // Time.time when timed fire effects expire
     private Renderer[] renderers;
     private Color[] originalEmissionColors;
     private bool[] hadEmissionEnabled;
@@ -190,6 +207,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (hasHitTrigger)
             animator.SetTrigger(hitTrigger);
 
+        // Play hurt sound
+        if (hurtSound != null && AudioManager.Instance != null)
+            AudioManager.Instance.Play(hurtSound);
+
         OnDamage?.Invoke(damage);
         UpdateHealthBar();
         NotifyHealthChanged();
@@ -219,6 +240,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (animator != null && !string.IsNullOrEmpty(healTrigger))
             animator.SetTrigger(healTrigger);
 
+        // Play heal sound
+        if (healSound != null && AudioManager.Instance != null)
+            AudioManager.Instance.Play(healSound);
+
         OnHeal?.Invoke(amount);
         UpdateHealthBar();
         NotifyHealthChanged();
@@ -237,40 +262,154 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     }
 
     /// <summary>
-    /// Sets the on-fire state (called by HazardZoneMeteors).
+    /// Adds a permanent fire source (e.g., HazardZone, Lava).
+    /// Fire stays on while any permanent source is active.
     /// </summary>
-    public void SetOnFire(bool onFire)
+    public void AddFireSource()
     {
-        isOnFire = onFire;
-        if (fireEffect != null)
-        {
-            fireEffect.SetActive(onFire);
-        }
-        Debug.Log($"[PlayerHealth] Fire state: {(onFire ? "ON FIRE" : "not on fire")}");
+        permanentFireSources++;
+        UpdateFireState();
     }
     
     /// <summary>
-    /// Sets the on-fire state for a specific duration (called by EnemyProjectile DoT).
+    /// Removes a permanent fire source.
+    /// Fire stops only when all sources are removed AND timed effects expire.
+    /// </summary>
+    public void RemoveFireSource()
+    {
+        permanentFireSources = Mathf.Max(0, permanentFireSources - 1);
+        UpdateFireState();
+    }
+    
+    /// <summary>
+    /// Adds a timed fire effect (e.g., fire projectile).
+    /// Uses max duration tracking - extends fire if this duration is longer.
+    /// </summary>
+    public void AddTimedFire(float duration)
+    {
+        if (duration <= 0) return;
+        
+        float newEndTime = Time.time + duration;
+        // Keep the longest remaining duration
+        if (newEndTime > fireEndTime)
+        {
+            fireEndTime = newEndTime;
+        }
+        UpdateFireState();
+        
+        // Start checking for timed fire expiry
+        if (fireEffectCoroutine != null)
+            StopCoroutine(fireEffectCoroutine);
+        fireEffectCoroutine = StartCoroutine(CheckTimedFireExpiry());
+    }
+    
+    /// <summary>
+    /// Sets fire damage multiplier (e.g., for hazard zone depth scaling).
+    /// </summary>
+    public void SetFireDamageMultiplier(float multiplier)
+    {
+        fireDamageMultiplier = Mathf.Max(0f, multiplier);
+    }
+    
+    /// <summary>
+    /// Legacy method for backward compatibility. Prefer AddFireSource/RemoveFireSource.
+    /// </summary>
+    public void SetOnFire(bool onFire)
+    {
+        if (onFire)
+            AddFireSource();
+        else
+            RemoveFireSource();
+    }
+    
+    /// <summary>
+    /// Legacy method for backward compatibility. Now uses AddTimedFire.
     /// </summary>
     public void SetOnFire(bool onFire, float duration)
     {
-        SetOnFire(onFire);
-        
         if (onFire && duration > 0)
         {
-            // Auto-clear fire effect after duration
-            if (fireEffectCoroutine != null)
-                StopCoroutine(fireEffectCoroutine);
-            fireEffectCoroutine = StartCoroutine(ClearFireAfterDuration(duration));
+            AddTimedFire(duration);
+        }
+        else if (!onFire)
+        {
+            // Timed effects don't call RemoveFireSource - they expire naturally
         }
     }
     
     private Coroutine fireEffectCoroutine;
     
-    private IEnumerator ClearFireAfterDuration(float duration)
+    /// <summary>
+    /// Updates the fire state based on all active sources.
+    /// </summary>
+    private void UpdateFireState()
     {
-        yield return new WaitForSeconds(duration);
-        SetOnFire(false);
+        bool shouldBeOnFire = permanentFireSources > 0 || Time.time < fireEndTime;
+        
+        if (shouldBeOnFire && !isOnFire)
+        {
+            // Turn fire ON
+            isOnFire = true;
+            if (fireEffect != null)
+                fireEffect.SetActive(true);
+            
+            if (fireDamageCoroutine == null)
+            {
+                fireDamageCoroutine = StartCoroutine(FireDamageRoutine());
+            }
+        }
+        else if (!shouldBeOnFire && isOnFire)
+        {
+            // Turn fire OFF
+            isOnFire = false;
+            if (fireEffect != null)
+                fireEffect.SetActive(false);
+            
+            if (fireDamageCoroutine != null)
+            {
+                StopCoroutine(fireDamageCoroutine);
+                fireDamageCoroutine = null;
+            }
+            fireDamageMultiplier = 1f;
+        }
+    }
+    
+    /// <summary>
+    /// Coroutine to check when timed fire effects expire.
+    /// </summary>
+    private IEnumerator CheckTimedFireExpiry()
+    {
+        while (Time.time < fireEndTime)
+        {
+            yield return new WaitForSeconds(0.1f);
+        }
+        fireEffectCoroutine = null;
+        UpdateFireState();
+    }
+    
+    /// <summary>
+    /// Centralized fire damage routine. Ticks at fireTickInterval (default 1 second).
+    /// </summary>
+    private IEnumerator FireDamageRoutine()
+    {
+        while (isOnFire && !isDead)
+        {
+            // Calculate damage with multiplier
+            int damage = Mathf.RoundToInt(fireDamagePerSecond * fireTickInterval * fireDamageMultiplier);
+            
+            if (damage > 0 && !isInvulnerable)
+            {
+                TakeDamageInternal(damage, triggerShake: false);
+                
+                // Play fire hurt sound
+                if (fireHurtSound != null && AudioManager.Instance != null)
+                    AudioManager.Instance.Play(fireHurtSound);
+            }
+            
+            yield return new WaitForSeconds(fireTickInterval);
+        }
+        
+        fireDamageCoroutine = null;
     }
 
     /// <summary>
@@ -374,6 +513,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private void Die()
     {
         isDead = true;
+
+        // Play death sound
+        if (deathSound != null && AudioManager.Instance != null)
+            AudioManager.Instance.Play(deathSound);
 
         if (animator != null && !string.IsNullOrEmpty(deathTrigger))
             animator.SetTrigger(deathTrigger);

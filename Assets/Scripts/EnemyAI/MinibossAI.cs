@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using Audio;
 
 namespace EnemyAI
 {
@@ -113,6 +114,11 @@ namespace EnemyAI
         private float circleStrafeRadius = 8f;
         [SerializeField, Tooltip("Circle-strafe arc angle")]
         private float circleStrafeAngle = 45f;
+        
+        [Header("=== SOUND EFFECTS ===")]
+        [SerializeField] private SoundEvent fireballSound;
+        [SerializeField] private SoundEvent rageChargeSound;
+        [SerializeField] private SoundEvent rageBurstSound;
         
         #endregion
         
@@ -597,6 +603,10 @@ namespace EnemyAI
             if (debugLog) Debug.Log($"[MinibossAI] Spawning fireball at height {spawnPos.y}");
             GameObject proj = Instantiate(fireballPrefab, spawnPos, Quaternion.LookRotation(direction));
             
+            // Play fireball sound
+            if (fireballSound != null && AudioManager.Instance != null)
+                AudioManager.Instance.PlayAtPosition(fireballSound, spawnPos);
+            
             EnemyProjectile ep = proj.GetComponent<EnemyProjectile>();
             if (ep != null)
             {
@@ -990,6 +1000,11 @@ namespace EnemyAI
             }
             
             Debug.Log($"[MinibossAI] STARTING RAGE MODE! Phase1={ragePhase1Triggered}, Phase2={ragePhase2Triggered}");
+            
+            // Play rage charge sound
+            if (rageChargeSound != null && AudioManager.Instance != null)
+                AudioManager.Instance.PlayAtPosition(rageChargeSound, transform.position);
+            
             SwitchState(MinibossState.RageMode);
             StartCoroutine(RageModeRoutine());
         }
@@ -1081,6 +1096,10 @@ namespace EnemyAI
         private void Spawn360FireballBurst()
         {
             if (debugLog) Debug.Log($"[MinibossAI] Spawning {rageFireballCount} fireballs in 360° pattern!");
+            
+            // Play rage burst sound
+            if (rageBurstSound != null && AudioManager.Instance != null)
+                AudioManager.Instance.PlayAtPosition(rageBurstSound, transform.position);
             
             GameObject prefabToUse = bouncingFireballPrefab != null ? bouncingFireballPrefab : fireballPrefab;
             if (prefabToUse == null) return;

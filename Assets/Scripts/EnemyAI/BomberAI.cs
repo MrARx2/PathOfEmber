@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using Audio;
 
 namespace EnemyAI
 {
@@ -44,6 +45,10 @@ namespace EnemyAI
         [Header("=== WARNING INDICATOR ===")]
         [SerializeField, Tooltip("Warning indicator prefab (spawns on ground during detonation)")]
         private GameObject warningPrefab;
+
+        [Header("=== SOUND EFFECTS ===")]
+        [SerializeField] private SoundEvent bipSound;
+        [SerializeField] private SoundEvent explosionSound;
 
         private bool hasExploded = false;
         private bool isDetonating = false;
@@ -132,6 +137,10 @@ namespace EnemyAI
             // Spawn warning indicator on ground
             SpawnWarningIndicator();
             
+            // Play bip sound at start of detonation
+            if (bipSound != null && AudioManager.Instance != null)
+                AudioManager.Instance.PlayAtPosition(bipSound, transform.position);
+            
             float elapsed = 0f;
 
             while (elapsed < detonationDelay)
@@ -207,6 +216,10 @@ namespace EnemyAI
 
             // Camera shake for explosion impact (even if player not hit)
             CameraShakeManager.Shake(CameraShakePreset.Heavy);
+
+            // Play explosion sound
+            if (explosionSound != null && AudioManager.Instance != null)
+                AudioManager.Instance.PlayAtPosition(explosionSound, transform.position);
 
             // Deal Damage
             Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, damageLayer);

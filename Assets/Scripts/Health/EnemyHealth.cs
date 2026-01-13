@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 using System.Collections;
+using Audio;
 
 /// <summary>
 /// Source of damage for XP calculation purposes.
@@ -84,6 +85,12 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private LayerMask knockbackBlockLayers;
     [SerializeField, Tooltip("Radius for wall collision check")]
     private float knockbackCollisionRadius = 0.5f;
+
+    [Header("Sound Effects")]
+    [SerializeField, Tooltip("Sound when enemy is hit")]
+    private SoundEvent hitSound;
+    [SerializeField, Tooltip("Sound when enemy dies")]
+    private SoundEvent deathSound;
 
     private bool isDead = false;
     private bool isInvulnerable = false;
@@ -288,6 +295,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             Vector3 popupPos = VisualCenter + damagePopupOffset;
             PopupManager.Instance.ShowDamage(damage, popupPos);
         }
+
+        // Play hit sound
+        if (hitSound != null && AudioManager.Instance != null)
+            AudioManager.Instance.PlayAtPosition(hitSound, VisualCenter);
 
         OnDamage?.Invoke(damage);
         OnHealthChanged?.Invoke((float)currentHealth / maxHealth);
@@ -507,6 +518,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     {
         if (isDead) return; // Prevent double death
         isDead = true;
+        
+        // Play death sound
+        if (deathSound != null && AudioManager.Instance != null)
+            AudioManager.Instance.PlayAtPosition(deathSound, VisualCenter);
         
         // Stop all coroutines (DoT, Freeze, etc.)
         StopAllCoroutines();

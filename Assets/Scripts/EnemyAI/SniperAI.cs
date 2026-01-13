@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using Audio;
 
 namespace EnemyAI
 {
@@ -51,6 +52,10 @@ namespace EnemyAI
         private float aimLineLength = 20f;
         [SerializeField, Tooltip("How long the aiming phase lasts (for color transition)")]
         private float aimDuration = 0.5f;
+
+        [Header("=== SOUND EFFECTS ===")]
+        [SerializeField] private SoundEvent aimSound;
+        [SerializeField] private SoundEvent shootSound;
 
         // State Machine
         private SniperState currentState = SniperState.Idle;
@@ -452,6 +457,10 @@ namespace EnemyAI
             if (!showAimLine || aimLine == null) return;
             aimLine.enabled = true;
             StartCoroutine(UpdateAimLineRoutine());
+            
+            // Play aim sound
+            if (aimSound != null && AudioManager.Instance != null)
+                AudioManager.Instance.PlayAtPosition(aimSound, transform.position);
         }
         
         private void HideAimLine()
@@ -510,6 +519,10 @@ namespace EnemyAI
         private void SpawnProjectile()
         {
             if (projectilePrefab == null || target == null) return;
+
+            // Play shoot sound
+            if (shootSound != null && AudioManager.Instance != null)
+                AudioManager.Instance.PlayAtPosition(shootSound, transform.position);
 
             Vector3 spawnPos = projectileSpawnPoint.position;
             // Keep trajectory flat
