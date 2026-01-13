@@ -33,6 +33,35 @@ public class TalentDatabase : ScriptableObject
     }
 
     /// <summary>
+    /// Gets all talents from all rarities combined.
+    /// </summary>
+    public TalentData[] GetAllTalents()
+    {
+        int totalCount = 
+            (commonTalents?.Length ?? 0) + 
+            (rareTalents?.Length ?? 0) + 
+            (legendaryTalents?.Length ?? 0);
+        
+        TalentData[] all = new TalentData[totalCount];
+        int index = 0;
+        
+        if (commonTalents != null)
+        {
+            foreach (var t in commonTalents) all[index++] = t;
+        }
+        if (rareTalents != null)
+        {
+            foreach (var t in rareTalents) all[index++] = t;
+        }
+        if (legendaryTalents != null)
+        {
+            foreach (var t in legendaryTalents) all[index++] = t;
+        }
+        
+        return all;
+    }
+
+    /// <summary>
     /// Rolls for a random rarity based on probability weights.
     /// Common: 60%, Rare: 30%, Legendary: 10%
     /// </summary>
