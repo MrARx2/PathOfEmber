@@ -152,14 +152,15 @@ public class SoundEventBatchGenerator : EditorWindow
             { "ArrowWallHit", new[] { "POE Wall Hit1", "POE Wall Hit2", "POE Wall Hit 3" } },
         };
         
-        // Create grouped SoundEvents
+        // Create grouped SoundEvents - Player sounds are 2D (always heard)
         foreach (var group in groups)
         {
             var clips = FindClips(sourcePath, group.Value);
             if (clips.Count > 0)
             {
                 CreateSoundEvent(outputPath, group.Key, clips.ToArray(), sfxGroup, 
-                    randomizePitch: true, maxInstances: 3, cooldown: 0.05f);
+                    randomizePitch: true, maxInstances: 3, cooldown: 0.05f, 
+                    spatialBlend: 0f); // 2D - player sounds always audible
                 count++;
             }
         }
@@ -183,7 +184,8 @@ public class SoundEventBatchGenerator : EditorWindow
             var clip = FindClip(sourcePath, single.Value);
             if (clip != null)
             {
-                CreateSoundEvent(outputPath, single.Key, new[] { clip }, sfxGroup);
+                CreateSoundEvent(outputPath, single.Key, new[] { clip }, sfxGroup, 
+                    spatialBlend: 0f); // 2D - player sounds always audible
                 count++;
             }
         }
@@ -251,26 +253,29 @@ public class SoundEventBatchGenerator : EditorWindow
         int count = 0;
         string outputPath = "Assets/Sounds/SoundEvents/Hazards";
         
-        // Meteor
+        // Meteor - larger range (10m) as they're impactful events
         var meteorFall = FindClip("Assets/Sounds/Meteor", "MeteorFall");
         var meteorBoom = FindClip("Assets/Sounds/Meteor", "MeteorBoom");
         
         if (meteorFall != null)
         {
-            CreateSoundEvent(outputPath, "MeteorFall", new[] { meteorFall }, sfxGroup);
+            CreateSoundEvent(outputPath, "MeteorFall", new[] { meteorFall }, sfxGroup,
+                spatialBlend: 1f, minDistance: 2f, maxDistance: 10f);
             count++;
         }
         if (meteorBoom != null)
         {
-            CreateSoundEvent(outputPath, "MeteorBoom", new[] { meteorBoom }, sfxGroup, maxInstances: 5);
+            CreateSoundEvent(outputPath, "MeteorBoom", new[] { meteorBoom }, sfxGroup, 
+                maxInstances: 5, spatialBlend: 1f, minDistance: 2f, maxDistance: 10f);
             count++;
         }
         
-        // Spawn
+        // Spawn - medium range (5m)
         var spawnPuff = FindClip("Assets/Sounds/Spawn", "SpawnPuff");
         if (spawnPuff != null)
         {
-            CreateSoundEvent(outputPath, "SpawnPuff", new[] { spawnPuff }, sfxGroup, maxInstances: 5);
+            CreateSoundEvent(outputPath, "SpawnPuff", new[] { spawnPuff }, sfxGroup, 
+                maxInstances: 5, spatialBlend: 1f, minDistance: 1f, maxDistance: 5f);
             count++;
         }
         
@@ -299,7 +304,9 @@ public class SoundEventBatchGenerator : EditorWindow
             var clip = FindClip(sourcePath, sound.Value);
             if (clip != null)
             {
-                CreateSoundEvent(outputPath, sound.Key, new[] { clip }, sfxGroup);
+                // UI sounds are 2D - always heard at full volume
+                CreateSoundEvent(outputPath, sound.Key, new[] { clip }, sfxGroup,
+                    spatialBlend: 0f);
                 count++;
             }
         }
@@ -327,8 +334,9 @@ public class SoundEventBatchGenerator : EditorWindow
             var clip = FindClip(sourcePath, sound.Value);
             if (clip != null)
             {
+                // Ambient: 3m range, fully 3D
                 CreateSoundEvent(outputPath, sound.Key, new[] { clip }, ambientGroup, 
-                    maxInstances: 1, spatialBlend: 0f);
+                    maxInstances: 1, spatialBlend: 1f, minDistance: 0.5f, maxDistance: 3f);
                 count++;
             }
         }
@@ -364,7 +372,9 @@ public class SoundEventBatchGenerator : EditorWindow
             var clip = FindClip(sourcePath, sound.Value);
             if (clip != null)
             {
-                CreateSoundEvent(outputPath, sound.Key, new[] { clip }, sfxGroup);
+                // Enemy sounds: 5m range, fully 3D
+                CreateSoundEvent(outputPath, sound.Key, new[] { clip }, sfxGroup,
+                    spatialBlend: 1f, minDistance: 1f, maxDistance: 5f);
                 count++;
             }
         }
@@ -426,7 +436,7 @@ public class SoundEventBatchGenerator : EditorWindow
     
     private void CreateSoundEvent(string outputPath, string eventName, AudioClip[] clips, 
         AudioMixerGroup mixerGroup, bool randomizePitch = false, int maxInstances = 3, 
-        float cooldown = 0f, float spatialBlend = 0f)
+        float cooldown = 0f, float spatialBlend = 1f, float minDistance = 1f, float maxDistance = 5f)
     {
         string assetPath = $"{outputPath}/{eventName}.asset";
         
@@ -448,9 +458,11 @@ public class SoundEventBatchGenerator : EditorWindow
         soundEvent.stealMode = SoundEvent.StealMode.StealOldest;
         soundEvent.cooldown = cooldown;
         soundEvent.spatialBlend = spatialBlend;
+        soundEvent.minDistance = minDistance;
+        soundEvent.maxDistance = maxDistance;
         
         AssetDatabase.CreateAsset(soundEvent, assetPath);
-        generationLog.Add($"  Created: {eventName} ({clips.Length} clips)");
+        generationLog.Add($"  Created: {eventName} ({clips.Length} clips, 3D: {spatialBlend:F1}, range: {minDistance}-{maxDistance}m)");
     }
     
     private void EnsureFolderExists(string path)

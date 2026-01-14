@@ -19,6 +19,13 @@ namespace Audio
         [Tooltip("Base volume (0-1)")]
         public float volume = 1f;
         
+        [Tooltip("Add slight random volume variation for variety")]
+        public bool randomizeVolume = false;
+        
+        [Range(0f, 0.3f)]
+        [Tooltip("Volume variation range (±)")]
+        public float volumeVariation = 0.1f;
+        
         [Range(0.5f, 2f)]
         [Tooltip("Base pitch (1 = normal)")]
         public float pitch = 1f;
@@ -26,9 +33,13 @@ namespace Audio
         [Tooltip("Add slight random pitch variation for variety")]
         public bool randomizePitch = false;
         
-        [Range(0f, 0.3f)]
+        [Range(0f, 1f)]
         [Tooltip("Pitch variation range (±)")]
         public float pitchVariation = 0.1f;
+        
+        [Header("Playback")]
+        [Tooltip("Should this sound loop continuously?")]
+        public bool loop = false;
         
         [Header("Mixer")]
         [Tooltip("Which mixer group to route through (SFX, BGM, etc.)")]
@@ -80,6 +91,18 @@ namespace Audio
             if (!IsValid) return null;
             if (clips.Length == 1) return clips[0];
             return clips[Random.Range(0, clips.Length)];
+        }
+        
+        /// <summary>
+        /// Gets the volume value, optionally randomized.
+        /// </summary>
+        public float GetVolume()
+        {
+            if (randomizeVolume)
+            {
+                return Mathf.Clamp01(volume + Random.Range(-volumeVariation, volumeVariation));
+            }
+            return volume;
         }
         
         /// <summary>

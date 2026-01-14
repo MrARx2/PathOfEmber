@@ -27,7 +27,6 @@ namespace Audio
         [SerializeField] private bool debugLog = false;
         
         private AudioSource _audioSource;
-        private bool _playerInZone = false;
         private float _targetVolume = 0f;
         private float _currentVolume = 0f;
         
@@ -82,7 +81,6 @@ namespace Audio
         {
             if (!other.CompareTag("Player")) return;
             
-            _playerInZone = true;
             _targetVolume = 1f;
             
             // Start playing if not already
@@ -98,7 +96,6 @@ namespace Audio
         {
             if (!other.CompareTag("Player")) return;
             
-            _playerInZone = false;
             _targetVolume = 0f;
             
             if (debugLog) Debug.Log($"[AmbientSoundZone] Player exited {gameObject.name}");

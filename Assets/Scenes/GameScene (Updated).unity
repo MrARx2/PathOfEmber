@@ -173,6 +173,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 672881484162932213, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
+      propertyPath: joystick
+      value: 
+      objectReference: {fileID: 2062247110}
+    - target: {fileID: 672881484162932213, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
       propertyPath: moveSpeed
       value: 1.3
       objectReference: {fileID: 0}
@@ -180,6 +184,10 @@ PrefabInstance:
       propertyPath: fireRate
       value: 1.5
       objectReference: {fileID: 0}
+    - target: {fileID: 4347114780483123299, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
+      propertyPath: bowShotSound
+      value: 
+      objectReference: {fileID: 11400000, guid: 51646dbcd42f3c4488ec3cab92fb9338, type: 2}
     - target: {fileID: 4347114780483123299, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
       propertyPath: shootingTempo
       value: 1.5
@@ -199,7 +207,7 @@ PrefabInstance:
     - target: {fileID: 6742299797560581123, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
       propertyPath: fireHurtSound
       value: 
-      objectReference: {fileID: 11400000, guid: f7e272bee84fa5b42ba07e20ee38fd55, type: 2}
+      objectReference: {fileID: 11400000, guid: 24f0f976ab45d844bb2384bfe5d8bd6f, type: 2}
     - target: {fileID: 8209237199643502871, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
       propertyPath: m_Name
       value: Player
@@ -5324,9 +5332,21 @@ PrefabInstance:
       value: 1.7753462
       objectReference: {fileID: 0}
     - target: {fileID: 3038110658198851907, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
+      propertyPath: bipSound
+      value: 
+      objectReference: {fileID: 11400000, guid: efc81d063159fcd4bb4f68bc0621f181, type: 2}
+    - target: {fileID: 3038110658198851907, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
       propertyPath: moveSpeed
       value: 0.5
       objectReference: {fileID: 0}
+    - target: {fileID: 3038110658198851907, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
+      propertyPath: ambientSound
+      value: 
+      objectReference: {fileID: 11400000, guid: 1100e96080304304da48745fc1ef31b1, type: 2}
+    - target: {fileID: 3038110658198851907, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
+      propertyPath: explosionSound
+      value: 
+      objectReference: {fileID: 11400000, guid: eab0d28bc435eed4aa1d157e47888703, type: 2}
     - target: {fileID: 3172300429538223230, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 74.87766
@@ -5426,6 +5446,18 @@ PrefabInstance:
     - target: {fileID: 4624808013242393265, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4627939987458794271, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
+      propertyPath: ambientSound
+      value: 
+      objectReference: {fileID: 11400000, guid: a46b3a76d2164084b8d9ba25c3d4e301, type: 2}
+    - target: {fileID: 4627939987458794271, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
+      propertyPath: ambientSoundMaxInterval
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4627939987458794271, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
+      propertyPath: ambientSoundMinInterval
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 4725073097687722576, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -5543,6 +5575,14 @@ PrefabInstance:
       propertyPath: moveSpeed
       value: 0.3
       objectReference: {fileID: 0}
+    - target: {fileID: 6273615156642591094, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
+      propertyPath: hitSound
+      value: 
+      objectReference: {fileID: 11400000, guid: 9685d8c6e08a5c54b98bc307e2f8e3a4, type: 2}
+    - target: {fileID: 6273615156642591094, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
+      propertyPath: deathSound
+      value: 
+      objectReference: {fileID: 11400000, guid: ae90a62a70d57224db37df75764e184a, type: 2}
     - target: {fileID: 6273615156642591094, guid: 1e2e3de411f05a04086742ee5dae1285, type: 3}
       propertyPath: damagePopupOffset.y
       value: 0
@@ -5907,6 +5947,7 @@ MonoBehaviour:
       m_Calls: []
   prayerWheelDisplay: {fileID: 1246689979}
   buttonYOffset: 0
+  textYOffset: 60
   systemsCanvasToHide: {fileID: 1381894438}
   selectionSound: {fileID: 0}
 --- !u!114 &1246689979
@@ -6849,6 +6890,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: HazardZonePostProcessVolume
       objectReference: {fileID: 0}
+    - target: {fileID: 4743012758448403167, guid: 84ff9b0e9d661724d82b0653f80051be, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5117948346246013678, guid: 84ff9b0e9d661724d82b0653f80051be, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -7051,6 +7096,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3040914389953011833, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
   m_PrefabInstance: {fileID: 241913751}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2062247110 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8621287589051769814, guid: c4669907f458db14d88ed86361cde17b, type: 3}
+  m_PrefabInstance: {fileID: 470439001}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e07e3cc060865d34aa8976ffdae99043, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FloatingJoystick
 --- !u!114 &2069106571 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 6198231551338802235, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}

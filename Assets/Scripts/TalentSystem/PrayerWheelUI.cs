@@ -59,6 +59,9 @@ public class PrayerWheelUI : MonoBehaviour
     [Header("UI Position Offsets")]
     [SerializeField, Tooltip("Y offset for button positioning (positive = up)")]
     private float buttonYOffset = 100f;
+    
+    [SerializeField, Tooltip("Additional Y offset for text above buttons (positive = up)")]
+    private float textYOffset = 60f;
 
     [Header("Other UI to Hide")]
     [SerializeField, Tooltip("Canvas to hide during prayer wheel (e.g., enemy health bars, damage numbers)")]
@@ -252,6 +255,19 @@ public class PrayerWheelUI : MonoBehaviour
                     {
                         localPoint.y += buttonYOffset;
                         btnRect.localPosition = localPoint;
+                        
+                        // Also update left text position (above the button)
+                        if (talentNameLeft != null && talentNameLeft.gameObject.activeSelf)
+                        {
+                            RectTransform textRect = talentNameLeft.GetComponent<RectTransform>();
+                            if (textRect != null)
+                            {
+                                // Position text at same X, but higher Y (above button)
+                                Vector2 textPos = localPoint;
+                                textPos.y += textYOffset; // Additional offset above button
+                                textRect.localPosition = textPos;
+                            }
+                        }
                     }
                 }
             }
@@ -269,6 +285,19 @@ public class PrayerWheelUI : MonoBehaviour
                     {
                         localPoint.y += buttonYOffset;
                         btnRect.localPosition = localPoint;
+                        
+                        // Also update right text position (above the button)
+                        if (talentNameRight != null && talentNameRight.gameObject.activeSelf)
+                        {
+                            RectTransform textRect = talentNameRight.GetComponent<RectTransform>();
+                            if (textRect != null)
+                            {
+                                // Position text at same X, but higher Y (above button)
+                                Vector2 textPos = localPoint;
+                                textPos.y += textYOffset; // Additional offset above button
+                                textRect.localPosition = textPos;
+                            }
+                        }
                     }
                 }
             }

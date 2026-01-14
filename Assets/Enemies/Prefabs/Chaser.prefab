@@ -71,7 +71,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI.ChaserAI
   target: {fileID: 0}
   modelTransform: {fileID: 2204907571803602135}
-  moveSpeed: 0.25
+  moveSpeed: 0.35
   attackRange: 0.2
   stoppingDistanceMultiplier: 0.2
   agentRadius: 0.25
@@ -94,6 +94,10 @@ MonoBehaviour:
   speedParameter: Speed
   attackTrigger: Attack
   debugLog: 0
+  ambientSound: {fileID: 11400000, guid: a6adae854048de3419098955a72591a4, type: 2}
+  ambientSoundDistance: 5
+  ambientSoundMinInterval: 4
+  ambientSoundMaxInterval: 6
   punchDamage: 50
   upperBodyLayerIndex: 1
   attackLayerWeight: 1
@@ -147,6 +151,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   knockbackCollisionRadius: 0.5
+  hitSound: {fileID: 11400000, guid: 9685d8c6e08a5c54b98bc307e2f8e3a4, type: 2}
+  deathSound: {fileID: 11400000, guid: bccfcb5da7154294f929bc3fc9a890c0, type: 2}
 --- !u!1001 &1807032776106531644
 PrefabInstance:
   m_ObjectHideFlags: 0

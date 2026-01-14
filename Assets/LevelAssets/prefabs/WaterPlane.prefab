@@ -101,6 +101,7 @@ GameObject:
   - component: {fileID: 5384654447689708886}
   - component: {fileID: 6625942680954011838}
   - component: {fileID: 2551582377981998233}
+  - component: {fileID: 3153642843798091405}
   m_Layer: 4
   m_Name: WaterPlane
   m_TagString: Untagged
@@ -202,3 +203,19 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &3153642843798091405
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8872686615835890674}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae2a29f4432a2ff4cb5039a394fb24a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Audio.AmbientSoundZone
+  ambientSound: {fileID: 11400000, guid: b2e56dbbaf7f2ab48948e3eb51e7ce4a, type: 2}
+  volumeMultiplier: 1
+  fadeDuration: 0.5
+  debugLog: 0

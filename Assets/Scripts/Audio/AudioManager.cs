@@ -247,9 +247,9 @@ namespace Audio
             // Configure source
             AudioClip clip = soundEvent.GetClip();
             source.clip = clip;
-            source.volume = soundEvent.volume * volumeMultiplier;
+            source.volume = soundEvent.GetVolume() * volumeMultiplier;
             source.pitch = soundEvent.GetPitch();
-            source.loop = false;
+            source.loop = soundEvent.loop;
             source.spatialBlend = use3D ? soundEvent.spatialBlend : 0f;
             source.minDistance = soundEvent.minDistance;
             source.maxDistance = soundEvent.maxDistance;

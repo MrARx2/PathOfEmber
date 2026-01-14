@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections.Generic;
+using Audio;
 
 namespace EnemyAI
 {
@@ -83,6 +84,19 @@ namespace EnemyAI
         [Header("=== DEBUG ===")]
         [SerializeField] protected bool debugLog = false;
 
+        [Header("=== PROXIMITY AMBIENT SOUND ===")]
+        [SerializeField, Tooltip("Optional sound that plays periodically when near the player (growls, hisses, etc.)")]
+        protected SoundEvent ambientSound;
+        
+        [SerializeField, Tooltip("Maximum distance from player for ambient sound to play")]
+        protected float ambientSoundDistance = 5f;
+        
+        [SerializeField, Tooltip("Minimum time between ambient sounds (seconds)")]
+        protected float ambientSoundMinInterval = 3f;
+        
+        [SerializeField, Tooltip("Maximum time between ambient sounds (seconds)")]
+        protected float ambientSoundMaxInterval = 8f;
+
         #endregion
 
         #region Protected State
@@ -104,6 +118,9 @@ namespace EnemyAI
         protected Vector3 alternateWaypoint;
         protected bool hasAlternateWaypoint;
         protected float alternateWaypointTimeout;
+        
+        // Ambient sound timing
+        protected float ambientSoundTimer;
         
         // Route memory - remembers successful waypoints for re-evaluation
         protected struct RememberedRoute
@@ -162,6 +179,9 @@ namespace EnemyAI
 
             if (target == null)
                 Debug.LogError($"[{GetType().Name}] No player found! Make sure player has 'Player' tag.");
+            
+            // Initialize ambient sound timer with random offset so all enemies don't sound at once
+            ambientSoundTimer = Random.Range(0f, ambientSoundMaxInterval);
         }
 
         protected virtual void Update()
@@ -226,6 +246,9 @@ namespace EnemyAI
 
             // Update animation
             UpdateAnimator();
+            
+            // Update ambient sound
+            UpdateAmbientSound(distanceToPlayer);
         }
 
         #endregion
@@ -649,6 +672,35 @@ namespace EnemyAI
             if (animator == null) return;
             float speed = agent != null ? agent.velocity.magnitude : 0f;
             animator.SetFloat(speedParameter, speed);
+        }
+
+        /// <summary>
+        /// Updates proximity-based ambient sound (growls, hisses, etc.).
+        /// Plays periodically when within ambientSoundDistance of the player.
+        /// </summary>
+        protected virtual void UpdateAmbientSound(float distanceToPlayer)
+        {
+            // Skip if no ambient sound assigned
+            if (ambientSound == null || AudioManager.Instance == null) return;
+            
+            // Decrement timer
+            ambientSoundTimer -= Time.deltaTime;
+            
+            // Check if it's time to potentially play a sound
+            if (ambientSoundTimer <= 0f)
+            {
+                // Reset timer to random interval
+                ambientSoundTimer = Random.Range(ambientSoundMinInterval, ambientSoundMaxInterval);
+                
+                // Only play if within range of player
+                if (distanceToPlayer <= ambientSoundDistance)
+                {
+                    AudioManager.Instance.PlayAtPosition(ambientSound, VisualPosition);
+                    
+                    if (debugLog)
+                        Debug.Log($"[{GetType().Name}] Playing ambient sound (dist: {distanceToPlayer:F1})");
+                }
+            }
         }
 
         #endregion

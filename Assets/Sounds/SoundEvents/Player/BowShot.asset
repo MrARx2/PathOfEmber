@@ -14,14 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Audio.SoundEvent
   clips:
   - {fileID: 8300000, guid: bad52deaa1f0f2c4e95982b6e13ab270, type: 3}
-  volume: 1
+  volume: 0.25
+  randomizeVolume: 0
+  volumeVariation: 0.1
   pitch: 1
-  randomizePitch: 0
-  pitchVariation: 0.1
+  randomizePitch: 1
+  pitchVariation: 0.05
+  loop: 0
   mixerGroup: {fileID: -5302755927721441297, guid: 192a397c5486ee64b9f6be8c47dcef29, type: 2}
   maxInstances: 3
   stealMode: 1
   cooldown: 0
   spatialBlend: 0
   minDistance: 1
-  maxDistance: 50
+  maxDistance: 5
