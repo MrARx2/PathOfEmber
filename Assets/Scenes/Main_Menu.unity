@@ -2243,8 +2243,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -4.8500214}
+  m_SizeDelta: {x: 0, y: -9.69997}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &697583881
 MonoBehaviour:
@@ -2266,10 +2266,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Quick
+  m_text: 'Roll
 
-
-    Play'
+    Talent'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 9ad70cbef578b79419514069b47e7356, type: 2}
   m_sharedMaterial: {fileID: 8046597203365366376, guid: 9ad70cbef578b79419514069b47e7356, type: 2}
@@ -2296,19 +2295,19 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 56.68
-  m_fontSizeBase: 56.68
+  m_fontSize: 50
+  m_fontSizeBase: 50
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 1
   m_HorizontalAlignment: 2
-  m_VerticalAlignment: 512
+  m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
-  m_lineSpacing: 41.1
+  m_lineSpacing: 300
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
@@ -2509,7 +2508,7 @@ GameObject:
   - component: {fileID: 871070265}
   - component: {fileID: 871070264}
   m_Layer: 5
-  m_Name: QuickPlayButton
+  m_Name: RollTalentButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2957,13 +2956,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuUI
   shopButton: {fileID: 351603777}
   playButton: {fileID: 1252047786}
-  quickPlayButton: {fileID: 871070264}
-  storySceneName: GameScene (Updated)
-  quickPlaySceneName: GameScene (Updated)
+  rollTalentButton: {fileID: 871070264}
+  gameSceneName: GameScene (Updated)
   coinsText: {fileID: 1576779444}
   gemsText: {fileID: 1625347888}
   talentIcon: {fileID: 1220575278}
+  defaultCubeSprite: {fileID: 21300000, guid: 7a372ac478a44b2488490ae4a8861939, type: 3}
   talentNameText: {fileID: 1919894880}
+  defaultTalentText: Choose core talent
   talentDatabase: {fileID: 11400000, guid: 5b3413b80e4e3cf46839f9049ec21299, type: 2}
 --- !u!4 &923720184 stripped
 Transform:
@@ -5684,7 +5684,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Talent
+  m_text: Choose core talent
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 9ad70cbef578b79419514069b47e7356, type: 2}
   m_sharedMaterial: {fileID: 8046597203365366376, guid: 9ad70cbef578b79419514069b47e7356, type: 2}
