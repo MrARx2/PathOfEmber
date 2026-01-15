@@ -5389,11 +5389,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff4462e812ce34142a4cc7e059ba80fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAbilities
---- !u!4 &864174289 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 3228088189080947736, guid: 419bdcb071ff052468f4ac69876310fd, type: 3}
-  m_PrefabInstance: {fileID: 122684668}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &883636388 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6764595516612043905, guid: ea395e67b0e91d24d9164b886efb63a3, type: 3}
@@ -7399,10 +7394,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 5117948346246013678, guid: 84ff9b0e9d661724d82b0653f80051be, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 864174289}
+    m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 84ff9b0e9d661724d82b0653f80051be, type: 3}
 --- !u!4 &2026781343 stripped
@@ -8517,3 +8509,4 @@ SceneRoots:
   - {fileID: 562886025}
   - {fileID: 1790982218}
   - {fileID: 1450293789}
+  - {fileID: 122684668}
