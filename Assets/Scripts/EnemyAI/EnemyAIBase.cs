@@ -138,6 +138,15 @@ namespace EnemyAI
         /// Returns the visual center position (modelTransform if set, otherwise this transform).
         /// </summary>
         protected Vector3 VisualPosition => modelTransform != null ? modelTransform.position : transform.position;
+        
+        // Performance: Cached NavMeshPath objects to avoid per-frame allocation
+        private NavMeshPath _cachedPathToWaypoint;
+        private NavMeshPath _cachedPathToTarget;
+        
+        // Performance: Frame throttling for expensive operations
+        private int _frameOffset; // Stagger enemies to spread CPU load
+        private const int LOS_CHECK_INTERVAL = 5; // Check line of sight every N frames
+        private bool _lastLineOfSightBlocked = false; // Cache the result between checks
 
         #endregion
 
@@ -165,6 +174,13 @@ namespace EnemyAI
             
             // Initialize stuck detection
             lastPosition = transform.position;
+            
+            // Performance: Pre-allocate NavMesh paths
+            _cachedPathToWaypoint = new NavMeshPath();
+            _cachedPathToTarget = new NavMeshPath();
+            
+            // Performance: Stagger frame offset so enemies don't all update on same frame
+            _frameOffset = GetInstanceID() % LOS_CHECK_INTERVAL;
         }
 
         protected virtual void Start()
@@ -268,34 +284,31 @@ namespace EnemyAI
             agent.isStopped = false;
             
             // === LINE OF SIGHT CHECK ===
-            // This is the PRIMARY check - do we have a clear path to the player?
-            Vector3 rayOrigin = transform.position + Vector3.up * raycastHeight;
-            Vector3 toTarget = target.position - transform.position;
-            float distToTarget = toTarget.magnitude;
-            Vector3 rayDir = toTarget.normalized;
+            // Performance: Only check every N frames (expensive raycasts), use cached result otherwise
+            bool lineOfSightBlocked = _lastLineOfSightBlocked;
             
-            RaycastHit physicsHit;
-            bool lineOfSightBlocked = Physics.Raycast(rayOrigin, rayDir, out physicsHit, 
-                distToTarget, obstacleLayerMask, QueryTriggerInteraction.Ignore);
-            
-            // Check if what we hit is actually an obstacle (not the player)
-            if (lineOfSightBlocked)
+            if ((Time.frameCount + _frameOffset) % LOS_CHECK_INTERVAL == 0)
             {
-                // If we hit the player or something with Player tag, we actually have line of sight
-                if (physicsHit.collider.gameObject == target.gameObject || 
-                    physicsHit.collider.CompareTag("Player"))
-                {
-                    lineOfSightBlocked = false;
-                }
-            }
-            
-            // Visual debug
-            if (debugLog)
-            {
+                Vector3 rayOrigin = transform.position + Vector3.up * raycastHeight;
+                Vector3 toTarget = target.position - transform.position;
+                float distToTarget = toTarget.magnitude;
+                Vector3 rayDir = toTarget.normalized;
+                
+                RaycastHit physicsHit;
+                lineOfSightBlocked = Physics.Raycast(rayOrigin, rayDir, out physicsHit, 
+                    distToTarget, obstacleLayerMask, QueryTriggerInteraction.Ignore);
+                
+                // Check if what we hit is actually an obstacle (not the player)
                 if (lineOfSightBlocked)
-                    Debug.DrawRay(rayOrigin, rayDir * physicsHit.distance, Color.red, 0.1f);
-                else
-                    Debug.DrawRay(rayOrigin, rayDir * distToTarget, Color.green, 0.1f);
+                {
+                    if (physicsHit.collider.gameObject == target.gameObject || 
+                        physicsHit.collider.CompareTag("Player"))
+                    {
+                        lineOfSightBlocked = false;
+                    }
+                }
+                
+                _lastLineOfSightBlocked = lineOfSightBlocked;
             }
             
             // === DECISION LOGIC ===
@@ -316,9 +329,6 @@ namespace EnemyAI
             else
             {
                 // LINE OF SIGHT BLOCKED - need to navigate around obstacle
-                
-                if (debugLog && Time.frameCount % 30 == 0)
-                    Debug.Log($"[{GetType().Name}] Blocked by {physicsHit.collider.name} at distance {physicsHit.distance:F1}");
                 
                 // If we already have an alternate waypoint, check if we should keep using it
                 if (hasAlternateWaypoint)
@@ -483,6 +493,7 @@ namespace EnemyAI
         /// <summary>
         /// Evaluates a waypoint and returns a score based on total path length to reach player.
         /// Lower score = better (shorter total path).
+        /// Uses cached NavMeshPath objects to avoid per-call allocation.
         /// </summary>
         protected virtual bool EvaluateWaypoint(Vector3 candidatePos, out float score)
         {
@@ -507,21 +518,21 @@ namespace EnemyAI
             if (pathBlocked)
                 return false;
             
-            // CHECK 2: Can NavMesh path to waypoint?
-            NavMeshPath pathToWaypoint = new NavMeshPath();
-            if (!agent.CalculatePath(waypointPos, pathToWaypoint) || 
-                pathToWaypoint.status != NavMeshPathStatus.PathComplete)
+            // CHECK 2: Can NavMesh path to waypoint? (use cached path object)
+            _cachedPathToWaypoint.ClearCorners();
+            if (!agent.CalculatePath(waypointPos, _cachedPathToWaypoint) || 
+                _cachedPathToWaypoint.status != NavMeshPathStatus.PathComplete)
                 return false;
             
-            // CHECK 3: Can NavMesh path from waypoint to target?
-            NavMeshPath pathToTarget = new NavMeshPath();
-            if (!NavMesh.CalculatePath(waypointPos, target.position, NavMesh.AllAreas, pathToTarget) ||
-                pathToTarget.status != NavMeshPathStatus.PathComplete)
+            // CHECK 3: Can NavMesh path from waypoint to target? (use cached path object)
+            _cachedPathToTarget.ClearCorners();
+            if (!NavMesh.CalculatePath(waypointPos, target.position, NavMesh.AllAreas, _cachedPathToTarget) ||
+                _cachedPathToTarget.status != NavMeshPathStatus.PathComplete)
                 return false;
             
             // Calculate actual path lengths
-            float pathLengthToWaypoint = CalculatePathLength(pathToWaypoint);
-            float pathLengthToTarget = CalculatePathLength(pathToTarget);
+            float pathLengthToWaypoint = CalculatePathLength(_cachedPathToWaypoint);
+            float pathLengthToTarget = CalculatePathLength(_cachedPathToTarget);
             
             // Total travel distance = path to waypoint + path from waypoint to target
             float totalPathLength = pathLengthToWaypoint + pathLengthToTarget;

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
+using Audio;
 
 /// <summary>
 /// Controls the dual prayer wheel spinning mechanism.
@@ -61,6 +62,12 @@ public class PrayerWheelController : MonoBehaviour
     [Header("Talent Database")]
     [SerializeField] private TalentDatabase talentDatabase;
 
+    [Header("Text Panel Positions (for UI tracking)")]
+    [SerializeField, Tooltip("Transform at the center of wheel 1's text panel (wooden box at top)")]
+    private Transform textPanelPosition1;
+    [SerializeField, Tooltip("Transform at the center of wheel 2's text panel (wooden box at top)")]
+    private Transform textPanelPosition2;
+
     [Header("Spin Configuration")]
     [SerializeField, Tooltip("Total duration of the spin animation in seconds")]
     private float spinDuration = 3f;
@@ -74,10 +81,21 @@ public class PrayerWheelController : MonoBehaviour
     [SerializeField] private Color legendaryTintColor = Color.yellow;
     [SerializeField] private string tintPropertyName = "_EmissionColor";
 
-    [Header("Audio (Optional)")]
-    [SerializeField] private AudioSource audioSource;
-    [SerializeField] private AudioClip spinSound;
-    [SerializeField] private AudioClip stopSound;
+    [Header("Sound Events (Layered by Rarity)")]
+    [SerializeField, Tooltip("Common spin sound (always plays)")]
+    private SoundEvent spinSoundCommon;
+    [SerializeField, Tooltip("Rare spin layer (adds to Common for Rare/Legendary)")]
+    private SoundEvent spinSoundRare;
+    [SerializeField, Tooltip("Legendary spin layer (adds to Common+Rare for Legendary)")]
+    private SoundEvent spinSoundLegendary;
+    
+    [Space(5)]
+    [SerializeField, Tooltip("Common stop sound (always plays)")]
+    private SoundEvent stopSoundCommon;
+    [SerializeField, Tooltip("Rare stop layer (adds to Common for Rare/Legendary)")]
+    private SoundEvent stopSoundRare;
+    [SerializeField, Tooltip("Legendary stop layer (adds to Common+Rare for Legendary)")]
+    private SoundEvent stopSoundLegendary;
 
     // Assigned talents for current spin (no repetition)
     private TalentData[,] wheel1Talents = new TalentData[3, 5]; // [rarity, socket]
@@ -249,30 +267,15 @@ public class PrayerWheelController : MonoBehaviour
         DisableEmissionForWheel(wheel1);
         DisableEmissionForWheel(wheel2);
 
-        // Step 6: Play spin sound
-        if (audioSource != null && spinSound != null)
-        {
-            audioSource.clip = spinSound;
-            audioSource.loop = true;
-            audioSource.Play();
-        }
+        // Step 6: Play layered spin sounds based on rarity
+        PlayLayeredSpinSounds();
 
         // Step 7: Animate spin
         yield return StartCoroutine(AnimateSpin(rotationAmountToAdd, originalColors));
 
-        // Step 8: Finalize
-        if (audioSource != null)
-        {
-            if (stopSound != null) 
-            {
-                audioSource.Stop();
-                audioSource.PlayOneShot(stopSound);
-            }
-            else
-            {
-                audioSource.Stop();
-            }
-        }
+        // Step 8: Finalize - Stop spin sounds and play layered stop sounds
+        StopLayeredSpinSounds();
+        PlayLayeredStopSounds();
 
         // Determine winners
         int rarityIndex = 0;
@@ -628,6 +631,72 @@ public class PrayerWheelController : MonoBehaviour
         
         return Vector3.zero;
     }
+
+    /// <summary>
+    /// Returns the world position of the text panel (wooden box at top) for the specified wheel (1 or 2).
+    /// Used by UI to position talent name text over the 3D panels.
+    /// </summary>
+    public Vector3 GetTextPanelPosition(int wheelNum)
+    {
+        Transform panel = (wheelNum == 1) ? textPanelPosition1 : textPanelPosition2;
+        return panel != null ? panel.position : Vector3.zero;
+    }
+
+    #region Layered Audio
+    /// <summary>
+    /// Plays layered spin sounds based on current rarity.
+    /// Common = Common only. Rare = Common + Rare. Legendary = Common + Rare + Legendary.
+    /// </summary>
+    private void PlayLayeredSpinSounds()
+    {
+        if (AudioManager.Instance == null) return;
+        
+        // Common always plays
+        if (spinSoundCommon != null)
+            AudioManager.Instance.Play(spinSoundCommon);
+        
+        // Rare layer plays for Rare and Legendary
+        if (currentRarity >= TalentData.TalentRarity.Rare && spinSoundRare != null)
+            AudioManager.Instance.Play(spinSoundRare);
+        
+        // Legendary layer only for Legendary
+        if (currentRarity == TalentData.TalentRarity.Legendary && spinSoundLegendary != null)
+            AudioManager.Instance.Play(spinSoundLegendary);
+    }
+    
+    /// <summary>
+    /// Stops all layered spin sounds.
+    /// </summary>
+    private void StopLayeredSpinSounds()
+    {
+        if (AudioManager.Instance == null) return;
+        
+        if (spinSoundCommon != null) AudioManager.Instance.Stop(spinSoundCommon);
+        if (spinSoundRare != null) AudioManager.Instance.Stop(spinSoundRare);
+        if (spinSoundLegendary != null) AudioManager.Instance.Stop(spinSoundLegendary);
+    }
+    
+    /// <summary>
+    /// Plays layered stop sounds based on current rarity.
+    /// Common = Common only. Rare = Common + Rare. Legendary = Common + Rare + Legendary.
+    /// </summary>
+    private void PlayLayeredStopSounds()
+    {
+        if (AudioManager.Instance == null) return;
+        
+        // Common always plays
+        if (stopSoundCommon != null)
+            AudioManager.Instance.Play(stopSoundCommon);
+        
+        // Rare layer plays for Rare and Legendary
+        if (currentRarity >= TalentData.TalentRarity.Rare && stopSoundRare != null)
+            AudioManager.Instance.Play(stopSoundRare);
+        
+        // Legendary layer only for Legendary
+        if (currentRarity == TalentData.TalentRarity.Legendary && stopSoundLegendary != null)
+            AudioManager.Instance.Play(stopSoundLegendary);
+    }
+    #endregion
 
     #region Debug
     [ContextMenu("Debug: Snap to Socket 0 (Check Alignment)")]

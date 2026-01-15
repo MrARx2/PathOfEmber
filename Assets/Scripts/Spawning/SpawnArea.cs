@@ -138,7 +138,6 @@ public class SpawnArea : MonoBehaviour
         if (useGlobalRegistry && SpawnAreaRegistry.Instance.HasSpawned(uniqueId))
         {
             hasSpawned = true;
-            Debug.Log($"[SpawnArea] '{uniqueId}' already spawned (from registry), skipping.");
         }
     }
     
@@ -181,7 +180,6 @@ public class SpawnArea : MonoBehaviour
     
     private IEnumerator TriggerWave2AfterDelay()
     {
-        Debug.Log($"[SpawnArea] Wave 1 cleared! Spawning wave 2 in {wave2SpawnDelay}s...");
         yield return new WaitForSeconds(wave2SpawnDelay);
         
         wave2Triggered = true;
@@ -240,7 +238,6 @@ public class SpawnArea : MonoBehaviour
             {
                 ShowIndicator(data.position, data.rotation);
             }
-            Debug.Log($"[SpawnArea] Wave 2: Showing {wave2Data.Count} indicators for {indicatorDuration}s");
             yield return new WaitForSeconds(indicatorDuration);
         }
         
@@ -258,8 +255,6 @@ public class SpawnArea : MonoBehaviour
         
         ClearIndicators();
         isSpawning = false;
-        
-        Debug.Log($"[SpawnArea] Wave 2 complete! Spawned {wave2Data.Count} bonus enemies.");
     }
 
     private Vector3 GetActivationCenter()
@@ -339,8 +334,6 @@ public class SpawnArea : MonoBehaviour
         {
             ShowIndicator(data.position, data.rotation);
         }
-        
-        Debug.Log($"[SpawnArea] Showing {spawnDataList.Count} spawn indicators for {indicatorDuration}s");
         
         // Wait for indicator duration
         yield return new WaitForSeconds(indicatorDuration);
@@ -576,8 +569,6 @@ public class SpawnArea : MonoBehaviour
         {
             SpawnAreaRegistry.Instance.MarkAsSpawned(uniqueId);
         }
-        
-        Debug.Log($"[SpawnArea] Wave 1 spawned {spawnedEnemies.Count} enemies at {gameObject.name} (ID: {uniqueId})");
     }
 
     // SpawnAtRandomVolumePositions removed - now handled by SpawnAtRandomVolumePositionsCoroutine

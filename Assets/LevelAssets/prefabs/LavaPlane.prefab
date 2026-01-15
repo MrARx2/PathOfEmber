@@ -146,6 +146,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Audio.AmbientSoundZone
   ambientSound: {fileID: 11400000, guid: 5c1f107a7ae49664d89a14b9ab72a04c, type: 2}
-  volumeMultiplier: 1
+  maxVolume: 1
   fadeDuration: 0.5
+  width: 10
+  height: 2.5
+  depth: 6
+  player: {fileID: 0}
   debugLog: 0
+  showGizmos: 1
+  gizmoColor: {r: 0, g: 0.8, b: 1, a: 0.3}

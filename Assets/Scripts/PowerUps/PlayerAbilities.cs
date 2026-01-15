@@ -142,7 +142,6 @@ public class PlayerAbilities : MonoBehaviour
     private void Start()
     {
         isInitialized = true;
-        Debug.Log($"[PlayerAbilities] Start: Applying initial stats with moveMultiplier={currentMoveSpeedMultiplier}, attackMultiplier={currentAttackSpeedMultiplier}");
         // Apply initial state only after all scripts have initialized
         RecalculateAllStats();
     }
@@ -215,14 +214,12 @@ public class PlayerAbilities : MonoBehaviour
     {
         movementSpeedStacks++;
         RecalculateAllStats();
-        Debug.Log($"[PlayerAbilities] Movement Speed granted. Total stacks: {movementSpeedStacks}, Multiplier: {currentMoveSpeedMultiplier:F2}x");
     }
 
     public void GrantOneTimeShield()
     {
         hasOneTimeShield = true;
         ApplyToScripts();
-        Debug.Log("[PlayerAbilities] One-Time Shield granted.");
     }
 
     public void GrantMaxHpPlus()
@@ -232,7 +229,6 @@ public class PlayerAbilities : MonoBehaviour
         {
             playerHealth.IncreaseMaxHealth(0.1f);
         }
-        Debug.Log($"[PlayerAbilities] Max HP+ granted. Total stacks: {maxHpPlusStacks}");
     }
 
     public void GrantHealthHeal()
@@ -243,7 +239,6 @@ public class PlayerAbilities : MonoBehaviour
             float healPercent = Random.Range(0.30f, 1.00f);
             int healAmount = Mathf.RoundToInt(playerHealth.MaxHealth * healPercent);
             playerHealth.Heal(healAmount);
-            Debug.Log($"[PlayerAbilities] Health Heal granted! Healed {healPercent * 100f:F0}% ({healAmount} HP)");
         }
         else
         {
@@ -256,12 +251,6 @@ public class PlayerAbilities : MonoBehaviour
         if (hazardResistanceStacks < MAX_HAZARD_RESISTANCE_STACKS)
         {
             hazardResistanceStacks++;
-            float reduction = hazardResistanceStacks * 25f;
-            Debug.Log($"[PlayerAbilities] Hazard Resistance granted. Stacks: {hazardResistanceStacks}/{MAX_HAZARD_RESISTANCE_STACKS}, Fire damage reduced by {reduction}%");
-        }
-        else
-        {
-            Debug.Log("[PlayerAbilities] Hazard Resistance already at max stacks!");
         }
     }
 
@@ -269,39 +258,33 @@ public class PlayerAbilities : MonoBehaviour
     public void GrantPiercing()
     {
         hasPiercing = true;
-        Debug.Log("[PlayerAbilities] Piercing granted.");
     }
 
     public void GrantBouncingArrows()
     {
         bouncingArrowsStacks++;
-        Debug.Log($"[PlayerAbilities] Bouncing Arrows granted. Total stacks: {bouncingArrowsStacks} (max bounces)");
     }
 
     public void GrantFreezeShot()
     {
         hasFreezeShot = true;
-        Debug.Log("[PlayerAbilities] Freeze Shot granted.");
     }
 
     public void GrantVenomShot()
     {
         hasVenomShot = true;
-        Debug.Log("[PlayerAbilities] Venom Shot granted.");
     }
 
     public void GrantMaximumFreeze()
     {
         maximumFreezeStacks++;
         RecalculateAllStats();
-        Debug.Log($"[PlayerAbilities] Maximum Freeze granted. Total stacks: {maximumFreezeStacks}, Duration: {currentFreezeDuration}s");
     }
 
     public void GrantMaximumVenom()
     {
         maximumVenomStacks++;
         RecalculateAllStats();
-        Debug.Log($"[PlayerAbilities] Maximum Venom granted. Total stacks: {maximumVenomStacks}, Damage: {currentVenomDamagePerSecond}/s");
     }
 
     public void GrantFreezePotionTalent()
@@ -309,7 +292,6 @@ public class PlayerAbilities : MonoBehaviour
         hasFreezePotionTalent = true;
         if (potionSpawner != null)
             potionSpawner.EnableFreezePotion();
-        Debug.Log("[PlayerAbilities] Freeze Potion Talent granted.");
     }
 
     public void GrantVenomPotionTalent()
@@ -317,7 +299,6 @@ public class PlayerAbilities : MonoBehaviour
         hasVenomPotionTalent = true;
         if (potionSpawner != null)
             potionSpawner.EnableVenomPotion();
-        Debug.Log("[PlayerAbilities] Venom Potion Talent granted.");
     }
 
     public void GrantInvulnerabilityPotionTalent()
@@ -325,7 +306,6 @@ public class PlayerAbilities : MonoBehaviour
         hasInvulnerabilityPotionTalent = true;
         if (potionSpawner != null)
             potionSpawner.EnableInvulnerabilityPotion();
-        Debug.Log("[PlayerAbilities] Invulnerability Potion Talent granted.");
     }
 
     // ===== LEGENDARY =====
@@ -333,15 +313,12 @@ public class PlayerAbilities : MonoBehaviour
     {
         multishotStacks++;
         ApplyToScripts();
-        Debug.Log($"[PlayerAbilities] Multishot granted. Total stacks: {multishotStacks}, Arrows: {1 + multishotStacks}");
     }
 
     public void GrantTripleShot()
     {
         tripleshotStacks++;
         ApplyToScripts();
-        int totalArrows = 1 + (tripleshotStacks * 2);
-        Debug.Log($"[PlayerAbilities] Triple Shot granted. Total stacks: {tripleshotStacks}, Arrows per burst: {totalArrows}");
     }
 
     public void GrantMaxHpPlusPlus()
@@ -351,14 +328,12 @@ public class PlayerAbilities : MonoBehaviour
         {
             playerHealth.IncreaseMaxHealth(0.3f);
         }
-        Debug.Log($"[PlayerAbilities] Max HP+++ granted. Total stacks: {maxHpPlusPlusStacks}");
     }
 
     public void GrantAttackSpeed()
     {
         attackSpeedStacks++;
         RecalculateAllStats();
-        Debug.Log($"[PlayerAbilities] Attack Speed+ granted. Total stacks: {attackSpeedStacks}, Multiplier: {currentAttackSpeedMultiplier:F2}x");
     }
 
     public void GrantInvulnerabilityPotion()
@@ -369,7 +344,6 @@ public class PlayerAbilities : MonoBehaviour
         {
             playerHealth.SetInvulnerable(2f);
         }
-        Debug.Log("[PlayerAbilities] Invulnerability Potion granted (applied directly for debug).");
     }
     #endregion
 
@@ -377,7 +351,6 @@ public class PlayerAbilities : MonoBehaviour
     public void OnShieldConsumed()
     {
         hasOneTimeShield = false;
-        Debug.Log("[PlayerAbilities] One-Time Shield consumed!");
     }
     #endregion
 
@@ -462,7 +435,6 @@ public class PlayerAbilities : MonoBehaviour
         if (potionSpawner != null)
             potionSpawner.DisableAllPotions();
         RecalculateAllStats();
-        Debug.Log("[PlayerAbilities] All abilities reset.");
     }
     #endregion
 }

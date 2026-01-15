@@ -59,9 +59,6 @@ public class PrayerWheelUI : MonoBehaviour
     [Header("UI Position Offsets")]
     [SerializeField, Tooltip("Y offset for button positioning (positive = up)")]
     private float buttonYOffset = 100f;
-    
-    [SerializeField, Tooltip("Additional Y offset for text above buttons (positive = up)")]
-    private float textYOffset = 60f;
 
     [Header("Other UI to Hide")]
     [SerializeField, Tooltip("Canvas to hide during prayer wheel (e.g., enemy health bars, damage numbers)")]
@@ -185,6 +182,12 @@ public class PrayerWheelUI : MonoBehaviour
         currentTalent1 = talent1;
         currentTalent2 = talent2;
 
+        // Freeze the game completely now that spin is done and selection appears
+        if (prayerWheelDisplay != null)
+        {
+            prayerWheelDisplay.FreezeCompletely();
+        }
+
         // Ensure root panel is visible (in case spin was triggered via Debug)
         if (wheelPanel != null) wheelPanel.SetActive(true);
 
@@ -196,22 +199,22 @@ public class PrayerWheelUI : MonoBehaviour
         if (buttonLeft != null) buttonLeft.gameObject.SetActive(true);
         if (buttonRight != null) buttonRight.gameObject.SetActive(true);
 
-        // Show Talent Name Text Boxes
+        // Show Talent Name Text Boxes (positioned in Unity Editor, not dynamically)
         if (talentNameLeft != null)
         {
             talentNameLeft.gameObject.SetActive(true);
-            talentNameLeft.text = talent1 != null ? talent1.talentName : "";
+            talentNameLeft.text = talent1 != null ? talent1.talentName.Trim() : "";
         }
 
         if (talentNameRight != null)
         {
             talentNameRight.gameObject.SetActive(true);
-            talentNameRight.text = talent2 != null ? talent2.talentName : "";
+            talentNameRight.text = talent2 != null ? talent2.talentName.Trim() : "";
         }
 
         // Update legacy Name Texts (if still used)
-        if (wheel1NameText != null) wheel1NameText.text = talent1 != null ? talent1.talentName : "";
-        if (wheel2NameText != null) wheel2NameText.text = talent2 != null ? talent2.talentName : "";
+        if (wheel1NameText != null) wheel1NameText.text = talent1 != null ? talent1.talentName.Trim() : "";
+        if (wheel2NameText != null) wheel2NameText.text = talent2 != null ? talent2.talentName.Trim() : "";
 
         // Enable continuous position updates
         isInSelectionMode = true;
@@ -224,13 +227,13 @@ public class PrayerWheelUI : MonoBehaviour
 
     /// <summary>
     /// Updates button positions to match the 3D wheel socket positions.
-    /// Called continuously during selection to track camera movement.
+    /// Text stays in fixed canvas position (game is paused so no movement issues).
     /// </summary>
     private void UpdateButtonPositions()
     {
         if (wheelController == null) return;
 
-        // Get winning positions from 3D world
+        // Get winning positions from 3D world (for buttons)
         Vector3 worldPosLeft = wheelController.GetWinningSocketPosition(1);
         Vector3 worldPosRight = wheelController.GetWinningSocketPosition(2);
         
@@ -255,19 +258,6 @@ public class PrayerWheelUI : MonoBehaviour
                     {
                         localPoint.y += buttonYOffset;
                         btnRect.localPosition = localPoint;
-                        
-                        // Also update left text position (above the button)
-                        if (talentNameLeft != null && talentNameLeft.gameObject.activeSelf)
-                        {
-                            RectTransform textRect = talentNameLeft.GetComponent<RectTransform>();
-                            if (textRect != null)
-                            {
-                                // Position text at same X, but higher Y (above button)
-                                Vector2 textPos = localPoint;
-                                textPos.y += textYOffset; // Additional offset above button
-                                textRect.localPosition = textPos;
-                            }
-                        }
                     }
                 }
             }
@@ -285,22 +275,11 @@ public class PrayerWheelUI : MonoBehaviour
                     {
                         localPoint.y += buttonYOffset;
                         btnRect.localPosition = localPoint;
-                        
-                        // Also update right text position (above the button)
-                        if (talentNameRight != null && talentNameRight.gameObject.activeSelf)
-                        {
-                            RectTransform textRect = talentNameRight.GetComponent<RectTransform>();
-                            if (textRect != null)
-                            {
-                                // Position text at same X, but higher Y (above button)
-                                Vector2 textPos = localPoint;
-                                textPos.y += textYOffset; // Additional offset above button
-                                textRect.localPosition = textPos;
-                            }
-                        }
                     }
                 }
             }
+            
+            // Text stays in fixed canvas position (no dynamic tracking needed since game is paused)
         }
     }
 

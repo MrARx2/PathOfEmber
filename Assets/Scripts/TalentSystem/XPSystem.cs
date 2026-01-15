@@ -58,7 +58,6 @@ public class XPSystem : MonoBehaviour
         if (amount <= 0) return;
 
         currentXP += amount;
-        Debug.Log($"[XPSystem] Added {amount} XP. Current: {currentXP}/{maxXP}");
 
         // Check for level up (can level up multiple times if huge XP gain)
         while (currentXP >= maxXP)
@@ -76,8 +75,6 @@ public class XPSystem : MonoBehaviour
         
         // Scale XP requirement for next level
         maxXP = Mathf.RoundToInt(maxXP * (1f + xpScalingPercent / 100f));
-        
-        Debug.Log($"[XPSystem] Level Up! Now level {level}. Next level requires {maxXP} XP.");
         
         // Trigger the prayer wheel
         OnXPFilled?.Invoke();

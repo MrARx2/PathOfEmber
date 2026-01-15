@@ -49,14 +49,18 @@ public class PrayerWheelDisplay : MonoBehaviour
     private int wheelLayer = 0;
 
     [Header("Smooth Time Transition (Archero 2 Style)")]
-    [SerializeField, Tooltip("Use smooth slowdown instead of instant freeze for better game feel")]
+    [SerializeField, Tooltip("Use smooth slowdown instead of instant freeze. Player can still move during slowdown.")]
     private bool useSmoothSlowdown = true;
     
-    [SerializeField, Tooltip("Fallback slowdown duration if TimeScaleManager not found")]
-    private float fallbackSlowdownDuration = 0.4f;
+    [SerializeField, Tooltip("Target time scale during slowdown (0.15 = 15% speed). Full freeze happens at spin complete.")]
+    [Range(0.05f, 0.5f)]
+    private float slowdownTargetTimeScale = 0.15f;
     
-    [SerializeField, Tooltip("Fallback resume duration if TimeScaleManager not found")]
-    private float fallbackResumeDuration = 0.25f;
+    [SerializeField, Tooltip("Duration of the slowdown transition (longer = more dramatic)")]
+    private float slowdownDuration = 1.2f;
+    
+    [SerializeField, Tooltip("Duration of the resume transition")]
+    private float resumeDuration = 0.3f;
 
     // State
     private bool isVisible = false;
@@ -186,25 +190,16 @@ public class PrayerWheelDisplay : MonoBehaviour
         // Position wheels in front of camera
         UpdateWheelPositions();
 
-        // Pause game if configured (only after initialization to avoid startup issues)
+        // Start slowdown if configured (only after initialization to avoid startup issues)
         if (pauseGameWhenVisible && isInitialized)
         {
             previousTimeScale = Time.timeScale;
             
             if (useSmoothSlowdown)
             {
-                // Use smooth Archero 2-style slowdown
-                if (TimeScaleManager.Instance != null)
-                {
-                    TimeScaleManager.Instance.SmoothSlowdown();
-                    Debug.Log("[PrayerWheelDisplay] Smooth slowdown started.");
-                }
-                else
-                {
-                    // Fallback: start coroutine for smooth transition
-                    StartCoroutine(SmoothTimeTransition(0f, fallbackSlowdownDuration));
-                    Debug.Log("[PrayerWheelDisplay] Fallback smooth slowdown started.");
-                }
+                // Start smooth slowdown to target (not 0 - player can still move during spin)
+                StartCoroutine(SmoothTimeTransition(slowdownTargetTimeScale, slowdownDuration));
+                Debug.Log($"[PrayerWheelDisplay] Smooth slowdown started (target: {slowdownTargetTimeScale}, duration: {slowdownDuration}s).");
             }
             else
             {
@@ -215,6 +210,18 @@ public class PrayerWheelDisplay : MonoBehaviour
         }
 
         Debug.Log("[PrayerWheelDisplay] Wheels shown.");
+    }
+
+    /// <summary>
+    /// Freezes the game completely. Call this when the spin completes and selection UI appears.
+    /// </summary>
+    public void FreezeCompletely()
+    {
+        if (useSmoothSlowdown && isInitialized)
+        {
+            Time.timeScale = 0f;
+            Debug.Log("[PrayerWheelDisplay] Game frozen completely for selection.");
+        }
     }
 
     /// <summary>
@@ -230,23 +237,14 @@ public class PrayerWheelDisplay : MonoBehaviour
         // Hide wheels
         SetWheelsVisible(false);
 
-        // Resume game if we paused it (only if initialized to avoid startup issues)
+        // Resume game if we paused/slowed it (only if initialized to avoid startup issues)
         if (pauseGameWhenVisible && isInitialized)
         {
             if (useSmoothSlowdown)
             {
-                // Use smooth Archero 2-style resume
-                if (TimeScaleManager.Instance != null)
-                {
-                    TimeScaleManager.Instance.SmoothResume();
-                    Debug.Log("[PrayerWheelDisplay] Smooth resume started.");
-                }
-                else
-                {
-                    // Fallback: start coroutine for smooth transition
-                    StartCoroutine(SmoothTimeTransition(previousTimeScale, fallbackResumeDuration));
-                    Debug.Log("[PrayerWheelDisplay] Fallback smooth resume started.");
-                }
+                // Smooth resume from frozen/slowed state
+                StartCoroutine(SmoothTimeTransition(previousTimeScale, resumeDuration));
+                Debug.Log($"[PrayerWheelDisplay] Smooth resume started (target: {previousTimeScale}, duration: {resumeDuration}s).");
             }
             else
             {

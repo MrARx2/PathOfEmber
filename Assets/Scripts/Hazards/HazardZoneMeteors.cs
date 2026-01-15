@@ -363,7 +363,11 @@ namespace Hazards
         private void SpawnMeteor()
         {
             Vector3 spawnPos = GetSpawnPosition();
-            Instantiate(meteorStrikePrefab, spawnPos, Quaternion.identity);
+            
+            // Use object pool instead of Instantiate for zero-allocation spawning
+            GameObject meteor = ObjectPoolManager.Instance != null
+                ? ObjectPoolManager.Instance.Get(meteorStrikePrefab, spawnPos, Quaternion.identity)
+                : Instantiate(meteorStrikePrefab, spawnPos, Quaternion.identity);
 
             if (debugLog)
             {

@@ -243,6 +243,9 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private void Start()
     {
+        // Register with global enemy registry (for fast enemy finding)
+        EnemyRegistry.Register(transform);
+        
         // Register with global manager
         if (HealthBarManager.Instance != null)
         {
@@ -252,7 +255,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private void OnDisable()
     {
-        // Clean up
+        // Unregister from enemy registry
+        EnemyRegistry.Unregister(transform);
+        
+        // Clean up health bar
         if (HealthBarManager.Instance != null)
         {
             HealthBarManager.Instance.Unregister(this);

@@ -14,7 +14,6 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField, Tooltip("Optional: rotate this visual transform to face target (keeps physics root untouched)")] private Transform rotateTarget;
 
     [Header("Targeting")] 
-    [SerializeField, Tooltip("Tag used to identify enemies")] private string enemyTag = "Enemy";
     [SerializeField, Tooltip("How often (seconds) to refresh nearest target")] private float targetRefreshInterval = 0.2f;
     [SerializeField, Tooltip("How quickly the visual (rotateTarget) turns toward the current enemy while idle")] private float aimRotationLerpSpeed = 18f;
 
@@ -76,13 +75,19 @@ public class PlayerShooting : MonoBehaviour
     private bool awaitingRelease;
     private Vector3 preparedTargetPos;
     private float baseShootingTempo;
+    private Collider[] cachedPlayerColliders; // Cached at Start to avoid per-arrow allocation
+    private int cachedProjectileLayer = -1; // Cached layer for pooled arrows
 
     private void Awake()
     {
         movement = GetComponent<PlayerMovement>();
         abilities = GetComponent<PlayerAbilities>();
         baseShootingTempo = shootingTempo;
-        Debug.Log($"[PlayerShooting] Awake: shootingTempo={shootingTempo}, baseShootingTempo={baseShootingTempo}");
+        
+        // Cache player colliders ONCE for collision ignore (major performance win)
+        cachedPlayerColliders = GetComponentsInChildren<Collider>();
+        cachedProjectileLayer = LayerMask.NameToLayer(projectileLayerName);
+        
         if (animator == null)
         {
             Animator[] animators = GetComponentsInChildren<Animator>(true);
@@ -275,13 +280,16 @@ public class PlayerShooting : MonoBehaviour
         // Spawn projectile slightly ahead to avoid any overlap with player colliders
         Vector3 spawnPos = origin + (dir.sqrMagnitude > 1e-6f ? dir : transform.forward) * Mathf.Max(0f, muzzleOffset);
         Quaternion spawnRot = Quaternion.LookRotation(dir.sqrMagnitude > 1e-6f ? dir : transform.forward, Vector3.up);
-        GameObject proj = Instantiate(projectilePrefab, spawnPos, spawnRot);
+        
+        // Use object pool for zero-allocation spawning
+        GameObject proj = ObjectPoolManager.Instance != null 
+            ? ObjectPoolManager.Instance.Get(projectilePrefab, spawnPos, spawnRot)
+            : Instantiate(projectilePrefab, spawnPos, spawnRot);
 
-        // Enforce projectile layer recursively
-        int projLayer = LayerMask.NameToLayer(projectileLayerName);
-        if (projLayer >= 0)
+        // Only set layer for non-pooled arrows (fallback)
+        if (ObjectPoolManager.Instance == null && cachedProjectileLayer >= 0)
         {
-            SetLayerRecursive(proj.transform, projLayer);
+            SetLayerRecursive(proj.transform, cachedProjectileLayer);
         }
 
         // Initialize projectile direction (if component present on root or children)
@@ -296,19 +304,16 @@ public class PlayerShooting : MonoBehaviour
             projectile.SetSpeed(projectileSpeed);
         }
 
-        // Ensure projectile doesn't collide with the player (supports nested colliders)
-        var projCols = proj.GetComponentsInChildren<Collider>();
-        if (projCols != null && projCols.Length > 0)
+        // Use cached player colliders for collision ignore
+        if (cachedPlayerColliders != null && cachedPlayerColliders.Length > 0)
         {
-            var playerCols = GetComponentsInChildren<Collider>();
-            for (int p = 0; p < projCols.Length; p++)
+            var projCol = proj.GetComponent<Collider>();
+            if (projCol != null)
             {
-                var pc = projCols[p];
-                if (pc == null) continue;
-                for (int i = 0; i < playerCols.Length; i++)
+                for (int i = 0; i < cachedPlayerColliders.Length; i++)
                 {
-                    if (playerCols[i] != null)
-                        Physics.IgnoreCollision(pc, playerCols[i], true);
+                    if (cachedPlayerColliders[i] != null)
+                        Physics.IgnoreCollision(projCol, cachedPlayerColliders[i], true);
                 }
             }
         }
@@ -426,12 +431,17 @@ public class PlayerShooting : MonoBehaviour
 
         Vector3 spawnPos = origin + (direction.sqrMagnitude > 1e-6f ? direction : transform.forward) * Mathf.Max(0f, muzzleOffset);
         Quaternion spawnRot = Quaternion.LookRotation(direction.sqrMagnitude > 1e-6f ? direction : transform.forward, Vector3.up);
-        GameObject proj = Instantiate(projectilePrefab, spawnPos, spawnRot);
+        
+        // Use object pool instead of Instantiate for zero-allocation shooting
+        GameObject proj = ObjectPoolManager.Instance != null 
+            ? ObjectPoolManager.Instance.Get(projectilePrefab, spawnPos, spawnRot)
+            : Instantiate(projectilePrefab, spawnPos, spawnRot);
 
-        int projLayer = LayerMask.NameToLayer(projectileLayerName);
-        if (projLayer >= 0)
+        // Layer is already set on pooled arrows (persists through pool)
+        // Only set layer for freshly instantiated arrows (fallback case)
+        if (ObjectPoolManager.Instance == null && cachedProjectileLayer >= 0)
         {
-            SetLayerRecursive(proj.transform, projLayer);
+            SetLayerRecursive(proj.transform, cachedProjectileLayer);
         }
 
         var projectile = proj.GetComponent<ArrowProjectile>();
@@ -461,18 +471,17 @@ public class PlayerShooting : MonoBehaviour
             }
         }
 
-        var projCols = proj.GetComponentsInChildren<Collider>();
-        if (projCols != null && projCols.Length > 0)
+        // Use cached player colliders instead of GetComponentsInChildren every arrow
+        // Collision ignore persists on pooled arrows so this is only needed once per arrow instance
+        if (cachedPlayerColliders != null && cachedPlayerColliders.Length > 0)
         {
-            var playerCols = GetComponentsInChildren<Collider>();
-            for (int p = 0; p < projCols.Length; p++)
+            var projCol = proj.GetComponent<Collider>();
+            if (projCol != null)
             {
-                var pc = projCols[p];
-                if (pc == null) continue;
-                for (int i = 0; i < playerCols.Length; i++)
+                for (int i = 0; i < cachedPlayerColliders.Length; i++)
                 {
-                    if (playerCols[i] != null)
-                        Physics.IgnoreCollision(pc, playerCols[i], true);
+                    if (cachedPlayerColliders[i] != null)
+                        Physics.IgnoreCollision(projCol, cachedPlayerColliders[i], true);
                 }
             }
         }
@@ -480,34 +489,8 @@ public class PlayerShooting : MonoBehaviour
 
     private Transform FindNearestEnemyInRange()
     {
-        GameObject[] enemies;
-        try
-        {
-            enemies = GameObject.FindGameObjectsWithTag(enemyTag);
-        }
-        catch
-        {
-            return null;
-        }
-
-        Transform nearest = null;
-        float bestSqr = float.MaxValue;
-        Vector3 p = transform.position;
-
-        for (int i = 0; i < enemies.Length; i++)
-        {
-            var e = enemies[i];
-            if (e == null) continue;
-            Vector3 d = e.transform.position - p;
-            d.y = 0f;
-            float s = d.sqrMagnitude;
-            if (s < bestSqr)
-            {
-                bestSqr = s;
-                nearest = e.transform;
-            }
-        }
-        return nearest;
+        // Use static registry instead of FindGameObjectsWithTag (zero allocation)
+        return EnemyRegistry.GetNearestEnemy(transform.position);
     }
 
     private void UpdateHeadLook(Transform target)
@@ -663,7 +646,6 @@ public class PlayerShooting : MonoBehaviour
         if (multiplier > 0f)
         {
             float newTempo = baseShootingTempo * multiplier;
-            Debug.Log($"[PlayerShooting] SetTempoMultiplier({multiplier:F2}): base={baseShootingTempo}, new={newTempo}");
             shootingTempo = newTempo;
         }
     }
@@ -674,7 +656,6 @@ public class PlayerShooting : MonoBehaviour
     public void SetMultishotStacks(int stacks)
     {
         multishotStacks = Mathf.Max(0, stacks);
-        Debug.Log($"[PlayerShooting] Multishot stacks set to {multishotStacks} (total bursts: {1 + multishotStacks})");
     }
 
     /// <summary>
@@ -684,8 +665,6 @@ public class PlayerShooting : MonoBehaviour
     {
         tripleshotStacks = Mathf.Max(0, stacks);
         tripleshotAngle = angle;
-        int arrowCount = 1 + (tripleshotStacks * 2);
-        Debug.Log($"[PlayerShooting] Tripleshot stacks set to {tripleshotStacks} (arrows per burst: {arrowCount})");
     }
     #endregion
 }

@@ -91,6 +91,29 @@ namespace Hazards
 
         private void Start()
         {
+            StartStrike();
+        }
+        
+        private void OnEnable()
+        {
+            // Reset state for pooled reuse
+            _warningInstance = null;
+            _meteorInstance = null;
+            
+            // When re-enabled from pool, restart the strike sequence
+            // Skip on first enable (handled by Start)
+            if (_hasStartedOnce)
+            {
+                StartStrike();
+            }
+        }
+        
+        private bool _hasStartedOnce = false;
+        
+        private void StartStrike()
+        {
+            _hasStartedOnce = true;
+            
             // Determine impact position - use current position, but ensure Y=0 (ground level)
             _impactPosition = transform.position;
             _impactPosition.y = 0f;
@@ -163,8 +186,8 @@ namespace Hazards
             // Spawn lingering fire pool
             SpawnFirePool();
 
-            // Clean up this controller
-            Destroy(gameObject, 0.1f);
+            // Return to object pool instead of destroying (or destroy if no pool)
+            ReturnToPool();
         }
 
         #endregion
@@ -271,6 +294,25 @@ namespace Hazards
             CameraShakeManager.Shake(CameraShakePreset.Meteor);
 
             if (debugLog) Debug.Log($"[MeteorStrike] Fire pool spawned, will last {firePoolDuration}s");
+        }
+        
+        /// <summary>
+        /// Returns this MeteorStrike to the object pool for reuse.
+        /// Falls back to Destroy if pool is not available.
+        /// </summary>
+        private void ReturnToPool()
+        {
+            // Stop any running coroutines before returning to pool
+            StopAllCoroutines();
+            
+            if (ObjectPoolManager.Instance != null)
+            {
+                ObjectPoolManager.Instance.Return(gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
 
         private void ApplyImpactDamage()

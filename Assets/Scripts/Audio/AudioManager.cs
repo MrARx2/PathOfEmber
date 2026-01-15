@@ -48,6 +48,18 @@ namespace Audio
         [Header("Debug")]
         [SerializeField] private bool debugLog = false;
         
+        [Header("Time-Based Pitch")]
+        [SerializeField, Tooltip("Apply pitch slowdown when time slows (for cinematic effect)")]
+        private bool applyTimeBasedPitch = true;
+        
+        [SerializeField, Tooltip("Intensity of pitch slowdown (0.5 = half as much slowdown as time, 1.0 = match time exactly)")]
+        [Range(0.1f, 1f)]
+        private float pitchSlowdownIntensity = 0.5f;
+        
+        [SerializeField, Tooltip("Minimum pitch value (prevents sounds from going too low)")]
+        [Range(0.3f, 0.8f)]
+        private float minimumPitch = 0.5f;
+        
         // BGM source (separate, always available)
         private AudioSource _bgmSource;
         
@@ -68,6 +80,12 @@ namespace Audio
         
         // dB conversion
         private const float MIN_DB = -80f;
+        
+        // Store original pitches for time-based adjustment
+        private Dictionary<AudioSource, float> _originalPitches;
+        
+        // Track which sources are affected by time-based pitch
+        private HashSet<AudioSource> _timeAffectedSources;
         
         #region Unity Lifecycle
         
@@ -106,6 +124,8 @@ namespace Audio
             // Initialize tracking
             _activeInstances = new Dictionary<SoundEvent, List<AudioSource>>();
             _lastPlayTime = new Dictionary<SoundEvent, float>();
+            _originalPitches = new Dictionary<AudioSource, float>();
+            _timeAffectedSources = new HashSet<AudioSource>();
             
             // Apply volumes to mixer
             ApplyAllVolumes();
@@ -126,6 +146,60 @@ namespace Audio
         {
             // Clean up finished instances from tracking
             CleanupFinishedInstances();
+            
+            // Apply time-based pitch adjustment
+            if (applyTimeBasedPitch)
+            {
+                UpdatePitchForTimeScale();
+            }
+        }
+        
+        /// <summary>
+        /// Adjusts pitch of playing audio sources based on current time scale.
+        /// Only affects sources marked as affectedByTimeSlowdown (enemy sounds, not world ambient).
+        /// </summary>
+        private void UpdatePitchForTimeScale()
+        {
+            float timeScale = Time.timeScale;
+            
+            // Calculate target pitch using intensity slider
+            // If timeScale = 0.15 and intensity = 0.5, pitch = 1 - (1 - 0.15) * 0.5 = 0.575
+            float targetPitch = 1f - (1f - timeScale) * pitchSlowdownIntensity;
+            targetPitch = Mathf.Max(targetPitch, minimumPitch);
+            
+            // Apply to affected pooled sources only
+            foreach (var source in _sourcePool)
+            {
+                if (source != null && source.isPlaying)
+                {
+                    // Get original pitch or assume 1.0
+                    if (!_originalPitches.TryGetValue(source, out float originalPitch))
+                    {
+                        originalPitch = 1f;
+                    }
+                    
+                    // Only apply slowdown if this source was marked as affected
+                    if (_timeAffectedSources.Contains(source))
+                    {
+                        source.pitch = originalPitch * targetPitch;
+                    }
+                    else
+                    {
+                        // Restore original pitch for non-affected sources (ambient sounds)
+                        source.pitch = originalPitch;
+                    }
+                }
+            }
+            
+            // BGM: Apply slowdown (music sounds good slowed)
+            if (_bgmSource != null && _bgmSource.isPlaying && _timeAffectedSources.Contains(_bgmSource))
+            {
+                if (!_originalPitches.TryGetValue(_bgmSource, out float bgmOriginalPitch))
+                {
+                    bgmOriginalPitch = 1f;
+                }
+                _bgmSource.pitch = bgmOriginalPitch * targetPitch;
+            }
         }
         
         private void CleanupFinishedInstances()
@@ -261,6 +335,19 @@ namespace Audio
             }
             
             source.Play();
+            
+            // Store original pitch for time-based adjustment
+            _originalPitches[source] = soundEvent.GetPitch();
+            
+            // Track if this source should be affected by time slowdown
+            if (soundEvent.affectedByTimeSlowdown)
+            {
+                _timeAffectedSources.Add(source);
+            }
+            else
+            {
+                _timeAffectedSources.Remove(source);
+            }
             
             // Track instance
             if (soundEvent.maxInstances > 0)

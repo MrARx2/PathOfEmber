@@ -68,6 +68,10 @@ namespace Audio
         [Tooltip("Distance where sound fades to silence")]
         public float maxDistance = 50f;
         
+        [Header("Time Effects")]
+        [Tooltip("If true, pitch slows down during time manipulation (enemy sounds). If false, stays normal (ambient world sounds like rivers, fire, wind).")]
+        public bool affectedByTimeSlowdown = true;
+        
         /// <summary>
         /// Polyphony steal modes.
         /// </summary>

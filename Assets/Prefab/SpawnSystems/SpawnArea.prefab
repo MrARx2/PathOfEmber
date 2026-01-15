@@ -209,13 +209,22 @@ MonoBehaviour:
   volumeSpawnCount: 40
   uniqueId: 
   useGlobalRegistry: 1
+  enableSecondWave: 0
+  wave2EnemyPrefabs: []
+  wave2EnemyCount: 3
+  wave2SpawnDelay: 1
   showGizmos: 1
   gizmoColor: {r: 0, g: 1, b: 1, a: 1}
   useSpawnIndicator: 1
   indicatorPrefab: {fileID: 2007081276863176460, guid: 15c90b2cbb9825547808b0d2ca1fcce2, type: 3}
+  indicatorPositionOffset: {x: 0, y: 0.05, z: 0}
+  indicatorRotationOffset: {x: 90, y: 0, z: 0}
   indicatorDuration: 0.5
   spawnStagger: 0.15
   spawnVFXPrefab: {fileID: 6270883829170812278, guid: e29d07466e93316459fbe430a227c5cc, type: 3}
+  spawnVFXPositionOffset: {x: 0, y: 0, z: 0}
+  spawnVFXRotationOffset: {x: -90, y: 0, z: 0}
+  spawnSound: {fileID: 11400000, guid: 826d29683561ba644b3e968378260f5f, type: 2}
 --- !u!1 &5965248338649303234
 GameObject:
   m_ObjectHideFlags: 0

@@ -28,23 +28,11 @@ public class ArrowProjectile : MonoBehaviour
     [SerializeField] private int maxBounces = 2;
     [SerializeField] private LayerMask wallLayers;
     
-    [Header("Enemy Detection (SphereCast)")]
-    [SerializeField, Tooltip("Layers containing enemies for SphereCast detection")]
-    private LayerMask enemyLayers;
-    [SerializeField, Tooltip("Radius of SphereCast for enemy detection")]
-    private float enemyDetectionRadius = 0.15f;
-    
     [Header("Wall Hit VFX")]
     [SerializeField, Tooltip("VFX prefab to spawn when arrow hits a wall and can't bounce")]
     private GameObject wallHitVFXPrefab;
     [SerializeField, Tooltip("How long the VFX lasts before auto-destroy")]
     private float wallHitVFXDuration = 1f;
-    
-    [Header("Trail Fade Effect")]
-    [SerializeField, Tooltip("Duration of the smooth trail fade")]
-    private float trailFadeDuration = 0.3f;
-    [SerializeField, Tooltip("Detach trail on destroy for lingering effect")]
-    private bool detachTrailOnDestroy = true;
     
     [Header("Trail Colors")]
     [SerializeField] private Color freezeTrailColor = new Color(0.2f, 0.8f, 1f, 1f); // Cyan
@@ -139,16 +127,44 @@ public class ArrowProjectile : MonoBehaviour
             rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
         }
         
-        // Cache trail renderers for fade effect
-        trails = GetComponentsInChildren<TrailRenderer>();
-        initialTrailWidths = new float[trails.Length];
-        originalTrailColors = new Color[trails.Length];
+        // Cache trail renderers for fade effect (only once)
+        if (trails == null || trails.Length == 0)
+        {
+            trails = GetComponentsInChildren<TrailRenderer>();
+            initialTrailWidths = new float[trails.Length];
+            originalTrailColors = new Color[trails.Length];
+            for (int i = 0; i < trails.Length; i++)
+            {
+                if (trails[i] != null)
+                {
+                    initialTrailWidths[i] = trails[i].widthMultiplier;
+                    originalTrailColors[i] = trails[i].startColor;
+                }
+            }
+        }
+        
+        // Clear trails for pooled reuse (prevents old trail appearing at new position)
+        ClearTrails();
+        
+        // Reset effect flags for pooled arrows
+        isPiercing = false;
+        hasFreezeEffect = false;
+        hasVenomEffect = false;
+        hasBouncing = false;
+    }
+    
+    /// <summary>
+    /// Clears trail history for pooled arrow reuse.
+    /// </summary>
+    private void ClearTrails()
+    {
+        if (trails == null) return;
         for (int i = 0; i < trails.Length; i++)
         {
             if (trails[i] != null)
             {
-                initialTrailWidths[i] = trails[i].widthMultiplier;
-                originalTrailColors[i] = trails[i].startColor;
+                trails[i].Clear();
+                trails[i].widthMultiplier = initialTrailWidths[i];
             }
         }
     }
@@ -237,16 +253,14 @@ public class ArrowProjectile : MonoBehaviour
         float dt = Time.deltaTime;
         float moveDistance = speed * dt;
         
-        // Use a larger lookahead distance to prevent tunneling
-        float lookAhead = Mathf.Max(moveDistance * 2f, 0.5f);
-        
-        // Check for wall collision using SphereCast for reliable detection
-        // ALWAYS check walls, not just when bouncing
+        // Simple raycast for wall detection (much cheaper than SphereCast)
+        // Only check walls - enemy detection uses OnTriggerEnter (runs on physics thread)
         if (wallLayers != 0)
         {
             RaycastHit hit;
-            // Use SphereCast for more reliable detection (catches edges better)
-            if (Physics.SphereCast(transform.position, 0.1f, moveDir, out hit, lookAhead, wallLayers, QueryTriggerInteraction.Ignore))
+            float lookAhead = Mathf.Max(moveDistance * 1.5f, 0.3f);
+            
+            if (Physics.Raycast(transform.position, moveDir, out hit, lookAhead, wallLayers, QueryTriggerInteraction.Ignore))
             {
                 // If bouncing is enabled and we have bounces left, bounce
                 if (hasBouncing && bounceCount < maxBounces)
@@ -260,33 +274,6 @@ public class ArrowProjectile : MonoBehaviour
                     SpawnWallHitVFX(hit.point);
                     GracefulDestroy();
                     return;
-                }
-            }
-        }
-        
-        // SphereCast for enemy detection - catches enemies even at low FPS
-        // This prevents arrows from tunneling through enemies on low-end hardware
-        if (enemyLayers != 0)
-        {
-            RaycastHit[] hits = Physics.SphereCastAll(transform.position, enemyDetectionRadius, moveDir, lookAhead, enemyLayers, QueryTriggerInteraction.Collide);
-            
-            // Sort hits by distance for proper hit order
-            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-            
-            foreach (RaycastHit hit in hits)
-            {
-                if (hit.collider == null) continue;
-                if (hit.collider.CompareTag("Player")) continue;
-                if (alreadyHitEnemies.Contains(hit.collider)) continue;
-                
-                alreadyHitEnemies.Add(hit.collider);
-                
-                // Process this hit through our existing damage logic
-                bool shouldDestroy = ProcessEnemyHit(hit.collider);
-                
-                if (shouldDestroy)
-                {
-                    return; // Arrow destroyed, stop processing
                 }
             }
         }
@@ -459,30 +446,23 @@ public class ArrowProjectile : MonoBehaviour
     }
     
     /// <summary>
-    /// Gracefully destroys the arrow with a smooth trail fade effect.
+    /// Returns the arrow to the pool for reuse (no allocation).
+    /// Falls back to Destroy if pool is not available.
     /// </summary>
     private void GracefulDestroy()
     {
-        if (trails != null && trails.Length > 0 && detachTrailOnDestroy)
-        {
-            // Detach trails so they can fade independently
-            foreach (var trail in trails)
-            {
-                if (trail != null)
-                {
-                    // Create a temporary holder for the trail
-                    GameObject trailHolder = new GameObject("FadingTrail");
-                    trailHolder.transform.position = trail.transform.position;
-                    trail.transform.SetParent(trailHolder.transform);
-                    
-                    // Start fade coroutine on a temporary MonoBehaviour
-                    var fader = trailHolder.AddComponent<TrailFader>();
-                    fader.StartFade(trail, trailFadeDuration);
-                }
-            }
-        }
+        // Clear trails before returning to pool
+        ClearTrails();
         
-        Destroy(gameObject);
+        // Return to pool instead of destroying
+        if (ObjectPoolManager.Instance != null)
+        {
+            ObjectPoolManager.Instance.Return(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 }
 

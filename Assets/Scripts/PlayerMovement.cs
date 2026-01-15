@@ -48,7 +48,6 @@ public class PlayerMovement : MonoBehaviour
         if (multiplier > 0f)
         {
             float newSpeed = baseMoveSpeed * multiplier;
-            Debug.Log($"[PlayerMovement] SetSpeedMultiplier({multiplier:F2}): base={baseMoveSpeed}, new={newSpeed}");
             moveSpeed = newSpeed;
         }
     }
@@ -62,7 +61,6 @@ public class PlayerMovement : MonoBehaviour
         rb.useGravity = false;
         rb.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionY;
         baseMoveSpeed = moveSpeed;
-        Debug.Log($"[PlayerMovement] Awake: moveSpeed={moveSpeed}, baseMoveSpeed={baseMoveSpeed}");
         keyboard = Keyboard.current;
         moveThresholdSquared = moveThreshold * moveThreshold;
 
@@ -138,29 +136,22 @@ public class PlayerMovement : MonoBehaviour
         float t = 1f - Mathf.Exp(-dt / accel);
         currentVelocity = Vector3.Lerp(currentVelocity, desiredVelocity, t);
 
-        // Prevent walking over tagged "Collider" by sweep testing and sliding along surfaces
+        // Simple collision check using cheap raycast instead of expensive SweepTest
+        // SweepTest projects entire collider every frame - extremely expensive!
         Vector3 velocityStep = currentVelocity * dt;
         if (velocityStep.sqrMagnitude > 1e-6f)
         {
             Vector3 moveDir = velocityStep.normalized;
             float moveDist = velocityStep.magnitude;
-            // Ignore triggers (e.g., projectiles) and only respond to solid obstacles
-            if (rb.SweepTest(moveDir, out RaycastHit hit, moveDist, QueryTriggerInteraction.Ignore))
+            
+            // Use simple raycast (cheap) instead of SweepTest (expensive full collider projection)
+            RaycastHit hit;
+            if (Physics.Raycast(rb.position + Vector3.up * 0.5f, moveDir, out hit, moveDist + 0.3f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
             {
-                if (hit.collider != null && hit.collider.CompareTag("Collider"))
+                if (hit.collider.CompareTag("Collider"))
                 {
                     // Project velocity onto plane to slide along obstacle
-                    Vector3 slid = Vector3.ProjectOnPlane(currentVelocity, hit.normal);
-                    // Secondary sweep to avoid edge snagging
-                    Vector3 slidStep = slid * dt;
-                    if (slidStep.sqrMagnitude > 1e-6f)
-                    {
-                        if (rb.SweepTest(slidStep.normalized, out RaycastHit hit2, slidStep.magnitude, QueryTriggerInteraction.Ignore) && hit2.collider != null && hit2.collider.CompareTag("Collider"))
-                        {
-                            slid = Vector3.zero; // blocked
-                        }
-                    }
-                    currentVelocity = slid;
+                    currentVelocity = Vector3.ProjectOnPlane(currentVelocity, hit.normal);
                 }
             }
         }
@@ -220,12 +211,6 @@ public class PlayerMovement : MonoBehaviour
                 animator.SetFloat(AnimSpeed, 0f);
             }
 
-            if (debugAnimation && animator != null && Time.frameCount % 30 == 0)
-            {
-                float s = animator.GetFloat(AnimSpeed);
-                Debug.Log($"[PlayerAnim Idle] GO={animator.gameObject.name}, Speed={s:F2}, RBv={sourceVel}");
-            }
-
             return;
         }
 
@@ -263,16 +248,6 @@ public class PlayerMovement : MonoBehaviour
         if (animator != null)
         {
             animator.SetFloat(AnimSpeed, PlayerSpeed);
-        }
-
-        if (debugAnimation && animator != null)
-        {
-            // Light-weight periodic debug
-            if (Time.frameCount % 30 == 0)
-            {
-                float s = animator.GetFloat(AnimSpeed);
-                Debug.Log($"[PlayerAnim Move] GO={animator.gameObject.name}, Speed={s:F2}, ComputedSpeed={PlayerSpeed:F2}, RBv={sourceVel}");
-            }
         }
     }
 }

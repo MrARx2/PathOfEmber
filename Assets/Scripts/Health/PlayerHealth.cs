@@ -121,8 +121,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             originalEmissionColors[i] = renderers[i].material.GetColor("_EmissionColor");
             hadEmissionEnabled[i] = renderers[i].material.IsKeywordEnabled("_EMISSION");
         }
-        
-        Debug.Log($"[PlayerHealth] Found {renderers.Length} emission-capable renderers for hit flash");
     }
 
     private void Start()
@@ -180,14 +178,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             if (abilities != null)
                 abilities.OnShieldConsumed();
             
-            Debug.Log("[PlayerHealth] One-Time Shield blocked damage!");
             return;
         }
 
         currentHealth -= damage;
         if (currentHealth < 0) currentHealth = 0;
-
-        Debug.Log($"[PlayerHealth] Took {damage} damage. Current: {currentHealth}/{maxHealth}");
 
         // Trigger camera shake effect (only for direct hits, not DoT)
         if (enableCameraShake && triggerShake)
@@ -433,7 +428,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             if (abilities != null)
                 abilities.OnShieldConsumed();
             
-            Debug.Log("[PlayerHealth] One-Time Shield blocked damage AND DoT!");
             return; // Shield consumed, no damage or DoT applied
         }
         
@@ -461,7 +455,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public void SetInvulnerable(float duration)
     {
-        Debug.Log($"[PlayerHealth] SetInvulnerable called for {duration}s");
         StartCoroutine(InvulnerabilityRoutine(duration));
     }
 
@@ -469,13 +462,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         isInvulnerable = true;
         SetInvulnerabilityEffectActive(true);
-        Debug.Log($"[PlayerHealth] Invulnerability started for {duration}s");
 
         yield return new WaitForSeconds(duration);
 
         isInvulnerable = false;
         SetInvulnerabilityEffectActive(false);
-        Debug.Log("[PlayerHealth] Invulnerability ended");
     }
 
     private void SetInvulnerabilityEffectActive(bool active)
@@ -488,13 +479,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         // Make sure the GameObject is active/inactive
         invulnerabilityEffect.SetActive(active);
-        Debug.Log($"[PlayerHealth] invulnerabilityEffect.SetActive({active}), activeInHierarchy={invulnerabilityEffect.activeInHierarchy}");
-        
-        // Also check if there's a parent being disabled
-        if (active && !invulnerabilityEffect.activeInHierarchy)
-        {
-            Debug.LogWarning("[PlayerHealth] invulnerabilityEffect is not active in hierarchy despite SetActive(true). Check parent GameObjects!");
-        }
     }
 
     private void OnDisable()
@@ -522,7 +506,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             animator.SetTrigger(deathTrigger);
 
         OnDeath?.Invoke();
-        Debug.Log($"{gameObject.name} died.");
     }
 
     private void NotifyHealthChanged()
@@ -615,12 +598,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [ContextMenu("Debug: Kill Player")]
     public void DebugKill() => TakeDamage(currentHealth);
 
-    [ContextMenu("Debug: Test Hit Flash")]
     public void DebugTestHitFlash()
     {
         if (hitFlashCoroutine != null)
             StopCoroutine(hitFlashCoroutine);
         hitFlashCoroutine = StartCoroutine(HitFlashRoutine());
-        Debug.Log($"[PlayerHealth] Testing hit flash with {renderers?.Length ?? 0} renderers");
     }
 }
