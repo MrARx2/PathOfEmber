@@ -13867,7 +13867,7 @@ PrefabInstance:
     - target: {fileID: 2212500005413112099, guid: bcd5dcb30e2c77441ba8b8155b84622d, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 2100000, guid: 4faa24a09aa7b014e921d530327dc4cc, type: 2}
     - target: {fileID: 2300209847881100693, guid: bcd5dcb30e2c77441ba8b8155b84622d, type: 3}
       propertyPath: m_SelectedEditorRenderState
       value: 2
@@ -14154,6 +14154,7 @@ MonoBehaviour:
   prayerWheelDisplay: {fileID: 1246689979}
   buttonYOffset: 0
   systemsCanvasToHide: {fileID: 1381894438}
+  selectionSound: {fileID: 0}
 --- !u!114 &1246689979
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14179,8 +14180,9 @@ MonoBehaviour:
   pauseGameWhenVisible: 1
   wheelLayer: 0
   useSmoothSlowdown: 1
-  fallbackSlowdownDuration: 0.4
-  fallbackResumeDuration: 0.25
+  slowdownTargetTimeScale: 0.15
+  slowdownDuration: 1.2
+  resumeDuration: 0.3
 --- !u!114 &1246689980 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1681347285293982752, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
