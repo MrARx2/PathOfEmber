@@ -13,6 +13,7 @@ public class TalentSelectionManager : MonoBehaviour
     [SerializeField] private PrayerWheelUI prayerWheelUI;
     [SerializeField] private PrayerWheelController prayerWheelController;
     [SerializeField] private PlayerAbilities playerAbilities;
+    [SerializeField] private TalentDatabase talentDatabase;
 
     [Header("Configuration")]
     [SerializeField, Tooltip("If true, finds PlayerAbilities on tagged 'Player' object")]
@@ -43,6 +44,34 @@ public class TalentSelectionManager : MonoBehaviour
         
         if (prayerWheelController == null)
             prayerWheelController = FindFirstObjectByType<PrayerWheelController>();
+
+        // TalentDatabase is a ScriptableObject, so we need to find it differently
+        if (talentDatabase == null)
+        {
+            // Try to get it from PrayerWheelUI if available (it likely has a reference)
+            var wheelUI = prayerWheelUI ?? FindFirstObjectByType<PrayerWheelUI>();
+            if (wheelUI != null)
+            {
+                // Use reflection or a public getter if available
+                var field = wheelUI.GetType().GetField("talentDatabase", 
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (field != null)
+                {
+                    talentDatabase = field.GetValue(wheelUI) as TalentDatabase;
+                }
+            }
+            
+            // Fallback: Find all loaded ScriptableObjects of this type
+            if (talentDatabase == null)
+            {
+                var databases = Resources.FindObjectsOfTypeAll<TalentDatabase>();
+                if (databases.Length > 0)
+                {
+                    talentDatabase = databases[0];
+                    Debug.Log($"[TalentSelectionManager] Found TalentDatabase via Resources.FindObjectsOfTypeAll");
+                }
+            }
+        }
 
         if (autoFindPlayer && playerAbilities == null)
         {
@@ -82,6 +111,9 @@ public class TalentSelectionManager : MonoBehaviour
         {
             Debug.LogError("[TalentSelectionManager] PlayerAbilities is NULL - CANNOT APPLY TALENTS!");
         }
+
+        // Check for talent pre-selected from main menu
+        ApplyStartingTalentFromMainMenu();
     }
 
     private void OnDestroy()
@@ -215,6 +247,63 @@ public class TalentSelectionManager : MonoBehaviour
         {
             Debug.LogWarning($"[TalentSelectionManager] No action found for talent ID: {talent.talentId}");
         }
+    }
+
+    /// <summary>
+    /// Checks PlayerPrefs for a talent pre-selected from the main menu and applies it.
+    /// </summary>
+    private void ApplyStartingTalentFromMainMenu()
+    {
+        // Check if we came from main menu with a selected talent
+        int quickPlayMode = PlayerPrefs.GetInt("QuickPlayMode", 0);
+        if (quickPlayMode != 1)
+        {
+            Debug.Log("[TalentSelectionManager] No starting talent from main menu (normal mode)");
+            return;
+        }
+
+        string talentName = PlayerPrefs.GetString("QuickPlayTalentName", "");
+        if (string.IsNullOrEmpty(talentName))
+        {
+            Debug.LogWarning("[TalentSelectionManager] QuickPlayMode is 1 but no talent name found!");
+            return;
+        }
+
+        Debug.Log($"[TalentSelectionManager] Found starting talent from main menu: {talentName}");
+
+        // Find the talent in the database
+        if (talentDatabase == null)
+        {
+            Debug.LogError("[TalentSelectionManager] TalentDatabase not found! Cannot apply starting talent.");
+            return;
+        }
+
+        TalentData[] allTalents = talentDatabase.GetAllTalents();
+        TalentData startingTalent = null;
+        
+        foreach (var talent in allTalents)
+        {
+            if (talent.talentName == talentName)
+            {
+                startingTalent = talent;
+                break;
+            }
+        }
+
+        if (startingTalent == null)
+        {
+            Debug.LogWarning($"[TalentSelectionManager] Could not find talent '{talentName}' in database!");
+            return;
+        }
+
+        // Apply the talent using existing system
+        OnTalentSelected(startingTalent);
+        Debug.Log($"[TalentSelectionManager] Applied starting talent: {startingTalent.talentName}");
+
+        // Clear the PlayerPrefs so it doesn't apply again on reload
+        PlayerPrefs.DeleteKey("QuickPlayTalentName");
+        PlayerPrefs.SetInt("QuickPlayMode", 0);
+        PlayerPrefs.Save();
     }
 
     /// <summary>
