@@ -530,7 +530,10 @@ namespace EnemyAI
             targetPos.y = spawnPos.y;
             Vector3 direction = (targetPos - spawnPos).normalized;
 
-            GameObject proj = Instantiate(projectilePrefab, spawnPos, Quaternion.LookRotation(direction));
+            // Use object pool instead of Instantiate for zero-allocation shooting
+            GameObject proj = ObjectPoolManager.Instance != null
+                ? ObjectPoolManager.Instance.Get(projectilePrefab, spawnPos, Quaternion.LookRotation(direction))
+                : Instantiate(projectilePrefab, spawnPos, Quaternion.LookRotation(direction));
             
             EnemyProjectile ep = proj.GetComponent<EnemyProjectile>();
             if (ep != null)

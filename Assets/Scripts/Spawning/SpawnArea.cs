@@ -664,11 +664,12 @@ public class SpawnArea : MonoBehaviour
             
             Gizmos.DrawSphere(points[i].position, 0.5f);
             
-            #if UNITY_EDITOR
-            // Show the enemy name that will spawn here
-            string label = !string.IsNullOrEmpty(enemyName) ? enemyName : $"[{i}]";
-            UnityEditor.Handles.Label(points[i].position + Vector3.up, label);
-            #endif
+            // NOTE: Handles.Label REMOVED for performance - was causing 30+ FPS drops!
+            // Uncomment below if you need to see enemy names at spawn points (will hurt editor FPS)
+            // #if UNITY_EDITOR
+            // string label = !string.IsNullOrEmpty(enemyName) ? enemyName : $"[{i}]";
+            // UnityEditor.Handles.Label(points[i].position + Vector3.up, label);
+            // #endif
         }
     }
     

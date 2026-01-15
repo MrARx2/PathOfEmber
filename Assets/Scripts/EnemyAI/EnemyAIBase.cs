@@ -147,6 +147,11 @@ namespace EnemyAI
         private int _frameOffset; // Stagger enemies to spread CPU load
         private const int LOS_CHECK_INTERVAL = 5; // Check line of sight every N frames
         private bool _lastLineOfSightBlocked = false; // Cache the result between checks
+        
+        // Performance: Throttle SetDestination calls (expensive NavMesh pathfinding)
+        private const int DESTINATION_UPDATE_INTERVAL = 10; // Update destination every N frames
+        private Vector3 _lastDestination;
+        private bool _hasDestination = false;
 
         #endregion
 
@@ -324,7 +329,18 @@ namespace EnemyAI
                         Debug.Log($"[{GetType().Name}] Line of sight restored, going direct to player");
                 }
                 
-                agent.SetDestination(target.position);
+                // PERFORMANCE: Only update destination every N frames (SetDestination is expensive!)
+                // Or if player moved significantly (> 1 unit)
+                bool shouldUpdateDestination = !_hasDestination || 
+                    (Time.frameCount + _frameOffset) % DESTINATION_UPDATE_INTERVAL == 0 ||
+                    (target.position - _lastDestination).sqrMagnitude > 1f;
+                    
+                if (shouldUpdateDestination)
+                {
+                    agent.SetDestination(target.position);
+                    _lastDestination = target.position;
+                    _hasDestination = true;
+                }
             }
             else
             {
@@ -351,8 +367,8 @@ namespace EnemyAI
                     }
                     else
                     {
-                        // Keep going to alternate waypoint
-                        agent.SetDestination(alternateWaypoint);
+                        // Keep going to alternate waypoint (destination already set when assigned)
+                        // No need to call SetDestination every frame - NavMesh handles following
                         return;
                     }
                 }
@@ -396,7 +412,11 @@ namespace EnemyAI
                 }
                 
                 // Fallback: try direct path anyway (NavMesh might find a way)
-                agent.SetDestination(target.position);
+                // But throttle to avoid calling every frame
+                if ((Time.frameCount + _frameOffset) % DESTINATION_UPDATE_INTERVAL == 0)
+                {
+                    agent.SetDestination(target.position);
+                }
             }
         }
         

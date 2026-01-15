@@ -250,60 +250,26 @@ public class TalentSelectionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Checks PlayerPrefs for a talent pre-selected from the main menu and applies it.
+    /// Checks GameSessionManager for a talent pre-selected from the main menu and applies it.
     /// </summary>
     private void ApplyStartingTalentFromMainMenu()
     {
-        // Check if we came from main menu with a selected talent
-        int quickPlayMode = PlayerPrefs.GetInt("QuickPlayMode", 0);
-        if (quickPlayMode != 1)
+        // Check if GameSessionManager exists and has a starting talent
+        if (GameSessionManager.Instance == null || GameSessionManager.Instance.StartingTalent == null)
         {
             Debug.Log("[TalentSelectionManager] No starting talent from main menu (normal mode)");
             return;
         }
 
-        string talentName = PlayerPrefs.GetString("QuickPlayTalentName", "");
-        if (string.IsNullOrEmpty(talentName))
-        {
-            Debug.LogWarning("[TalentSelectionManager] QuickPlayMode is 1 but no talent name found!");
-            return;
-        }
-
-        Debug.Log($"[TalentSelectionManager] Found starting talent from main menu: {talentName}");
-
-        // Find the talent in the database
-        if (talentDatabase == null)
-        {
-            Debug.LogError("[TalentSelectionManager] TalentDatabase not found! Cannot apply starting talent.");
-            return;
-        }
-
-        TalentData[] allTalents = talentDatabase.GetAllTalents();
-        TalentData startingTalent = null;
-        
-        foreach (var talent in allTalents)
-        {
-            if (talent.talentName == talentName)
-            {
-                startingTalent = talent;
-                break;
-            }
-        }
-
-        if (startingTalent == null)
-        {
-            Debug.LogWarning($"[TalentSelectionManager] Could not find talent '{talentName}' in database!");
-            return;
-        }
+        TalentData startingTalent = GameSessionManager.Instance.StartingTalent;
+        Debug.Log($"[TalentSelectionManager] Found starting talent from main menu: {startingTalent.talentName}");
 
         // Apply the talent using existing system
         OnTalentSelected(startingTalent);
         Debug.Log($"[TalentSelectionManager] Applied starting talent: {startingTalent.talentName}");
 
-        // Clear the PlayerPrefs so it doesn't apply again on reload
-        PlayerPrefs.DeleteKey("QuickPlayTalentName");
-        PlayerPrefs.SetInt("QuickPlayMode", 0);
-        PlayerPrefs.Save();
+        // Clear the starting talent so it doesn't apply again on scene reload
+        GameSessionManager.Instance.StartingTalent = null;
     }
 
     /// <summary>

@@ -63,10 +63,8 @@ public class SpawnPoint : MonoBehaviour
         Gizmos.color = Color.cyan;
         Gizmos.DrawRay(transform.position, transform.forward * gizmoSize * 2);
         
-        #if UNITY_EDITOR
-        // Draw enemy type label
-        UnityEditor.Handles.Label(transform.position + Vector3.up * (gizmoSize + 0.3f), enemyType.ToString());
-        #endif
+        // NOTE: Labels moved to OnDrawGizmosSelected for MASSIVE performance gain
+        // Handles.Label is extremely expensive and was causing 30+ FPS drops
     }
 
     private void OnDrawGizmosSelected()
@@ -74,6 +72,11 @@ public class SpawnPoint : MonoBehaviour
         Color enemyColor = GetEnemyTypeColor();
         Gizmos.color = enemyColor;
         Gizmos.DrawSphere(transform.position, gizmoSize);
+        
+        #if UNITY_EDITOR
+        // Draw enemy type label ONLY when selected (Handles.Label is very expensive!)
+        UnityEditor.Handles.Label(transform.position + Vector3.up * (gizmoSize + 0.3f), enemyType.ToString());
+        #endif
     }
     
     /// <summary>

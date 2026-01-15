@@ -156,6 +156,16 @@ namespace EnemyAI
         private bool rageAnimationEnded = false;
         private GameObject activeShieldVFX;
         
+        // === PERFORMANCE CACHES ===
+        // Cache player's IDamageable to avoid GetComponent every frame
+        private IDamageable _cachedPlayerDamageable;
+        private bool _playerDamageableCached = false;
+        
+        // LOS check throttling (raycast every N frames, cache result)
+        private const int LOS_CHECK_INTERVAL = 5;
+        private bool _cachedLOS = true;
+        private int _losFrameOffset;
+        
         #endregion
         
         #region Unity Lifecycle
@@ -169,6 +179,9 @@ namespace EnemyAI
             {
                 agent.updateRotation = true; // Let NavMesh handle rotation normally
             }
+            
+            // Randomize LOS check frame to spread load across enemies
+            _losFrameOffset = Random.Range(0, LOS_CHECK_INTERVAL);
         }
         
         protected override void Start()
@@ -183,6 +196,15 @@ namespace EnemyAI
             // Start with some cooldown so attacks don't fire immediately
             fireballCooldownTimer = fireballCooldown * 0.5f;
             meteorCooldownTimer = meteorCooldown * 0.5f;
+            
+            // Cache player's IDamageable to avoid GetComponent every frame
+            if (target != null && !_playerDamageableCached)
+            {
+                _cachedPlayerDamageable = target.GetComponent<IDamageable>();
+                if (_cachedPlayerDamageable == null)
+                    _cachedPlayerDamageable = target.GetComponentInParent<IDamageable>();
+                _playerDamageableCached = true;
+            }
         }
         
         protected override void Update()
@@ -244,7 +266,9 @@ namespace EnemyAI
         
         private void UpdateChasing()
         {
-            float distance = Vector3.Distance(VisualPosition, target.position);
+            // Use sqrMagnitude for cheaper distance check
+            float distSqr = (VisualPosition - target.position).sqrMagnitude;
+            float combatRangeSqr = (preferredRange + 2f) * (preferredRange + 2f);
             
             // Let NavMesh handle rotation during movement (face movement direction)
             if (agent != null && !agent.updateRotation)
@@ -260,9 +284,10 @@ namespace EnemyAI
             }
             
             // Check if in combat range
-            if (distance <= preferredRange + 2f)
+            if (distSqr <= combatRangeSqr)
             {
-                // In range - make combat decision
+                // In range - make combat decision (pass actual distance for sub-checks)
+                float distance = Mathf.Sqrt(distSqr);
                 MakeCombatDecision(distance);
             }
             else
@@ -398,6 +423,12 @@ namespace EnemyAI
         
         private bool HasLineOfSightToPlayer()
         {
+            // PERFORMANCE: Only do actual raycast every N frames, use cached result otherwise
+            if ((Time.frameCount + _losFrameOffset) % LOS_CHECK_INTERVAL != 0)
+            {
+                return _cachedLOS;
+            }
+            
             Vector3 rayOrigin = transform.position + Vector3.up * raycastHeight;
             Vector3 toTarget = target.position - transform.position;
             float dist = toTarget.magnitude;
@@ -406,11 +437,15 @@ namespace EnemyAI
             if (Physics.Raycast(rayOrigin, toTarget.normalized, out hit, dist, obstacleLayerMask, QueryTriggerInteraction.Ignore))
             {
                 // Hit something - check if it's the player
-                return hit.collider.gameObject == target.gameObject || hit.collider.CompareTag("Player");
+                _cachedLOS = hit.collider.gameObject == target.gameObject || hit.collider.CompareTag("Player");
+            }
+            else
+            {
+                // Nothing in the way
+                _cachedLOS = true;
             }
             
-            // Nothing in the way
-            return true;
+            return _cachedLOS;
         }
         
         #endregion
@@ -601,7 +636,11 @@ namespace EnemyAI
             Vector3 direction = (targetPos - spawnPos).normalized;
             
             if (debugLog) Debug.Log($"[MinibossAI] Spawning fireball at height {spawnPos.y}");
-            GameObject proj = Instantiate(fireballPrefab, spawnPos, Quaternion.LookRotation(direction));
+            
+            // Use object pool instead of Instantiate for zero-allocation shooting
+            GameObject proj = ObjectPoolManager.Instance != null
+                ? ObjectPoolManager.Instance.Get(fireballPrefab, spawnPos, Quaternion.LookRotation(direction))
+                : Instantiate(fireballPrefab, spawnPos, Quaternion.LookRotation(direction));
             
             // Play fireball sound
             if (fireballSound != null && AudioManager.Instance != null)
@@ -1116,7 +1155,11 @@ namespace EnemyAI
                 
                 // Use fixed spawn height for rage fireballs
                 Vector3 fixedSpawnPos = new Vector3(spawnPos.x, rageFireballSpawnHeight, spawnPos.z);
-                GameObject proj = Instantiate(prefabToUse, fixedSpawnPos, Quaternion.LookRotation(direction));
+                
+                // Use object pool for zero-allocation spawning
+                GameObject proj = ObjectPoolManager.Instance != null
+                    ? ObjectPoolManager.Instance.Get(prefabToUse, fixedSpawnPos, Quaternion.LookRotation(direction))
+                    : Instantiate(prefabToUse, fixedSpawnPos, Quaternion.LookRotation(direction));
                 
                 EnemyProjectile ep = proj.GetComponent<EnemyProjectile>();
                 if (ep != null)
@@ -1331,16 +1374,24 @@ namespace EnemyAI
                 return;
             }
             
-            float distance = Vector3.Distance(VisualPosition, target.position);
-            if (distance <= contactDistance)
+            // Use sqrMagnitude for cheaper distance check
+            float distSqr = (VisualPosition - target.position).sqrMagnitude;
+            float contactDistSqr = contactDistance * contactDistance;
+            
+            if (distSqr <= contactDistSqr)
             {
-                IDamageable playerHealth = target.GetComponent<IDamageable>();
-                if (playerHealth == null)
-                    playerHealth = target.GetComponentInParent<IDamageable>();
-                
-                if (playerHealth != null)
+                // Use cached reference instead of GetComponent every frame
+                if (!_playerDamageableCached && target != null)
                 {
-                    playerHealth.TakeDamage(contactDamageAmount);
+                    _cachedPlayerDamageable = target.GetComponent<IDamageable>();
+                    if (_cachedPlayerDamageable == null)
+                        _cachedPlayerDamageable = target.GetComponentInParent<IDamageable>();
+                    _playerDamageableCached = true;
+                }
+                
+                if (_cachedPlayerDamageable != null)
+                {
+                    _cachedPlayerDamageable.TakeDamage(contactDamageAmount);
                     contactDamageCooldown = contactDamageRate;
                     
                     if (debugLog)

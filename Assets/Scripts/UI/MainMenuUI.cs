@@ -199,22 +199,23 @@ public class MainMenuUI : MonoBehaviour
     /// </summary>
     private void OnPlayClicked()
     {
+        // Ensure GameSessionManager exists before setting data
+        GameSessionManager.EnsureExists();
+        
         if (selectedTalent != null)
         {
-            // Talent selected - start game with that talent
+            // Store talent in GameSessionManager (persists across scene load)
+            GameSessionManager.Instance.StartingTalent = selectedTalent;
             Debug.Log($"[MainMenuUI] Play clicked with talent: {selectedTalent.talentName}");
-            PlayerPrefs.SetString(QUICK_PLAY_TALENT_KEY, selectedTalent.talentName);
-            PlayerPrefs.SetInt(QUICK_PLAY_MODE_KEY, 1); // Playing with selected talent
         }
         else
         {
-            // No talent selected - start game without talent (normal mode)
+            // No talent selected - clear any previous selection
+            if (GameSessionManager.Instance != null)
+                GameSessionManager.Instance.StartingTalent = null;
             Debug.Log("[MainMenuUI] Play clicked without talent - starting normal mode");
-            PlayerPrefs.DeleteKey(QUICK_PLAY_TALENT_KEY);
-            PlayerPrefs.SetInt(QUICK_PLAY_MODE_KEY, 0); // Normal mode, no talent
         }
         
-        PlayerPrefs.Save();
         SceneManager.LoadScene(gameSceneName);
     }
 

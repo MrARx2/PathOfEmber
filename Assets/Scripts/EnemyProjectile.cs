@@ -79,14 +79,19 @@ public class EnemyProjectile : MonoBehaviour
     private float[] initialTrailWidths;
 
     public int Damage => damage;
+    
+    // Cached flag to prevent re-initialization
+    private bool _isInitialized = false;
 
-    private void OnEnable()
+    private void Awake()
     {
-        lifeTimer = lifetime;
-        isFadingOut = false;
+        // One-time initialization - cache all components
+        if (_isInitialized) return;
+        _isInitialized = true;
         
-        if (rb == null) rb = GetComponent<Rigidbody>();
+        rb = GetComponent<Rigidbody>();
         
+        // Cache colliders once
         var cols = GetComponentsInChildren<Collider>();
         for (int i = 0; i < cols.Length; i++)
         {
@@ -100,18 +105,17 @@ public class EnemyProjectile : MonoBehaviour
             rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
         }
 
-        // Cache components for fade effect
+        // Cache renderers and trails ONCE (expensive GetComponentsInChildren)
         renderers = GetComponentsInChildren<Renderer>();
         trails = GetComponentsInChildren<TrailRenderer>();
         initialScale = transform.localScale;
         
-        // Cache shrink target initial scale and emission
+        // Cache shrink target
         if (shrinkTarget != null)
         {
             shrinkTargetInitialScale = shrinkTarget.localScale;
             shrinkTargetRenderer = shrinkTarget.GetComponent<Renderer>();
             
-            // Cache initial emission color
             if (shrinkTargetRenderer != null && shrinkTargetRenderer.material.HasProperty("_EmissionColor"))
             {
                 shrinkTargetInitialEmission = shrinkTargetRenderer.material.GetColor("_EmissionColor");
@@ -144,8 +148,52 @@ public class EnemyProjectile : MonoBehaviour
             SetupBeautifulTrail();
         }
         
-        // Apply shadow settings to all renderers
+        // Apply shadow settings
         ApplyShadowSettings();
+    }
+
+    private void OnEnable()
+    {
+        // Reset state for pooled reuse (components already cached in Awake)
+        lifeTimer = lifetime;
+        isFadingOut = false;
+        currentBounces = 0;
+        
+        // Ensure Awake ran (in case OnEnable is called before Awake due to pooling)
+        if (!_isInitialized)
+        {
+            Awake();
+        }
+        
+        // Reset scale and colors to initial values
+        transform.localScale = initialScale;
+        if (shrinkTarget != null)
+        {
+            shrinkTarget.localScale = shrinkTargetInitialScale;
+            if (shrinkTargetRenderer != null && shrinkTargetRenderer.material.HasProperty("_EmissionColor"))
+            {
+                shrinkTargetRenderer.material.SetColor("_EmissionColor", shrinkTargetInitialEmission);
+            }
+        }
+        
+        // Reset renderer colors
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null && renderers[i].material != null)
+            {
+                renderers[i].material.color = initialColors[i];
+            }
+        }
+        
+        // Reset trail widths
+        for (int i = 0; i < trails.Length; i++)
+        {
+            if (trails[i] != null)
+            {
+                trails[i].widthMultiplier = initialTrailWidths[i];
+                trails[i].Clear(); // Clear old trail points from previous use
+            }
+        }
     }
     
     private void ApplyShadowSettings()
@@ -287,13 +335,13 @@ public class EnemyProjectile : MonoBehaviour
         float dt = Time.deltaTime;
         float moveDistance = speed * dt;
         
-        // Check for wall collision using SphereCast (walls are solid, not triggers)
+        // Check for wall collision using simple Raycast (much cheaper than SphereCast)
         if (!isFadingOut && wallLayers != 0)
         {
             float lookAhead = Mathf.Max(moveDistance * 2f, 0.5f);
             
             RaycastHit hit;
-            if (Physics.SphereCast(transform.position, 0.1f, moveDir, out hit, lookAhead, wallLayers, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(transform.position, moveDir, out hit, lookAhead, wallLayers, QueryTriggerInteraction.Ignore))
             {
                 // Check if we can bounce
                 if (bounceEnabled && currentBounces < maxBounces)
@@ -318,7 +366,7 @@ public class EnemyProjectile : MonoBehaviour
                     Destroy(vfx, wallHitVFXDuration);
                 }
                 
-                Destroy(gameObject);
+                GracefulDestroy();
                 return;
             }
         }
@@ -410,26 +458,8 @@ public class EnemyProjectile : MonoBehaviour
 
     private IEnumerator FadeOutRoutine()
     {
-        // Detach trails if enabled for lingering effect
-        if (detachTrailOnFade && trails != null)
-        {
-            foreach (var trail in trails)
-            {
-                if (trail != null)
-                {
-                    // Create holder for detached trail
-                    GameObject trailHolder = new GameObject("LingeringTrail");
-                    trailHolder.transform.position = trail.transform.position;
-                    trail.transform.SetParent(trailHolder.transform);
-                    
-                    // Start independent fade
-                    var fader = trailHolder.AddComponent<EnemyTrailFader>();
-                    fader.StartFade(trail, trailLingerDuration);
-                }
-            }
-            // Clear trails array so we don't try to fade them again
-            trails = new TrailRenderer[0];
-        }
+        // NOTE: Trail detachment removed for performance (was allocating new GameObject every fade)
+        // Trails now simply shrink in place which looks just as good
         
         float elapsed = 0f;
         
@@ -452,7 +482,7 @@ public class EnemyProjectile : MonoBehaviour
                 renderers[i].material.color = c;
             }
             
-            // Fade trail width (if not detached)
+            // Fade trail width (attached trails shrink in place)
             if (fadeTrailWidth && trails != null)
             {
                 for (int i = 0; i < trails.Length; i++)
@@ -509,7 +539,27 @@ public class EnemyProjectile : MonoBehaviour
             yield return null;
         }
         
-        Destroy(gameObject);
+        GracefulDestroy();
+    }
+    
+    /// <summary>
+    /// Returns projectile to pool instead of destroying.
+    /// Falls back to Destroy if pool is not available.
+    /// </summary>
+    private void GracefulDestroy()
+    {
+        // Stop any running coroutines
+        StopAllCoroutines();
+        
+        // Return to pool instead of destroying
+        if (ObjectPoolManager.Instance != null)
+        {
+            ObjectPoolManager.Instance.Return(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 }
 
