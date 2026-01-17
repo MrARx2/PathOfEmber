@@ -26,6 +26,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField, Tooltip("Visual effect for active shield")]
     private GameObject shieldEffect;
 
+    [Header("Heal VFX")]
+    [SerializeField, Tooltip("Child GameObject with heal VFX particles (activate/deactivate)")]
+    private GameObject healVFX;
+    [SerializeField, Tooltip("Duration to show heal VFX")]
+    private float healVFXDuration = 2f;
+
     [Header("Fire State")]
     [SerializeField, Tooltip("Is the player currently on fire?")]
     private bool isOnFire = false;
@@ -74,6 +80,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private Coroutine dotCoroutine;
     private Coroutine hitFlashCoroutine;
     private Coroutine fireDamageCoroutine;
+    private Coroutine healVFXCoroutine;
     private float fireDamageMultiplier = 1f; // External sources can modify (e.g., hazard zone depth)
     private int permanentFireSources = 0; // Count of permanent fire sources (HazardZone, Lava)
     private float fireEndTime = 0f; // Time.time when timed fire effects expire
@@ -95,6 +102,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             invulnerabilityEffect.SetActive(false);
         if (fireEffect != null)
             fireEffect.SetActive(false);
+        if (healVFX != null)
+            healVFX.SetActive(false);
         
         // Cache only MeshRenderers and SkinnedMeshRenderers for emission flash
         // Exclude ParticleSystemRenderer, TrailRenderer, LineRenderer, etc.
@@ -238,6 +247,14 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         // Play heal sound
         if (healSound != null && AudioManager.Instance != null)
             AudioManager.Instance.Play(healSound);
+
+        // Activate heal VFX
+        if (healVFX != null)
+        {
+            if (healVFXCoroutine != null)
+                StopCoroutine(healVFXCoroutine);
+            healVFXCoroutine = StartCoroutine(HealVFXRoutine());
+        }
 
         OnHeal?.Invoke(amount);
         UpdateHealthBar();
@@ -515,6 +532,14 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     }
 
     public Transform GetTransform() => transform;
+
+    private IEnumerator HealVFXRoutine()
+    {
+        healVFX.SetActive(true);
+        yield return new WaitForSeconds(healVFXDuration);
+        healVFX.SetActive(false);
+        healVFXCoroutine = null;
+    }
 
     #region Emission Helpers
     private IEnumerator HitFlashRoutine()

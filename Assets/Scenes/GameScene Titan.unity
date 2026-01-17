@@ -4545,7 +4545,6 @@ MonoBehaviour:
   wheelVerticalOffset: 0
   wheelForwardDistance: 3
   wheelDefaultRotation: {x: 90, y: 0, z: 0}
-  fadeDuration: 0.3
 --- !u!114 &1246689978
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4566,12 +4565,10 @@ MonoBehaviour:
   wheel1NameText: {fileID: 0}
   wheel2TalentIcon: {fileID: 0}
   wheel2NameText: {fileID: 0}
-  commonButtonLeft: {fileID: 227616226}
-  commonButtonRight: {fileID: 0}
-  rareButtonLeft: {fileID: 0}
-  rareButtonRight: {fileID: 0}
-  legendaryButtonLeft: {fileID: 0}
-  legendaryButtonRight: {fileID: 0}
+  buttonLeft: {fileID: 0}
+  buttonRight: {fileID: 0}
+  talentNameLeft: {fileID: 0}
+  talentNameRight: {fileID: 0}
   wheel1RarityGlow: {fileID: 0}
   wheel2RarityGlow: {fileID: 0}
   commonColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
@@ -4580,7 +4577,10 @@ MonoBehaviour:
   OnTalentSelected:
     m_PersistentCalls:
       m_Calls: []
-  cameraSetup: {fileID: 0}
+  prayerWheelDisplay: {fileID: 0}
+  buttonYOffset: 100
+  systemsCanvasToHide: {fileID: 0}
+  selectionSound: {fileID: 0}
 --- !u!1 &1282017256
 GameObject:
   m_ObjectHideFlags: 0

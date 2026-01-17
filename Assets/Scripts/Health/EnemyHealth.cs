@@ -551,20 +551,13 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             navAgent.enabled = false;
         }
         
-        // Grant XP to player and show XP popup
+        // Spawn coins (XP is granted when coins are collected)
         // Hazard kills grant 50% XP, player kills grant full XP
-        if (XPSystem.Instance != null && xpReward > 0)
+        if (CoinManager.Instance != null && xpReward > 0)
         {
             float xpMultiplier = (lastDamageSource == DamageSource.Hazard) ? 0.5f : 1.0f;
             int xpToGrant = Mathf.RoundToInt(xpReward * xpMultiplier);
-            
-            XPSystem.Instance.AddXP(xpToGrant);
-            
-            // Show XP popup at enemy position
-            if (PopupManager.Instance != null)
-            {
-                PopupManager.Instance.ShowXP(xpToGrant, VisualCenter);
-            }
+            CoinManager.Instance.SpawnCoins(VisualCenter, xpToGrant);
         }
         
         // Invoke death event (for external listeners like HealthBarManager)

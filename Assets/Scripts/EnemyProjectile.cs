@@ -32,10 +32,6 @@ public class EnemyProjectile : MonoBehaviour
     private Transform shrinkTarget;
     [SerializeField, Tooltip("Fade out trail width during fade")]
     private bool fadeTrailWidth = true;
-    [SerializeField, Tooltip("Detach trail for lingering effect (disable for slimmer attached trail)")]
-    private bool detachTrailOnFade = false;
-    [SerializeField, Tooltip("Duration for detached trail to linger (only if detach enabled)")]
-    private float trailLingerDuration = 0.4f;
 
 
     [Header("Trail Enhancement (Optional)")]
