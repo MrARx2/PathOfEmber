@@ -16,6 +16,12 @@ public class CoinManager : MonoBehaviour
     [Header("Pool Settings")]
     [SerializeField] private int initialPoolSize = 50;
     
+    [Header("Target Settings")]
+    [SerializeField, Tooltip("Optional: Specific bone/transform for coins to target (e.g., Spine2). Auto-detects mixamorig:Spine2 if empty.")]
+    private Transform coinTargetOverride;
+    [SerializeField, Tooltip("Bone name to search for if no override set")]
+    private string targetBoneName = "mixamorig:Spine2";
+    
     [Header("Spawn Tiers")]
     [SerializeField, Tooltip("XP threshold for quick fountain (1 second)")]
     private int quickFountainThreshold = 31;
@@ -37,6 +43,7 @@ public class CoinManager : MonoBehaviour
     
     private Queue<Coin> coinPool = new Queue<Coin>();
     private Transform playerTransform;
+    private Transform coinTarget; // The actual target for coins (bone or player root)
     private Transform poolContainer;
     
     private void Awake()
@@ -65,7 +72,48 @@ public class CoinManager : MonoBehaviour
         if (player != null)
         {
             playerTransform = player.transform;
+            
+            // Determine coin target
+            if (coinTargetOverride != null)
+            {
+                coinTarget = coinTargetOverride;
+                if (debugLog)
+                    Debug.Log($"[CoinManager] Using override target: {coinTarget.name}");
+            }
+            else
+            {
+                // Try to find the specified bone
+                coinTarget = FindBoneRecursive(playerTransform, targetBoneName);
+                
+                if (coinTarget != null)
+                {
+                    if (debugLog)
+                        Debug.Log($"[CoinManager] Found bone target: {coinTarget.name}");
+                }
+                else
+                {
+                    // Fallback to player root
+                    coinTarget = playerTransform;
+                    if (debugLog)
+                        Debug.Log($"[CoinManager] Bone '{targetBoneName}' not found, using player root");
+                }
+            }
         }
+    }
+    
+    private Transform FindBoneRecursive(Transform parent, string boneName)
+    {
+        if (parent.name == boneName)
+            return parent;
+        
+        foreach (Transform child in parent)
+        {
+            Transform found = FindBoneRecursive(child, boneName);
+            if (found != null)
+                return found;
+        }
+        
+        return null;
     }
     
     private void InitializePool()
@@ -228,6 +276,6 @@ public class CoinManager : MonoBehaviour
     {
         Coin coin = GetCoin();
         coin.transform.position = position;
-        coin.Initialize(xpValue, explosionDir, playerTransform);
+        coin.Initialize(xpValue, explosionDir, coinTarget);
     }
 }

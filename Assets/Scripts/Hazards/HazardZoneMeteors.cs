@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Hazards
 {
@@ -81,6 +82,18 @@ namespace Hazards
         
         [SerializeField, Tooltip("Fire damage multiplier at maximum depth (passed to PlayerHealth).")]
         private float maxDepthFireDamageMultiplier = 2.0f;
+        
+        [Header("=== POST PROCESS VOLUME ===")]
+        [SerializeField, Tooltip("Post-process volume to control based on depth.")]
+        private Volume hazardVolume;
+        
+        [SerializeField, Tooltip("Volume weight at zone edge (depth = 0).")]
+        [Range(0f, 1f)]
+        private float volumeWeightMin = 0.3f;
+        
+        [SerializeField, Tooltip("Volume weight at maximum depth (depth = 1).")]
+        [Range(0f, 1f)]
+        private float volumeWeightMax = 1.0f;
 
         [Header("=== ZONE CONFIGURATION ===")]
         [SerializeField, Tooltip("Which axis defines 'depth' into the zone.")]
@@ -227,6 +240,12 @@ namespace Hazards
                     
                     _playerHealth.SetFireDamageMultiplier(depthMultiplier * resistanceMultiplier);
                 }
+                
+                // Update post-process volume weight based on depth
+                if (hazardVolume != null)
+                {
+                    hazardVolume.weight = Mathf.Lerp(volumeWeightMin, volumeWeightMax, _currentDepth);
+                }
             }
 
             // Handle meteor spawning (continuous per-second approach)
@@ -304,6 +323,12 @@ namespace Hazards
             if (_playerHealth != null)
             {
                 _playerHealth.SetOnFire(false);
+            }
+            
+            // Reset volume weight when exiting zone
+            if (hazardVolume != null)
+            {
+                hazardVolume.weight = 0f;
             }
         }
 

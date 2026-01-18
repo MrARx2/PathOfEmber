@@ -261,11 +261,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Coin
   explosionForce: 8
   explosionDuration: 0.6
-  upwardBias: 0.8
-  hoverDuration: 0.1
+  upwardBias: 1
+  hoverDuration: 0.05
   attractSpeed: 20
   accelerationRate: 30
-  collectDistance: 0.3
+  collectDistance: 0.5
   collectScalePop: 1.5
   scalePopDuration: 0.08
   pickupSound: {fileID: 11400000, guid: c210889a7cbaca0489310ae442862972, type: 2}
@@ -284,7 +284,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3

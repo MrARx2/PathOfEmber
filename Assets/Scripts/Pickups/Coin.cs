@@ -133,15 +133,18 @@ public class Coin : MonoBehaviour
     
     private void UpdateAttraction()
     {
-        Vector3 targetPos = playerTransform.position + Vector3.up * 0.5f;
-        Vector3 direction = (targetPos - transform.position).normalized;
+        // Target the exact position (no offset - we're targeting Hips bone now)
+        Vector3 targetPos = playerTransform.position;
         float distance = Vector3.Distance(transform.position, targetPos);
         
-        // Accelerate as we get closer
+        // Accelerate over time
         currentSpeed += accelerationRate * Time.deltaTime;
         
-        // Move toward player
-        transform.position += direction * currentSpeed * Time.deltaTime;
+        // Calculate move distance, but don't overshoot
+        float moveDistance = currentSpeed * Time.deltaTime;
+        
+        // Use MoveTowards to prevent overshooting
+        transform.position = Vector3.MoveTowards(transform.position, targetPos, moveDistance);
         
         // Check for collection - start scale pop
         if (distance <= collectDistance)
@@ -173,12 +176,12 @@ public class Coin : MonoBehaviour
         float scaleMult = 1f + (collectScalePop - 1f) * Mathf.Sin(t * Mathf.PI);
         transform.localScale = originalScale * scaleMult;
         
-        // Continue moving toward player during pop
+        // Continue moving toward target during pop (using MoveTowards)
         if (playerTransform != null)
         {
-            Vector3 targetPos = playerTransform.position + Vector3.up * 0.5f;
-            Vector3 direction = (targetPos - transform.position).normalized;
-            transform.position += direction * currentSpeed * Time.deltaTime;
+            Vector3 targetPos = playerTransform.position;
+            float moveDistance = currentSpeed * Time.deltaTime;
+            transform.position = Vector3.MoveTowards(transform.position, targetPos, moveDistance);
         }
     }
     
