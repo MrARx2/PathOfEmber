@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using Hazards;
+using Audio;
 
 /// <summary>
 /// Simplified meteor for potion talents. No warning phase.
@@ -37,6 +38,10 @@ public class EffectMeteor : MonoBehaviour
     [Header("Color Tints")]
     [SerializeField] private Color freezeColor = new Color(0.2f, 0.8f, 1f, 1f); // Cyan
     [SerializeField] private Color venomColor = new Color(0.6f, 0.2f, 0.8f, 1f); // Purple
+    
+    [Header("Sound Effects")]
+    [SerializeField, Tooltip("Sound when meteor impacts (always plays on hit)")]
+    private SoundEvent impactSound;
     
     [Header("Debug")]
     [SerializeField] private bool debugLog = false;
@@ -133,6 +138,12 @@ public class EffectMeteor : MonoBehaviour
     
     private void ApplyImpactDamageAndEffect()
     {
+        // Play impact sound first (always plays, even if enemy dies from hit)
+        if (impactSound != null && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayAtPosition(impactSound, impactPosition);
+        }
+        
         Collider[] hits = Physics.OverlapSphere(impactPosition, impactRadius, damageLayer);
         
         foreach (Collider hit in hits)

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
+using Audio;
 
 /// <summary>
 /// Main menu UI controller with Shop, Play, and Talent Roll buttons.
@@ -43,6 +44,13 @@ public class MainMenuUI : MonoBehaviour
     
     [SerializeField, Tooltip("Reference to the TalentDatabase for random talent selection")]
     private TalentDatabase talentDatabase;
+
+    [Header("Sound Effects")]
+    [SerializeField, Tooltip("Sound played when clicking Roll Talent button")]
+    private SoundEvent rollClickSound;
+    
+    [SerializeField, Tooltip("Sound played when clicking Play button")]
+    private SoundEvent playClickSound;
 
     // The currently selected talent (null until first roll)
     private TalentData selectedTalent;
@@ -189,6 +197,12 @@ public class MainMenuUI : MonoBehaviour
     /// </summary>
     private void OnRollTalentClicked()
     {
+        // Play click sound
+        if (rollClickSound != null && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.Play(rollClickSound);
+        }
+        
         RollRandomTalent();
         Debug.Log("[MainMenuUI] Roll button clicked - talent rolled, waiting for Play");
     }
@@ -199,6 +213,18 @@ public class MainMenuUI : MonoBehaviour
     /// </summary>
     private void OnPlayClicked()
     {
+        // Play click sound
+        if (playClickSound != null && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.Play(playClickSound);
+        }
+        
+        // Stop main menu music before transitioning
+        if (AudioManager.Instance != null && AudioManager.Instance.IsBGMPlaying)
+        {
+            AudioManager.Instance.StopBGM();
+        }
+        
         if (selectedTalent != null)
         {
             // Talent selected - start game with that talent

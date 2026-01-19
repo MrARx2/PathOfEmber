@@ -208,6 +208,10 @@ PrefabInstance:
       propertyPath: fireHurtSound
       value: 
       objectReference: {fileID: 11400000, guid: 24f0f976ab45d844bb2384bfe5d8bd6f, type: 2}
+    - target: {fileID: 6742299797560581123, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
+      propertyPath: invulnerabilitySound
+      value: 
+      objectReference: {fileID: 11400000, guid: 2cb093da0ed6f7449b4c4c0e882e2fa9, type: 2}
     - target: {fileID: 8101401498753084112, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
       propertyPath: m_Mass
       value: 1
@@ -750,7 +754,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.18431373}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1589,12 +1593,16 @@ PrefabInstance:
       value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 1681347285293982752, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
+      propertyPath: spinEndSound
+      value: 
+      objectReference: {fileID: 11400000, guid: fe6c06753063e194d93d76c2894168a3, type: 2}
+    - target: {fileID: 1681347285293982752, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
       propertyPath: spinSoundRare
       value: 
       objectReference: {fileID: 11400000, guid: c66c7c23efdda6a45ba64e35c62608ee, type: 2}
     - target: {fileID: 1681347285293982752, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
       propertyPath: useDebugRarity
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1681347285293982752, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
       propertyPath: rareTintColor.b
@@ -6384,7 +6392,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.18431373}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -7159,7 +7167,7 @@ AudioSource:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1980788521}
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
@@ -7256,7 +7264,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1980788521}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 061d193d436f42d45b459312396c36ff, type: 3}
   m_Name: 
@@ -7264,8 +7272,8 @@ MonoBehaviour:
   windSound: {fileID: 11400000, guid: b826b6e4620aceb4caccf763093f63b1, type: 2}
   minSpeed: 0.5
   maxSpeed: 1.8
-  minVolume: 0.05
-  maxVolume: 0.02
+  minVolume: 0.02
+  maxVolume: 0.05
   attackTime: 0.5
   releaseTime: 0.3
   minPitch: 0.9

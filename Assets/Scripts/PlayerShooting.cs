@@ -188,7 +188,19 @@ public class PlayerShooting : MonoBehaviour
         if (targetRefreshTimer <= 0f)
         {
             targetRefreshTimer = targetRefreshInterval;
-            currentTarget = FindNearestEnemyInRange();
+            Transform newTarget = FindNearestEnemyInRange();
+            
+            // If target changed, check if new target is a Titan socket and show its health bar
+            if (newTarget != currentTarget && newTarget != null)
+            {
+                var titanSocket = newTarget.GetComponent<Boss.TitanTargetSocket>();
+                if (titanSocket != null && titanSocket.HealthPart != null)
+                {
+                    titanSocket.HealthPart.ShowHealthBar();
+                }
+            }
+            
+            currentTarget = newTarget;
         }
 
         bool isMoving = movement != null && movement.IsMoving;

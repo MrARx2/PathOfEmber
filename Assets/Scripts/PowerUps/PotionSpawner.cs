@@ -1,4 +1,5 @@
 using UnityEngine;
+using Audio;
 
 /// <summary>
 /// Manages potion spawning for Freeze, Venom, and Invulnerability Potion talents.
@@ -38,6 +39,14 @@ public class PotionSpawner : MonoBehaviour
     private float spawnHeight = 0.5f;
     [SerializeField, Tooltip("Random variance added to spawn interval (+/- this value)")]
     private float spawnTimeVariance = 2f;
+    
+    [Header("Spawn Sound Effects")]
+    [SerializeField, Tooltip("Sound when freeze potion spawns/falls")]
+    private SoundEvent freezeSpawnSound;
+    [SerializeField, Tooltip("Sound when venom potion spawns/falls")]
+    private SoundEvent venomSpawnSound;
+    [SerializeField, Tooltip("Sound when invulnerability potion spawns")]
+    private SoundEvent invulnerabilitySpawnSound;
     
     [Header("Debug")]
     [SerializeField] private bool debugLog = false;
@@ -128,6 +137,18 @@ public class PotionSpawner : MonoBehaviour
         Vector3 spawnPos = playerTransform.position + new Vector3(randomCircle.x, spawnHeight, randomCircle.y);
         
         GameObject potion = Instantiate(prefab, spawnPos, Quaternion.identity);
+        
+        // Play spawn sound based on type
+        if (AudioManager.Instance != null)
+        {
+            SoundEvent soundToPlay = null;
+            if (type == "Freeze") soundToPlay = freezeSpawnSound;
+            else if (type == "Venom") soundToPlay = venomSpawnSound;
+            else if (type == "Invulnerability") soundToPlay = invulnerabilitySpawnSound;
+            
+            if (soundToPlay != null)
+                AudioManager.Instance.PlayAtPosition(soundToPlay, spawnPos);
+        }
         
         if (debugLog)
             Debug.Log($"[PotionSpawner] Spawned {type} potion at {spawnPos}");

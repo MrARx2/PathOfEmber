@@ -91,6 +91,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private SoundEvent hitSound;
     [SerializeField, Tooltip("Sound when enemy dies")]
     private SoundEvent deathSound;
+    [SerializeField, Tooltip("Sound when enemy is frozen")]
+    private SoundEvent freezeSound;
+    [SerializeField, Tooltip("Sound when enemy is poisoned/venomed")]
+    private SoundEvent venomSound;
 
     private bool isDead = false;
     private bool isInvulnerable = false;
@@ -423,6 +427,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         // Apply venom tint
         isVenomed = true;
         ApplyTint(venomTintColor);
+        
+        // Play venom sound
+        if (venomSound != null && AudioManager.Instance != null)
+            AudioManager.Instance.PlayAtPosition(venomSound, VisualCenter);
 
         for (int i = 0; i < totalTicks; i++)
         {
@@ -471,6 +479,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private IEnumerator FreezeRoutine(float duration)
     {
         isFrozen = true;
+
+        // Play freeze sound
+        if (freezeSound != null && AudioManager.Instance != null)
+            AudioManager.Instance.PlayAtPosition(freezeSound, VisualCenter);
 
         // Apply freeze tint
         ApplyTint(freezeTintColor);

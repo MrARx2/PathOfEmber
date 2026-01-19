@@ -235,6 +235,17 @@ namespace Audio
         }
         
         /// <summary>
+        /// Plays a SoundEvent and returns the AudioSource for direct control.
+        /// Useful when you need to modify volume during playback.
+        /// </summary>
+        public AudioSource PlayAndGetSource(SoundEvent soundEvent, float initialVolume = 1f)
+        {
+            if (soundEvent == null || !soundEvent.IsValid) return null;
+            
+            return PlayInternalWithReturn(soundEvent, Vector3.zero, false, initialVolume);
+        }
+        
+        /// <summary>
         /// Plays a SoundEvent at a world position (3D).
         /// </summary>
         public void PlayAtPosition(SoundEvent soundEvent, Vector3 position)
@@ -363,6 +374,67 @@ namespace Audio
             _lastPlayTime[soundEvent] = Time.time;
             
             if (debugLog) Debug.Log($"[AudioManager] Playing: {soundEvent.name} ({clip.name})");
+        }
+        
+        /// <summary>
+        /// Same as PlayInternal but returns the AudioSource for caller control.
+        /// </summary>
+        private AudioSource PlayInternalWithReturn(SoundEvent soundEvent, Vector3 position, bool use3D, float volumeMultiplier = 1f)
+        {
+            // Skip cooldown check for this version (caller manages timing)
+            
+            // Get source from pool
+            AudioSource source = GetAvailableSource();
+            if (source == null)
+            {
+                if (debugLog) Debug.LogWarning("[AudioManager] No available audio sources in pool!");
+                return null;
+            }
+            
+            // Configure source
+            AudioClip clip = soundEvent.GetClip();
+            source.clip = clip;
+            source.volume = soundEvent.GetVolume() * volumeMultiplier;
+            source.pitch = soundEvent.GetPitch();
+            source.loop = soundEvent.loop;
+            source.spatialBlend = use3D ? soundEvent.spatialBlend : 0f;
+            source.minDistance = soundEvent.minDistance;
+            source.maxDistance = soundEvent.maxDistance;
+            source.outputAudioMixerGroup = soundEvent.mixerGroup != null ? soundEvent.mixerGroup : defaultSFXGroup;
+            
+            if (use3D)
+            {
+                source.transform.position = position;
+            }
+            
+            source.Play();
+            
+            // Store original pitch for time-based adjustment
+            _originalPitches[source] = soundEvent.GetPitch();
+            
+            // Track if this source should be affected by time slowdown
+            if (soundEvent.affectedByTimeSlowdown)
+            {
+                _timeAffectedSources.Add(source);
+            }
+            else
+            {
+                _timeAffectedSources.Remove(source);
+            }
+            
+            // Track instance
+            if (soundEvent.maxInstances > 0)
+            {
+                if (!_activeInstances.ContainsKey(soundEvent))
+                {
+                    _activeInstances[soundEvent] = new List<AudioSource>();
+                }
+                _activeInstances[soundEvent].Add(source);
+            }
+            
+            if (debugLog) Debug.Log($"[AudioManager] Playing (with return): {soundEvent.name} ({clip.name})");
+            
+            return source;
         }
         
         private AudioSource GetAvailableSource()

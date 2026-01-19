@@ -15,9 +15,12 @@ MonoBehaviour:
   clips:
   - {fileID: 8300000, guid: 7cffd2fffdc8d984ebe83917fc8b30b3, type: 3}
   volume: 1
+  randomizeVolume: 0
+  volumeVariation: 0.1
   pitch: 1
   randomizePitch: 0
   pitchVariation: 0.1
+  loop: 1
   mixerGroup: {fileID: 4846871184643591485, guid: 192a397c5486ee64b9f6be8c47dcef29, type: 2}
   maxInstances: 1
   stealMode: 1
@@ -25,3 +28,4 @@ MonoBehaviour:
   spatialBlend: 1
   minDistance: 1
   maxDistance: 5
+  affectedByTimeSlowdown: 1

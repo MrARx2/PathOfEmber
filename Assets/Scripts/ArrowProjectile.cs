@@ -111,6 +111,7 @@ public class ArrowProjectile : MonoBehaviour
     {
         lifeTimer = lifetime;
         bounceCount = 0;
+        hasBeenReturned = false; // Reset for pooled reuse
         alreadyHitEnemies.Clear(); // Reset for pooled arrows
         if (rb == null) rb = GetComponent<Rigidbody>();
         
@@ -445,12 +446,17 @@ public class ArrowProjectile : MonoBehaviour
         return ((1 << layer) & wallLayers) != 0;
     }
     
+    private bool hasBeenReturned = false;
+
     /// <summary>
     /// Returns the arrow to the pool for reuse (no allocation).
     /// Falls back to Destroy if pool is not available.
     /// </summary>
     private void GracefulDestroy()
     {
+        if (hasBeenReturned) return;
+        hasBeenReturned = true;
+        
         // Clear trails before returning to pool
         ClearTrails();
         

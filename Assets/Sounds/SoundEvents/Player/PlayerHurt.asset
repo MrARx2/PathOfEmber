@@ -16,9 +16,9 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 682e52a506e918c40855893b84c26f01, type: 3}
   - {fileID: 8300000, guid: 2fd5b9aa35defb84d8a92adc8cc6ccfe, type: 3}
   - {fileID: 8300000, guid: 64c75754bd0cbd3479735af6aa821f5d, type: 3}
-  volume: 1
-  randomizeVolume: 0
-  volumeVariation: 0.1
+  volume: 0.8
+  randomizeVolume: 1
+  volumeVariation: 0.2
   pitch: 1
   randomizePitch: 1
   pitchVariation: 0.1
@@ -30,3 +30,4 @@ MonoBehaviour:
   spatialBlend: 0
   minDistance: 1
   maxDistance: 5
+  affectedByTimeSlowdown: 1
