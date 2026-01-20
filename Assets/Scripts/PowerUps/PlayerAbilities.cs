@@ -97,6 +97,13 @@ public class PlayerAbilities : MonoBehaviour
 
     [SerializeField, Tooltip("Triple shot angle spread in degrees")]
     private float tripleShotAngle = 25f;
+    
+    [Header("Status Effect Particles")]
+    [SerializeField, Tooltip("Global scale for freeze particles on enemies")]
+    private float freezeParticleScale = 1f;
+    
+    [SerializeField, Tooltip("Global scale for venom particles on enemies")]
+    private float venomParticleScale = 1f;
     #endregion
 
     #region Calculated Values (Read-only in Inspector)
@@ -108,6 +115,11 @@ public class PlayerAbilities : MonoBehaviour
     #endregion
 
     private bool isInitialized = false;
+    
+    // Singleton for global access to particle scales
+    public static PlayerAbilities Instance { get; private set; }
+    public float FreezeParticleScale => freezeParticleScale;
+    public float VenomParticleScale => venomParticleScale;
 
     #region Public Properties
     public bool HasPiercing => piercingStacks > 0;
@@ -137,6 +149,8 @@ public class PlayerAbilities : MonoBehaviour
 
     private void Awake()
     {
+        Instance = this;
+        
         // Auto-wire references if not set
         if (playerMovement == null)
             playerMovement = GetComponent<PlayerMovement>();

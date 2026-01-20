@@ -41,6 +41,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private float destroyDelay = 0.5f;
     [SerializeField, Tooltip("Optional VFX prefab to spawn on death")]
     private GameObject deathVFXPrefab;
+    [SerializeField, Tooltip("Heart pickup prefab (heals player)")]
+    private GameObject heartPickupPrefab;
+    [SerializeField, Range(0f, 1f), Tooltip("Chance to spawn heart on death (0.1 = 10%)")]
+    private float heartDropChance = 0.1f;
 
     [Header("Freeze Settings")]
     [SerializeField, Tooltip("Time enemy cannot be frozen again after unfreeze")]
@@ -109,6 +113,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private bool isStaggered = false;
     private Vector3 knockbackVelocity = Vector3.zero;
     private DamageSource lastDamageSource = DamageSource.Player;
+    
+    // Status effect particles (auto-found by name)
+    private GameObject freezeParticles;
+    private GameObject venomParticles;
 
     /// <summary>
     /// Returns the visual center position (modelTransform if set, otherwise this transform).
@@ -159,6 +167,14 @@ public class EnemyHealth : MonoBehaviour, IDamageable
                 hadEmissionEnabled[i] = renderers[i].material.IsKeywordEnabled("_EMISSION");
             }
         }
+        
+        // Find status effect particle children (recursive search)
+        freezeParticles = FindChildByName(transform, "Freeze_Particles");
+        venomParticles = FindChildByName(transform, "Venom_Particles");
+        
+        // Ensure they start disabled
+        if (freezeParticles != null) freezeParticles.SetActive(false);
+        if (venomParticles != null) venomParticles.SetActive(false);
     }
 
     private void Update()
@@ -420,9 +436,14 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private IEnumerator DamageOverTimeRoutine(int damagePerTick, float tickInterval, int totalTicks)
     {
-        // Apply venom tint
+        // Apply venom tint and particles
         isVenomed = true;
         ApplyTint(venomTintColor);
+        if (venomParticles != null)
+        {
+            ApplyParticleScale(venomParticles, PlayerAbilities.Instance?.VenomParticleScale ?? 1f);
+            venomParticles.SetActive(true);
+        }
 
         for (int i = 0; i < totalTicks; i++)
         {
@@ -430,6 +451,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             {
                 isVenomed = false;
                 ClearTint();
+                if (venomParticles != null) venomParticles.SetActive(false);
                 dotCoroutine = null;
                 yield break;
             }
@@ -437,8 +459,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             yield return new WaitForSeconds(tickInterval);
         }
         
-        // Clear venom tint
+        // Clear venom tint and particles
         isVenomed = false;
+        if (venomParticles != null) venomParticles.SetActive(false);
+        
         if (!isFrozen) // Don't clear if still frozen
         {
             ClearTint();
@@ -472,8 +496,13 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     {
         isFrozen = true;
 
-        // Apply freeze tint
+        // Apply freeze tint and particles
         ApplyTint(freezeTintColor);
+        if (freezeParticles != null)
+        {
+            ApplyParticleScale(freezeParticles, PlayerAbilities.Instance?.FreezeParticleScale ?? 1f);
+            freezeParticles.SetActive(true);
+        }
 
         // Stop animator
         float originalSpeed = 1f;
@@ -508,6 +537,9 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         isFrozen = false;
         freezeImmunityTimer = freezeImmunityDuration;
         freezeCoroutine = null;
+        
+        // Disable freeze particles
+        if (freezeParticles != null) freezeParticles.SetActive(false);
 
         // Clear freeze tint (restore venom tint if still poisoned)
         if (isVenomed)
@@ -558,6 +590,12 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             float xpMultiplier = (lastDamageSource == DamageSource.Hazard) ? 0.5f : 1.0f;
             int xpToGrant = Mathf.RoundToInt(xpReward * xpMultiplier);
             CoinManager.Instance.SpawnCoins(VisualCenter, xpToGrant);
+        }
+        
+        // Chance to spawn heart pickup (10% default)
+        if (heartPickupPrefab != null && Random.value <= heartDropChance)
+        {
+            Instantiate(heartPickupPrefab, VisualCenter, Quaternion.identity);
         }
         
         // Invoke death event (for external listeners like HealthBarManager)
@@ -699,5 +737,33 @@ public class EnemyHealth : MonoBehaviour, IDamageable
                 return true;
         }
         return false;
+    }
+    
+    /// <summary>
+    /// Recursively finds a child GameObject by name anywhere in the hierarchy.
+    /// </summary>
+    private GameObject FindChildByName(Transform parent, string name)
+    {
+        foreach (Transform child in parent)
+        {
+            if (child.name == name)
+                return child.gameObject;
+            
+            GameObject found = FindChildByName(child, name);
+            if (found != null)
+                return found;
+        }
+        return null;
+    }
+    
+    /// <summary>
+    /// Applies a uniform scale to a particle GameObject.
+    /// </summary>
+    private void ApplyParticleScale(GameObject particleObj, float scale)
+    {
+        if (particleObj != null)
+        {
+            particleObj.transform.localScale = Vector3.one * scale;
+        }
     }
 }

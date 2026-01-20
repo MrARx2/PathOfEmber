@@ -577,8 +577,11 @@ public class ArrowProjectile : MonoBehaviour
     /// Returns the arrow to the pool for reuse (no allocation).
     /// Falls back to Destroy if pool is not available.
     /// </summary>
-    private void GracefulDestroy()
+    public void GracefulDestroy()
     {
+        // Guard against double-destroy (can happen from extension zone + main collider)
+        if (!gameObject.activeInHierarchy) return;
+        
         // Clear trails before returning to pool
         ClearTrails();
         

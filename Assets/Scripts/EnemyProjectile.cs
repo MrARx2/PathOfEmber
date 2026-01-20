@@ -51,6 +51,18 @@ public class EnemyProjectile : MonoBehaviour
     [SerializeField, Tooltip("Layers that block the projectile (walls)")] 
     private LayerMask wallLayers;
 
+    [Header("Splash Damage")]
+    [SerializeField, Tooltip("If true, deals AOE damage to player when hitting a wall")]
+    private bool enableWallSplash = false;
+    [SerializeField, Tooltip("Radius of splash damage")]
+    private float splashRadius = 2.5f;
+    [SerializeField, Tooltip("Multiplier for splash damage (relative to direct hit damage)")]
+    private float splashDamageMultiplier = 1.0f;
+    [SerializeField, Tooltip("VFX to spawn for splash damage area")]
+    private GameObject splashVFXPrefab;
+    [SerializeField, Tooltip("Layer mask for splash damage (should include Player)")]
+    private LayerMask splashLayers;
+
     [Header("Wall Bounce Settings")]
     [SerializeField, Tooltip("Maximum number of wall bounces (0 = no bounce, destroy on hit)")]
     private int maxBounces = 0;
@@ -146,6 +158,14 @@ public class EnemyProjectile : MonoBehaviour
         
         // Apply shadow settings
         ApplyShadowSettings();
+        
+        // Default splash layers if not set (find Player layer)
+        if (splashLayers == 0)
+        {
+            int playerLayerIdx = LayerMask.NameToLayer("Player");
+            if (playerLayerIdx != -1)
+                splashLayers = 1 << playerLayerIdx;
+        }
     }
 
     private void OnEnable()
@@ -362,6 +382,12 @@ public class EnemyProjectile : MonoBehaviour
                     Destroy(vfx, wallHitVFXDuration);
                 }
                 
+                // Apply Splash Damage if enabled
+                if (enableWallSplash)
+                {
+                    ApplySplashDamage(hit.point);
+                }
+                
                 GracefulDestroy();
                 return;
             }
@@ -375,6 +401,34 @@ public class EnemyProjectile : MonoBehaviour
             lifeTimer -= dt;
             if (lifeTimer <= 0f)
                 StartFadeOut();
+        }
+    }
+    
+    private void ApplySplashDamage(Vector3 center)
+    {
+        // visual feedback
+        if (splashVFXPrefab != null)
+        {
+            GameObject vfx = Instantiate(splashVFXPrefab, center, Quaternion.identity);
+            Destroy(vfx, 2f);
+        }
+        
+        // logic
+        Collider[] hits = Physics.OverlapSphere(center, splashRadius, splashLayers);
+        foreach (var col in hits)
+        {
+            // Check for Player
+            PlayerHealth player = col.GetComponent<PlayerHealth>();
+            if (player == null) player = col.GetComponentInParent<PlayerHealth>();
+            
+            if (player != null)
+            {
+                // Calculate splash damage
+                int splashDamage = Mathf.RoundToInt(damage * splashDamageMultiplier);
+                if (splashDamage < 1) splashDamage = 1;
+                
+                player.TakeDamage(splashDamage);
+            }
         }
     }
 

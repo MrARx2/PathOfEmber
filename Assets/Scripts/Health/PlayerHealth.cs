@@ -88,6 +88,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private Color[] originalEmissionColors;
     private bool[] hadEmissionEnabled;
     private bool hasHitTrigger = false;
+    private bool hasHealTrigger = false;
 
     public bool IsInvulnerable => isInvulnerable;
     public bool IsDead => isDead;
@@ -150,6 +151,19 @@ public class PlayerHealth : MonoBehaviour, IDamageable
                 if (param.name == hitTrigger && param.type == AnimatorControllerParameterType.Trigger)
                 {
                     hasHitTrigger = true;
+                    break;
+                }
+            }
+        }
+        
+        // Check if animator has heal trigger parameter
+        if (animator != null && !string.IsNullOrEmpty(healTrigger))
+        {
+            foreach (var param in animator.parameters)
+            {
+                if (param.name == healTrigger && param.type == AnimatorControllerParameterType.Trigger)
+                {
+                    hasHealTrigger = true;
                     break;
                 }
             }
@@ -241,7 +255,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         currentHealth += amount;
         if (currentHealth > maxHealth) currentHealth = maxHealth;
 
-        if (animator != null && !string.IsNullOrEmpty(healTrigger))
+        // Only trigger animation if parameter exists
+        if (hasHealTrigger)
             animator.SetTrigger(healTrigger);
 
         // Play heal sound

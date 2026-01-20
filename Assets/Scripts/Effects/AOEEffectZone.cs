@@ -142,6 +142,9 @@ public class AOEEffectZone : MonoBehaviour
         
         ApplyVisualColor();
         
+        // Ensure object is active before starting coroutine
+        gameObject.SetActive(true);
+        
         if (activeRoutine != null)
             StopCoroutine(activeRoutine);
         activeRoutine = StartCoroutine(ActivateRoutine());

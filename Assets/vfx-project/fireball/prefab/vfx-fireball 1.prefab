@@ -14909,8 +14909,6 @@ MonoBehaviour:
   shrinkOnFade: 1
   shrinkTarget: {fileID: 6082799960114829165}
   fadeTrailWidth: 1
-  detachTrailOnFade: 0
-  trailLingerDuration: 0.4
   autoSetupTrail: 0
   trailHeadColor: {r: 1, g: 0.9, b: 0.4, a: 1}
   trailTailColor: {r: 1, g: 0.3, b: 0, a: 0}
@@ -14922,6 +14920,13 @@ MonoBehaviour:
   wallLayers:
     serializedVersion: 2
     m_Bits: 256
+  enableWallSplash: 1
+  splashRadius: 0.5
+  splashDamageMultiplier: 1
+  splashVFXPrefab: {fileID: 0}
+  splashLayers:
+    serializedVersion: 2
+    m_Bits: 8
   maxBounces: 0
   disableShadows: 1
 --- !u!136 &-7790517302508887111
@@ -14943,7 +14948,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.1
+  m_Radius: 0.2
   m_Height: 0.5
   m_Direction: 1
   m_Center: {x: 0, y: 0.1, z: 0}
