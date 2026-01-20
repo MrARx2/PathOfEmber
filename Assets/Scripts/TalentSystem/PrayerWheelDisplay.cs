@@ -22,18 +22,21 @@ public class PrayerWheelDisplay : MonoBehaviour
     [SerializeField, Tooltip("Prefab for static base that spawns with the wheels")]
     private GameObject wheelBasePrefab;
     
-    [SerializeField, Tooltip("Position offset relative to wheel center (between the two wheels)")]
-    private Vector3 basePositionOffset = Vector3.zero;
+    [SerializeField, Tooltip("X = Horizontal Offset. Y = Vertical offset. Z = Forward/Back (positive = toward camera).")]
+    private Vector3 basePositionOffset = new Vector3(0f, -2f, 0f);
     
-    [SerializeField, Tooltip("Rotation offset for the base")]
+    [SerializeField, Tooltip("Rotation offset. Y is added to camera's Y rotation. X and Z are absolute tilts.")]
     private Vector3 baseRotationOffset = Vector3.zero;
 
     [Header("Position Offset")]
     [SerializeField, Tooltip("Distance in front of the camera")]
     private float forwardOffset = 3f;
     
-    [SerializeField, Tooltip("Horizontal spacing between wheels (wheel1 goes left, wheel2 goes right)")]
-    private float horizontalOffset = 1.5f;
+    [SerializeField, Tooltip("Horizontal offset for Wheel 1 (Left)")]
+    private float wheel1HorizontalOffset = 1.5f;
+
+    [SerializeField, Tooltip("Horizontal offset for Wheel 2 (Right)")]
+    private float wheel2HorizontalOffset = 1.5f;
     
     [SerializeField, Tooltip("Shift both wheels left/right together (positive = right)")]
     private float horizontalShift = 0f;
@@ -193,7 +196,18 @@ public class PrayerWheelDisplay : MonoBehaviour
         // Start slowdown if configured (only after initialization to avoid startup issues)
         if (pauseGameWhenVisible && isInitialized)
         {
-            previousTimeScale = Time.timeScale;
+            // Only capture previousTimeScale if it's a reasonable value
+            // If we're showing while time is still slowed (e.g., second wheel after first), use default 1.0
+            if (Time.timeScale > 0.5f)
+            {
+                previousTimeScale = Time.timeScale;
+            }
+            else
+            {
+                // Time is still slowed from previous wheel - use normal speed as target
+                previousTimeScale = 1f;
+                Debug.Log("[PrayerWheelDisplay] Time still slowed, using 1.0 as resume target.");
+            }
             
             if (useSmoothSlowdown)
             {
@@ -281,13 +295,13 @@ public class PrayerWheelDisplay : MonoBehaviour
         // Position wheel 1 (left side) - only position, NO rotation change
         if (prayerWheel1 != null)
         {
-            prayerWheel1.position = basePosition - cameraTransform.right * horizontalOffset;
+            prayerWheel1.position = basePosition - cameraTransform.right * wheel1HorizontalOffset;
         }
 
         // Position wheel 2 (right side) - only position, NO rotation change
         if (prayerWheel2 != null)
         {
-            prayerWheel2.position = basePosition + cameraTransform.right * horizontalOffset;
+            prayerWheel2.position = basePosition + cameraTransform.right * wheel2HorizontalOffset;
         }
 
         // Update base position to stay centered between wheels
@@ -296,35 +310,43 @@ public class PrayerWheelDisplay : MonoBehaviour
 
     private void UpdateBasePosition()
     {
-        if (spawnedBase == null) return;
+        if (spawnedBase == null || cameraTransform == null) return;
         
-        // Calculate center position between the two wheels
-        Vector3 centerPos = Vector3.zero;
-        if (prayerWheel1 != null && prayerWheel2 != null)
-        {
-            centerPos = (prayerWheel1.position + prayerWheel2.position) / 2f;
-        }
-        else if (prayerWheel1 != null)
-        {
-            centerPos = prayerWheel1.position;
-        }
-        else if (prayerWheel2 != null)
-        {
-            centerPos = prayerWheel2.position;
-        }
+        // Calculate anchor position in front of camera (same as wheels started)
+        Vector3 anchorPos = cameraTransform.position + cameraTransform.forward * forwardOffset;
         
-        // Apply position offset and update
-        spawnedBase.transform.position = centerPos + basePositionOffset;
-        spawnedBase.transform.rotation = Quaternion.Euler(baseRotationOffset);
+        // Apply Global Group Offsets (so base moves with the main controls)
+        anchorPos += Vector3.up * verticalOffset;
+        anchorPos += cameraTransform.right * horizontalShift;
+
+        // Apply Base-Specific Offsets
+        // X = Horizontal Offset for Base (New!)
+        anchorPos += cameraTransform.right * basePositionOffset.x;
+        // Y = Vertical Tweak for Base
+        anchorPos += Vector3.up * basePositionOffset.y;
+        // Z = Forward/Back Tweak for Base
+        anchorPos += cameraTransform.forward * basePositionOffset.z;
+
+        spawnedBase.transform.position = anchorPos;
+        
+        // Rotation: match camera's Y rotation (face same direction as camera), then apply offset
+        // This keeps the base facing "forward" like the wheels appear to
+        float cameraYRotation = cameraTransform.eulerAngles.y;
+        spawnedBase.transform.rotation = Quaternion.Euler(
+            baseRotationOffset.x,
+            cameraYRotation + baseRotationOffset.y,
+            baseRotationOffset.z
+        );
     }
 
     /// <summary>
     /// Sets the offset values at runtime and updates positions if visible.
     /// </summary>
-    public void SetOffset(float forward, float horizontal, float vertical)
+    public void SetOffset(float forward, float wheel1Horizontal, float wheel2Horizontal, float vertical)
     {
         forwardOffset = forward;
-        horizontalOffset = horizontal;
+        wheel1HorizontalOffset = wheel1Horizontal;
+        wheel2HorizontalOffset = wheel2Horizontal;
         verticalOffset = vertical;
 
         if (isVisible)
@@ -335,10 +357,11 @@ public class PrayerWheelDisplay : MonoBehaviour
 
     /// <summary>
     /// Gets the current offset values.
+    /// Returns (Wheel1Horizontal, Wheel2Horizontal, Vertical). Forward is accessed separately or ignored in this packed return.
     /// </summary>
     public Vector3 GetOffset()
     {
-        return new Vector3(horizontalOffset, verticalOffset, forwardOffset);
+        return new Vector3(wheel1HorizontalOffset, wheel2HorizontalOffset, verticalOffset);
     }
 
     private void SetWheelsVisible(bool visible)
@@ -381,35 +404,17 @@ public class PrayerWheelDisplay : MonoBehaviour
         if (wheelBasePrefab == null) return;
         if (spawnedBase != null) return; // Already spawned
         
-        // Calculate center position between the two wheels
-        Vector3 centerPos = Vector3.zero;
-        if (prayerWheel1 != null && prayerWheel2 != null)
-        {
-            centerPos = (prayerWheel1.position + prayerWheel2.position) / 2f;
-        }
-        else if (prayerWheel1 != null)
-        {
-            centerPos = prayerWheel1.position;
-        }
-        else if (prayerWheel2 != null)
-        {
-            centerPos = prayerWheel2.position;
-        }
-        
-        // Apply position offset
-        Vector3 spawnPos = centerPos + basePositionOffset;
-        
-        // Apply rotation offset
-        Quaternion spawnRot = Quaternion.Euler(baseRotationOffset);
-        
-        // Spawn the base
-        spawnedBase = Instantiate(wheelBasePrefab, spawnPos, spawnRot);
+        // Spawn at origin first, UpdateBasePosition will place it correctly
+        spawnedBase = Instantiate(wheelBasePrefab, Vector3.zero, Quaternion.identity);
         spawnedBase.name = "PrayerWheelBase(Spawned)";
         
         // Set to same layer as wheels
         SetLayerRecursive(spawnedBase, wheelLayer);
         
-        Debug.Log($"[PrayerWheelDisplay] Spawned base at {spawnPos}");
+        // Position it correctly relative to camera
+        UpdateBasePosition();
+        
+        Debug.Log($"[PrayerWheelDisplay] Spawned base at {spawnedBase.transform.position}");
     }
 
     private void DestroyBase()

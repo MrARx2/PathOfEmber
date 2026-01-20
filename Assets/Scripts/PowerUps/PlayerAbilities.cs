@@ -32,17 +32,19 @@ public class PlayerAbilities : MonoBehaviour
 
     #region Rare Abilities (30% - Blue)
     [Header("Rare Abilities (Blue)")]
-    [SerializeField, Tooltip("Arrows pass through enemies")]
-    private bool hasPiercing = false;
+    [SerializeField, Range(0, 3), Tooltip("Stacks: Arrows pierce enemies. Stack 2+ adds +2s lifetime per enemy hit per stack.")]
+    private int piercingStacks = 0;
+    private const int MAX_PIERCING_STACKS = 3;
 
     [SerializeField, Range(0, 10), Tooltip("Stacks: +1 bounce per stack (0 = no bouncing)")]
     private int bouncingArrowsStacks = 0;
 
-    [SerializeField, Tooltip("Arrows freeze enemies for 1s")]
-    private bool hasFreezeShot = false;
+    [SerializeField, Range(0, 5), Tooltip("Stacks: Arrows freeze enemies. Stack 2+ triggers AOE freeze. Stack 3+=larger radius.")]
+    private int freezeShotStacks = 0;
 
-    [SerializeField, Tooltip("Arrows apply poison DoT")]
-    private bool hasVenomShot = false;
+    [SerializeField, Range(0, 5), Tooltip("Stacks: Arrows apply venom DoT. Stack 2+ triggers AOE venom. Stack 3+=larger radius.")]
+    private int venomShotStacks = 0;
+    private const int MAX_SHOT_STACKS = 5;
 
     [SerializeField, Range(0, 10), Tooltip("Stacks: +1s freeze duration per stack")]
     private int maximumFreezeStacks = 0;
@@ -50,14 +52,15 @@ public class PlayerAbilities : MonoBehaviour
     [SerializeField, Range(0, 10), Tooltip("Stacks: +100 damage/s per stack")]
     private int maximumVenomStacks = 0;
 
-    [SerializeField, Tooltip("Spawns freeze potions that trigger freeze meteors")]
-    private bool hasFreezePotionTalent = false;
+    [SerializeField, Range(0, 4), Tooltip("Stacks: spawns freeze potions. Each stack reduces spawn interval by 2s (min 1s).")]
+    private int freezePotionStacks = 0;
 
-    [SerializeField, Tooltip("Spawns venom potions that trigger venom meteors")]
-    private bool hasVenomPotionTalent = false;
+    [SerializeField, Range(0, 4), Tooltip("Stacks: spawns venom potions. Each stack reduces spawn interval by 2s (min 1s).")]
+    private int venomPotionStacks = 0;
 
-    [SerializeField, Tooltip("Spawns invulnerability potions that give 2s invulnerability")]
-    private bool hasInvulnerabilityPotionTalent = false;
+    [SerializeField, Range(0, 4), Tooltip("Stacks: spawns invulnerability potions. Each stack reduces spawn interval by 2s (min 1s).")]
+    private int invulnerabilityPotionStacks = 0;
+    private const int MAX_POTION_STACKS = 4;
     #endregion
 
     #region Legendary Abilities (10% - Red)
@@ -107,11 +110,14 @@ public class PlayerAbilities : MonoBehaviour
     private bool isInitialized = false;
 
     #region Public Properties
-    public bool HasPiercing => hasPiercing;
+    public bool HasPiercing => piercingStacks > 0;
+    public int PiercingStacks => piercingStacks;
     public bool HasBouncingArrows => bouncingArrowsStacks > 0;
     public int BouncingArrowsStacks => bouncingArrowsStacks;
-    public bool HasFreezeShot => hasFreezeShot;
-    public bool HasVenomShot => hasVenomShot;
+    public bool HasFreezeShot => freezeShotStacks > 0;
+    public int FreezeShotStacks => freezeShotStacks;
+    public bool HasVenomShot => venomShotStacks > 0;
+    public int VenomShotStacks => venomShotStacks;
     public int MultishotStacks => multishotStacks;
     public int TripleshotStacks => tripleshotStacks;
     public bool HasOneTimeShield => hasOneTimeShield;
@@ -121,9 +127,12 @@ public class PlayerAbilities : MonoBehaviour
     public int VenomDamagePerSecond => currentVenomDamagePerSecond;
     public float VenomDuration => venomDuration;
     public float TripleShotAngle => tripleShotAngle;
-    public bool HasFreezePotionTalent => hasFreezePotionTalent;
-    public bool HasVenomPotionTalent => hasVenomPotionTalent;
-    public bool HasInvulnerabilityPotionTalent => hasInvulnerabilityPotionTalent;
+    public bool HasFreezePotionTalent => freezePotionStacks > 0;
+    public bool HasVenomPotionTalent => venomPotionStacks > 0;
+    public bool HasInvulnerabilityPotionTalent => invulnerabilityPotionStacks > 0;
+    public int FreezePotionStacks => freezePotionStacks;
+    public int VenomPotionStacks => venomPotionStacks;
+    public int InvulnerabilityPotionStacks => invulnerabilityPotionStacks;
     #endregion
 
     private void Awake()
@@ -163,7 +172,7 @@ public class PlayerAbilities : MonoBehaviour
             // Sync potion talents with PotionSpawner (handles both enable AND disable)
             if (potionSpawner != null)
             {
-                potionSpawner.SyncWithAbilities(hasFreezePotionTalent, hasVenomPotionTalent, hasInvulnerabilityPotionTalent);
+                potionSpawner.SyncWithAbilities(freezePotionStacks, venomPotionStacks, invulnerabilityPotionStacks);
             }
         }
     }
@@ -257,7 +266,9 @@ public class PlayerAbilities : MonoBehaviour
     // ===== RARE =====
     public void GrantPiercing()
     {
-        hasPiercing = true;
+        if (piercingStacks < MAX_PIERCING_STACKS)
+            piercingStacks++;
+        Debug.Log($"[PlayerAbilities] GrantPiercing: stacks now {piercingStacks}");
     }
 
     public void GrantBouncingArrows()
@@ -267,12 +278,16 @@ public class PlayerAbilities : MonoBehaviour
 
     public void GrantFreezeShot()
     {
-        hasFreezeShot = true;
+        if (freezeShotStacks < MAX_SHOT_STACKS)
+            freezeShotStacks++;
+        Debug.Log($"[PlayerAbilities] GrantFreezeShot: stacks now {freezeShotStacks}");
     }
 
     public void GrantVenomShot()
     {
-        hasVenomShot = true;
+        if (venomShotStacks < MAX_SHOT_STACKS)
+            venomShotStacks++;
+        Debug.Log($"[PlayerAbilities] GrantVenomShot: stacks now {venomShotStacks}");
     }
 
     public void GrantMaximumFreeze()
@@ -289,23 +304,32 @@ public class PlayerAbilities : MonoBehaviour
 
     public void GrantFreezePotionTalent()
     {
-        hasFreezePotionTalent = true;
+        int oldStacks = freezePotionStacks;
+        if (freezePotionStacks < MAX_POTION_STACKS)
+            freezePotionStacks++;
+        Debug.Log($"[PlayerAbilities] GrantFreezePotionTalent: {oldStacks} → {freezePotionStacks}, PotionSpawner: {(potionSpawner != null ? "OK" : "NULL")}");
         if (potionSpawner != null)
-            potionSpawner.EnableFreezePotion();
+            potionSpawner.SetFreezePotionStacks(freezePotionStacks);
     }
 
     public void GrantVenomPotionTalent()
     {
-        hasVenomPotionTalent = true;
+        int oldStacks = venomPotionStacks;
+        if (venomPotionStacks < MAX_POTION_STACKS)
+            venomPotionStacks++;
+        Debug.Log($"[PlayerAbilities] GrantVenomPotionTalent: {oldStacks} → {venomPotionStacks}, PotionSpawner: {(potionSpawner != null ? "OK" : "NULL")}");
         if (potionSpawner != null)
-            potionSpawner.EnableVenomPotion();
+            potionSpawner.SetVenomPotionStacks(venomPotionStacks);
     }
 
     public void GrantInvulnerabilityPotionTalent()
     {
-        hasInvulnerabilityPotionTalent = true;
+        int oldStacks = invulnerabilityPotionStacks;
+        if (invulnerabilityPotionStacks < MAX_POTION_STACKS)
+            invulnerabilityPotionStacks++;
+        Debug.Log($"[PlayerAbilities] GrantInvulnerabilityPotionTalent: {oldStacks} → {invulnerabilityPotionStacks}, PotionSpawner: {(potionSpawner != null ? "OK" : "NULL")}");
         if (potionSpawner != null)
-            potionSpawner.EnableInvulnerabilityPotion();
+            potionSpawner.SetInvulnerabilityPotionStacks(invulnerabilityPotionStacks);
     }
 
     // ===== LEGENDARY =====
@@ -419,19 +443,19 @@ public class PlayerAbilities : MonoBehaviour
         hasOneTimeShield = false;
         maxHpPlusStacks = 0;
         hazardResistanceStacks = 0;
-        hasPiercing = false;
+        piercingStacks = 0;
         bouncingArrowsStacks = 0;
-        hasFreezeShot = false;
-        hasVenomShot = false;
+        freezeShotStacks = 0;
+        venomShotStacks = 0;
         maximumFreezeStacks = 0;
         maximumVenomStacks = 0;
         multishotStacks = 0;
         tripleshotStacks = 0;
         maxHpPlusPlusStacks = 0;
         attackSpeedStacks = 0;
-        hasFreezePotionTalent = false;
-        hasVenomPotionTalent = false;
-        hasInvulnerabilityPotionTalent = false;
+        freezePotionStacks = 0;
+        venomPotionStacks = 0;
+        invulnerabilityPotionStacks = 0;
         if (potionSpawner != null)
             potionSpawner.DisableAllPotions();
         RecalculateAllStats();

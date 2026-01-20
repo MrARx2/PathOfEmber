@@ -64,6 +64,10 @@ public class PrayerWheelUI : MonoBehaviour
     [SerializeField, Tooltip("Canvas to hide during prayer wheel (e.g., enemy health bars, damage numbers)")]
     private Canvas systemsCanvasToHide;
 
+    [Header("Canvas Priority (Input Blocking)")]
+    [SerializeField, Tooltip("Sort order to use when Prayer Wheel is active (higher = receives input first)")]
+    private int activeSortOrder = 100;
+
     [Header("Sound Effects")]
     [SerializeField] private SoundEvent selectionSound;
 
@@ -71,6 +75,7 @@ public class PrayerWheelUI : MonoBehaviour
     private TalentData currentTalent2;
     private PrayerWheelController wheelController;
     private bool isInSelectionMode = false; // Track if buttons need continuous positioning
+    private int originalCanvasSortOrder = 0; // Store original sort order to restore later
 
     private void Awake()
     {
@@ -151,6 +156,14 @@ public class PrayerWheelUI : MonoBehaviour
         if (systemsCanvasToHide != null)
         {
             systemsCanvasToHide.gameObject.SetActive(false);
+        }
+        
+        // Boost this canvas's sort order so it receives input priority over joystick
+        // This allows player to still move (joystick works) but Prayer Wheel buttons take priority
+        if (mainCanvas != null)
+        {
+            originalCanvasSortOrder = mainCanvas.sortingOrder;
+            mainCanvas.sortingOrder = activeSortOrder;
         }
 
         Debug.Log("[PrayerWheelUI] Wheels shown with talents. Waiting for spin trigger.");
@@ -242,8 +255,15 @@ public class PrayerWheelUI : MonoBehaviour
         {
             Camera uiCam = (mainCanvas.renderMode == RenderMode.ScreenSpaceOverlay) ? null : mainCanvas.worldCamera;
             
+            // Get raw screen positions from camera
             Vector3 screenPosLeft = mainCam.WorldToScreenPoint(worldPosLeft);
             Vector3 screenPosRight = mainCam.WorldToScreenPoint(worldPosRight);
+            
+            // Fix: Adjust for camera viewport offset/scale (pillarboxing from ResolutionManager)
+            // When viewport is full (Editor), this returns unchanged coordinates
+            Rect viewport = mainCam.rect;
+            screenPosLeft = ViewportToFullScreenPoint(screenPosLeft, viewport);
+            screenPosRight = ViewportToFullScreenPoint(screenPosRight, viewport);
             
             // Position Left Button
             if (buttonLeft != null && buttonLeft.gameObject.activeSelf)
@@ -281,6 +301,22 @@ public class PrayerWheelUI : MonoBehaviour
             
             // Text stays in fixed canvas position (no dynamic tracking needed since game is paused)
         }
+    }
+
+    /// <summary>
+    /// Converts a screen point from camera viewport space to full screen space.
+    /// Required when camera viewport is not full screen (pillarboxing/letterboxing).
+    /// When viewport is full (x=0, y=0, width=1, height=1), returns unchanged coordinates.
+    /// </summary>
+    private Vector3 ViewportToFullScreenPoint(Vector3 viewportScreenPoint, Rect cameraViewport)
+    {
+        // WorldToScreenPoint returns coordinates relative to the viewport, not full screen
+        // We need to scale and offset to get actual screen coordinates
+        return new Vector3(
+            viewportScreenPoint.x * cameraViewport.width + cameraViewport.x * Screen.width,
+            viewportScreenPoint.y * cameraViewport.height + cameraViewport.y * Screen.height,
+            viewportScreenPoint.z
+        );
     }
 
     private void SetButtonsActive(bool active)
@@ -379,6 +415,12 @@ public class PrayerWheelUI : MonoBehaviour
         if (systemsCanvasToHide != null)
         {
             systemsCanvasToHide.gameObject.SetActive(true);
+        }
+        
+        // Restore original canvas sort order
+        if (mainCanvas != null)
+        {
+            mainCanvas.sortingOrder = originalCanvasSortOrder;
         }
     }
 

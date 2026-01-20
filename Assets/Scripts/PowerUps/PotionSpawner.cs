@@ -8,28 +8,22 @@ using UnityEngine;
 public class PotionSpawner : MonoBehaviour
 {
     [Header("Freeze Potion")]
-    [SerializeField, Tooltip("Enable freeze potion spawning")]
-    private bool freezePotionEnabled = false;
     [SerializeField, Tooltip("Freeze potion prefab to spawn")]
     private GameObject freezePotionPrefab;
     [SerializeField, Tooltip("Base seconds between freeze potion spawns")]
     private float freezeSpawnInterval = 8f;
     
     [Header("Venom Potion")]
-    [SerializeField, Tooltip("Enable venom potion spawning")]
-    private bool venomPotionEnabled = false;
     [SerializeField, Tooltip("Venom potion prefab to spawn")]
     private GameObject venomPotionPrefab;
     [SerializeField, Tooltip("Base seconds between venom potion spawns")]
     private float venomSpawnInterval = 8f;
     
     [Header("Invulnerability Potion")]
-    [SerializeField, Tooltip("Enable invulnerability potion spawning")]
-    private bool invulnerabilityPotionEnabled = false;
     [SerializeField, Tooltip("Invulnerability potion prefab to spawn")]
     private GameObject invulnerabilityPotionPrefab;
     [SerializeField, Tooltip("Base seconds between invulnerability potion spawns")]
-    private float invulnerabilitySpawnInterval = 12f;
+    private float invulnerabilitySpawnInterval = 8f;
     
     [Header("Spawn Settings")]
     [SerializeField, Tooltip("Radius around player to spawn potions")]
@@ -50,6 +44,15 @@ public class PotionSpawner : MonoBehaviour
     private float currentVenomTarget = 0f;
     private float currentInvulnerabilityTarget = 0f;
     
+    // Stack counts (received from PlayerAbilities)
+    private int freezePotionStacks = 0;
+    private int venomPotionStacks = 0;
+    private int invulnerabilityPotionStacks = 0;
+    
+    // Stack-based interval reduction constants
+    private const float INTERVAL_REDUCTION_PER_STACK = 2f;
+    private const float MINIMUM_INTERVAL = 1f;
+    
     private Transform playerTransform;
     
     private void Awake()
@@ -67,8 +70,8 @@ public class PotionSpawner : MonoBehaviour
     
     private void Update()
     {
-        // Freeze potion timer
-        if (freezePotionEnabled && freezePotionPrefab != null)
+        // Freeze potion timer (enabled when stacks > 0)
+        if (freezePotionStacks > 0 && freezePotionPrefab != null)
         {
             freezeTimer += Time.deltaTime;
             if (freezeTimer >= currentFreezeTarget)
@@ -78,8 +81,8 @@ public class PotionSpawner : MonoBehaviour
             }
         }
         
-        // Venom potion timer
-        if (venomPotionEnabled && venomPotionPrefab != null)
+        // Venom potion timer (enabled when stacks > 0)
+        if (venomPotionStacks > 0 && venomPotionPrefab != null)
         {
             venomTimer += Time.deltaTime;
             if (venomTimer >= currentVenomTarget)
@@ -89,8 +92,8 @@ public class PotionSpawner : MonoBehaviour
             }
         }
         
-        // Invulnerability potion timer
-        if (invulnerabilityPotionEnabled && invulnerabilityPotionPrefab != null)
+        // Invulnerability potion timer (enabled when stacks > 0)
+        if (invulnerabilityPotionStacks > 0 && invulnerabilityPotionPrefab != null)
         {
             invulnerabilityTimer += Time.deltaTime;
             if (invulnerabilityTimer >= currentInvulnerabilityTarget)
@@ -101,25 +104,42 @@ public class PotionSpawner : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// Calculates effective spawn interval based on stack count.
+    /// Stack 1 = base interval, each additional stack reduces by 2s, minimum 1s.
+    /// </summary>
+    private float GetEffectiveInterval(float baseInterval, int stacks)
+    {
+        if (stacks <= 0) return baseInterval;
+        float reduction = (stacks - 1) * INTERVAL_REDUCTION_PER_STACK;
+        return Mathf.Max(MINIMUM_INTERVAL, baseInterval - reduction);
+    }
+    
     private void ResetFreezeTimer()
     {
         freezeTimer = 0f;
-        currentFreezeTarget = freezeSpawnInterval + Random.Range(-spawnTimeVariance, spawnTimeVariance);
-        currentFreezeTarget = Mathf.Max(1f, currentFreezeTarget);
+        float effectiveInterval = GetEffectiveInterval(freezeSpawnInterval, freezePotionStacks);
+        currentFreezeTarget = effectiveInterval + Random.Range(-spawnTimeVariance, spawnTimeVariance);
+        currentFreezeTarget = Mathf.Max(MINIMUM_INTERVAL, currentFreezeTarget);
+        if (debugLog) Debug.Log($"[PotionSpawner] Freeze timer reset. Stacks: {freezePotionStacks}, Interval: {effectiveInterval:F1}s, Target: {currentFreezeTarget:F1}s");
     }
     
     private void ResetVenomTimer()
     {
         venomTimer = 0f;
-        currentVenomTarget = venomSpawnInterval + Random.Range(-spawnTimeVariance, spawnTimeVariance);
-        currentVenomTarget = Mathf.Max(1f, currentVenomTarget);
+        float effectiveInterval = GetEffectiveInterval(venomSpawnInterval, venomPotionStacks);
+        currentVenomTarget = effectiveInterval + Random.Range(-spawnTimeVariance, spawnTimeVariance);
+        currentVenomTarget = Mathf.Max(MINIMUM_INTERVAL, currentVenomTarget);
+        if (debugLog) Debug.Log($"[PotionSpawner] Venom timer reset. Stacks: {venomPotionStacks}, Interval: {effectiveInterval:F1}s, Target: {currentVenomTarget:F1}s");
     }
     
     private void ResetInvulnerabilityTimer()
     {
         invulnerabilityTimer = 0f;
-        currentInvulnerabilityTarget = invulnerabilitySpawnInterval + Random.Range(-spawnTimeVariance, spawnTimeVariance);
-        currentInvulnerabilityTarget = Mathf.Max(1f, currentInvulnerabilityTarget);
+        float effectiveInterval = GetEffectiveInterval(invulnerabilitySpawnInterval, invulnerabilityPotionStacks);
+        currentInvulnerabilityTarget = effectiveInterval + Random.Range(-spawnTimeVariance, spawnTimeVariance);
+        currentInvulnerabilityTarget = Mathf.Max(MINIMUM_INTERVAL, currentInvulnerabilityTarget);
+        if (debugLog) Debug.Log($"[PotionSpawner] Invulnerability timer reset. Stacks: {invulnerabilityPotionStacks}, Interval: {effectiveInterval:F1}s, Target: {currentInvulnerabilityTarget:F1}s");
     }
     
     private void SpawnPotion(GameObject prefab, string type)
@@ -135,101 +155,116 @@ public class PotionSpawner : MonoBehaviour
     
     #region Public Methods (Called by PlayerAbilities)
     
-    public void EnableFreezePotion()
+    /// <summary>
+    /// Sets freeze potion stacks. Spawns initial potion on first stack.
+    /// </summary>
+    public void SetFreezePotionStacks(int stacks)
     {
-        freezePotionEnabled = true;
-        ResetFreezeTimer();
+        bool wasDisabled = freezePotionStacks == 0;
+        freezePotionStacks = stacks;
         
-        // Spawn one immediately so player knows what they picked
-        if (freezePotionPrefab != null)
+        if (stacks > 0)
         {
-            SpawnPotion(freezePotionPrefab, "Freeze");
-            if (debugLog) Debug.Log("[PotionSpawner] Spawned initial Freeze potion on talent pickup!");
+            ResetFreezeTimer();
+            
+            // Spawn one immediately on first activation so player knows what they picked
+            if (wasDisabled && freezePotionPrefab != null)
+            {
+                SpawnPotion(freezePotionPrefab, "Freeze");
+                if (debugLog) Debug.Log("[PotionSpawner] Spawned initial Freeze potion on talent pickup!");
+            }
+            
+            if (debugLog) Debug.Log($"[PotionSpawner] Freeze Potion stacks: {stacks}, interval: {GetEffectiveInterval(freezeSpawnInterval, stacks):F1}s");
         }
-        
-        if (debugLog) Debug.Log("[PotionSpawner] Freeze Potion talent activated!");
-    }
-    
-    public void DisableFreezePotion()
-    {
-        freezePotionEnabled = false;
-        freezeTimer = 0f;
-        if (debugLog) Debug.Log("[PotionSpawner] Freeze Potion talent deactivated!");
-    }
-    
-    public void EnableVenomPotion()
-    {
-        venomPotionEnabled = true;
-        ResetVenomTimer();
-        
-        // Spawn one immediately so player knows what they picked
-        if (venomPotionPrefab != null)
+        else
         {
-            SpawnPotion(venomPotionPrefab, "Venom");
-            if (debugLog) Debug.Log("[PotionSpawner] Spawned initial Venom potion on talent pickup!");
+            freezeTimer = 0f;
+            if (debugLog) Debug.Log("[PotionSpawner] Freeze Potion talent deactivated!");
         }
-        
-        if (debugLog) Debug.Log("[PotionSpawner] Venom Potion talent activated!");
-    }
-    
-    public void DisableVenomPotion()
-    {
-        venomPotionEnabled = false;
-        venomTimer = 0f;
-        if (debugLog) Debug.Log("[PotionSpawner] Venom Potion talent deactivated!");
-    }
-    
-    public void EnableInvulnerabilityPotion()
-    {
-        invulnerabilityPotionEnabled = true;
-        ResetInvulnerabilityTimer();
-        
-        // Spawn one immediately so player knows what they picked
-        if (invulnerabilityPotionPrefab != null)
-        {
-            SpawnPotion(invulnerabilityPotionPrefab, "Invulnerability");
-            if (debugLog) Debug.Log("[PotionSpawner] Spawned initial Invulnerability potion on talent pickup!");
-        }
-        
-        if (debugLog) Debug.Log("[PotionSpawner] Invulnerability Potion talent activated!");
-    }
-    
-    public void DisableInvulnerabilityPotion()
-    {
-        invulnerabilityPotionEnabled = false;
-        invulnerabilityTimer = 0f;
-        if (debugLog) Debug.Log("[PotionSpawner] Invulnerability Potion talent deactivated!");
     }
     
     /// <summary>
-    /// Sync with PlayerAbilities boolean states.
+    /// Sets venom potion stacks. Spawns initial potion on first stack.
     /// </summary>
-    public void SyncWithAbilities(bool freezeEnabled, bool venomEnabled, bool invulnerabilityEnabled)
+    public void SetVenomPotionStacks(int stacks)
     {
-        // Handle freeze
-        if (freezeEnabled && !freezePotionEnabled)
-            EnableFreezePotion();
-        else if (!freezeEnabled && freezePotionEnabled)
-            DisableFreezePotion();
+        bool wasDisabled = venomPotionStacks == 0;
+        venomPotionStacks = stacks;
+        
+        if (stacks > 0)
+        {
+            ResetVenomTimer();
             
-        // Handle venom
-        if (venomEnabled && !venomPotionEnabled)
-            EnableVenomPotion();
-        else if (!venomEnabled && venomPotionEnabled)
-            DisableVenomPotion();
+            // Spawn one immediately on first activation so player knows what they picked
+            if (wasDisabled && venomPotionPrefab != null)
+            {
+                SpawnPotion(venomPotionPrefab, "Venom");
+                if (debugLog) Debug.Log("[PotionSpawner] Spawned initial Venom potion on talent pickup!");
+            }
             
-        // Handle invulnerability
-        if (invulnerabilityEnabled && !invulnerabilityPotionEnabled)
-            EnableInvulnerabilityPotion();
-        else if (!invulnerabilityEnabled && invulnerabilityPotionEnabled)
-            DisableInvulnerabilityPotion();
+            if (debugLog) Debug.Log($"[PotionSpawner] Venom Potion stacks: {stacks}, interval: {GetEffectiveInterval(venomSpawnInterval, stacks):F1}s");
+        }
+        else
+        {
+            venomTimer = 0f;
+            if (debugLog) Debug.Log("[PotionSpawner] Venom Potion talent deactivated!");
+        }
+    }
+    
+    /// <summary>
+    /// Sets invulnerability potion stacks. Spawns initial potion on first stack.
+    /// </summary>
+    public void SetInvulnerabilityPotionStacks(int stacks)
+    {
+        bool wasDisabled = invulnerabilityPotionStacks == 0;
+        invulnerabilityPotionStacks = stacks;
+        
+        if (stacks > 0)
+        {
+            ResetInvulnerabilityTimer();
+            
+            // Spawn one immediately on first activation so player knows what they picked
+            if (wasDisabled && invulnerabilityPotionPrefab != null)
+            {
+                SpawnPotion(invulnerabilityPotionPrefab, "Invulnerability");
+                if (debugLog) Debug.Log("[PotionSpawner] Spawned initial Invulnerability potion on talent pickup!");
+            }
+            
+            if (debugLog) Debug.Log($"[PotionSpawner] Invulnerability Potion stacks: {stacks}, interval: {GetEffectiveInterval(invulnerabilitySpawnInterval, stacks):F1}s");
+        }
+        else
+        {
+            invulnerabilityTimer = 0f;
+            if (debugLog) Debug.Log("[PotionSpawner] Invulnerability Potion talent deactivated!");
+        }
+    }
+    
+    // Legacy methods (kept for backwards compatibility, delegate to new stack methods)
+    public void EnableFreezePotion() => SetFreezePotionStacks(Mathf.Max(1, freezePotionStacks + 1));
+    public void DisableFreezePotion() => SetFreezePotionStacks(0);
+    public void EnableVenomPotion() => SetVenomPotionStacks(Mathf.Max(1, venomPotionStacks + 1));
+    public void DisableVenomPotion() => SetVenomPotionStacks(0);
+    public void EnableInvulnerabilityPotion() => SetInvulnerabilityPotionStacks(Mathf.Max(1, invulnerabilityPotionStacks + 1));
+    public void DisableInvulnerabilityPotion() => SetInvulnerabilityPotionStacks(0);
+    
+    /// <summary>
+    /// Sync with PlayerAbilities stack counts.
+    /// </summary>
+    public void SyncWithAbilities(int freezeStacks, int venomStacks, int invulnerabilityStacks)
+    {
+        if (freezeStacks != freezePotionStacks)
+            SetFreezePotionStacks(freezeStacks);
+        if (venomStacks != venomPotionStacks)
+            SetVenomPotionStacks(venomStacks);
+        if (invulnerabilityStacks != invulnerabilityPotionStacks)
+            SetInvulnerabilityPotionStacks(invulnerabilityStacks);
     }
     
     public void DisableAllPotions()
     {
-        DisableFreezePotion();
-        DisableVenomPotion();
-        DisableInvulnerabilityPotion();
+        SetFreezePotionStacks(0);
+        SetVenomPotionStacks(0);
+        SetInvulnerabilityPotionStacks(0);
     }
     
     #endregion

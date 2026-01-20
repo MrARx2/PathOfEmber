@@ -100,7 +100,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 26f12725e9bbeee44aef610fdfaa45c8, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.7332538
+      value: -11.60692
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 26f12725e9bbeee44aef610fdfaa45c8, type: 3}
       propertyPath: m_LocalPosition.y
@@ -108,7 +108,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 26f12725e9bbeee44aef610fdfaa45c8, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.045276582
+      value: 159.40846
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 26f12725e9bbeee44aef610fdfaa45c8, type: 3}
       propertyPath: m_LocalRotation.w
@@ -148,7 +148,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 26f12725e9bbeee44aef610fdfaa45c8, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -213,19 +213,25 @@ MonoBehaviour:
   OnHitAnything:
     m_PersistentCalls:
       m_Calls: []
-  isPiercing: 0
-  hasFreezeEffect: 0
-  hasVenomEffect: 0
+  piercingStacks: 0
+  freezeShotStacks: 0
+  venomShotStacks: 0
   freezeDuration: 1
   venomDamagePerSecond: 100
   venomDuration: 3
+  aoeEffectPrefab: {fileID: 637159452964701297, guid: b34cb83ff54e15346880a21eb6b2e1c8, type: 3}
+  aoeRadius: 2.5
+  aoeActivationDelay: 0
+  lifetimeExtensionPerHit: 2
   hasBouncing: 0
   maxBounces: 2
   wallLayers:
     serializedVersion: 2
     m_Bits: 256
-  trailFadeDuration: 0.5
-  detachTrailOnDestroy: 1
+  wallHitVFXPrefab: {fileID: 5602200919654995859, guid: c16de88aca6b0594a9a5e8a538c3c6c3, type: 3}
+  wallHitVFXDuration: 1
+  freezeTrailColor: {r: 0.2, g: 0.8, b: 1, a: 1}
+  venomTrailColor: {r: 0.6, g: 0.2, b: 0.8, a: 1}
 --- !u!4 &3155557943967144755 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 26f12725e9bbeee44aef610fdfaa45c8, type: 3}

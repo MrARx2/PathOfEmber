@@ -16,12 +16,19 @@ public class ArrowProjectile : MonoBehaviour
     public UnityEvent OnHitAnything;
 
     [Header("Power-Up Effects (Set by PlayerShooting)")]
-    [SerializeField] private bool isPiercing = false;
-    [SerializeField] private bool hasFreezeEffect = false;
-    [SerializeField] private bool hasVenomEffect = false;
+    [SerializeField] private int piercingStacks = 0;
+    [SerializeField] private int freezeShotStacks = 0;
+    [SerializeField] private int venomShotStacks = 0;
     [SerializeField] private float freezeDuration = 1f;
     [SerializeField] private int venomDamagePerSecond = 100;
     [SerializeField] private float venomDuration = 3f;
+    
+    [Header("AOE Settings")]
+    [SerializeField] private GameObject aoeEffectPrefab;
+    [SerializeField] private float aoeActivationDelay = 0f; // 0 = instant
+    
+    [Header("Piercing Lifetime Extension")]
+    [SerializeField] private float lifetimeExtensionPerHit = 2f;
     
     [Header("Bouncing Arrows")]
     [SerializeField] private bool hasBouncing = false;
@@ -52,22 +59,28 @@ public class ArrowProjectile : MonoBehaviour
     #region Public Properties
     public int Damage => damage;
     
-    public bool IsPiercing
+    public bool IsPiercing => piercingStacks > 0;
+    
+    public int PiercingStacks
     {
-        get => isPiercing;
-        set => isPiercing = value;
+        get => piercingStacks;
+        set => piercingStacks = value;
     }
     
-    public bool HasFreezeEffect
+    public bool HasFreezeEffect => freezeShotStacks > 0;
+    
+    public int FreezeShotStacks
     {
-        get => hasFreezeEffect;
-        set => hasFreezeEffect = value;
+        get => freezeShotStacks;
+        set => freezeShotStacks = value;
     }
     
-    public bool HasVenomEffect
+    public bool HasVenomEffect => venomShotStacks > 0;
+    
+    public int VenomShotStacks
     {
-        get => hasVenomEffect;
-        set => hasVenomEffect = value;
+        get => venomShotStacks;
+        set => venomShotStacks = value;
     }
     
     public float FreezeDuration
@@ -147,9 +160,9 @@ public class ArrowProjectile : MonoBehaviour
         ClearTrails();
         
         // Reset effect flags for pooled arrows
-        isPiercing = false;
-        hasFreezeEffect = false;
-        hasVenomEffect = false;
+        piercingStacks = 0;
+        freezeShotStacks = 0;
+        venomShotStacks = 0;
         hasBouncing = false;
     }
     
@@ -177,7 +190,7 @@ public class ArrowProjectile : MonoBehaviour
         if (trails == null) return;
         
         // Both effects - create gradient from freeze to venom
-        if (hasFreezeEffect && hasVenomEffect)
+        if (HasFreezeEffect && HasVenomEffect)
         {
             for (int i = 0; i < trails.Length; i++)
             {
@@ -191,13 +204,13 @@ public class ArrowProjectile : MonoBehaviour
         }
         
         // Single effect
-        if (hasFreezeEffect)
+        if (HasFreezeEffect)
         {
             ApplySingleColor(freezeTrailColor);
             return;
         }
         
-        if (hasVenomEffect)
+        if (HasVenomEffect)
         {
             ApplySingleColor(venomTrailColor);
             return;
@@ -270,6 +283,23 @@ public class ArrowProjectile : MonoBehaviour
                 }
                 else
                 {
+                    // Spawn AOE on wall hit if freeze/venom stacks >= 2
+                    bool freezeAOE = HasFreezeEffect && freezeShotStacks >= 2 && aoeEffectPrefab != null;
+                    bool venomAOE = HasVenomEffect && venomShotStacks >= 2 && aoeEffectPrefab != null;
+                    
+                    if (freezeAOE && venomAOE)
+                    {
+                        SpawnWallAOE(hit.point, AOEEffectZone.EffectType.Both);
+                    }
+                    else if (freezeAOE)
+                    {
+                        SpawnWallAOE(hit.point, AOEEffectZone.EffectType.Freeze);
+                    }
+                    else if (venomAOE)
+                    {
+                        SpawnWallAOE(hit.point, AOEEffectZone.EffectType.Venom);
+                    }
+                    
                     // No bouncing or max bounces reached - spawn VFX and destroy
                     SpawnWallHitVFX(hit.point);
                     GracefulDestroy();
@@ -318,29 +348,103 @@ public class ArrowProjectile : MonoBehaviour
         
         OnHitDamageable?.Invoke(damage);
 
-        // Apply Freeze Effect
-        if (hasFreezeEffect && enemyHealth != null)
+        // Determine AOE mode (combined if both have 2+ stacks)
+        bool freezeAOE = HasFreezeEffect && freezeShotStacks >= 2 && aoeEffectPrefab != null;
+        bool venomAOE = HasVenomEffect && venomShotStacks >= 2 && aoeEffectPrefab != null;
+        
+        if (freezeAOE && venomAOE)
         {
-            enemyHealth.ApplyFreeze(freezeDuration);
+            ActivateEnemyAOE(enemyHealth, AOEEffectZone.EffectType.Both);
         }
-
-        // Apply Venom Effect (DoT)
-        if (hasVenomEffect && enemyHealth != null)
+        else if (freezeAOE)
         {
-            int totalTicks = Mathf.RoundToInt(venomDuration);
-            enemyHealth.ApplyDamageOverTime(venomDamagePerSecond, 1f, totalTicks);
+            ActivateEnemyAOE(enemyHealth, AOEEffectZone.EffectType.Freeze);
+        }
+        else if (venomAOE)
+        {
+            ActivateEnemyAOE(enemyHealth, AOEEffectZone.EffectType.Venom);
+        }
+        else
+        {
+            // Single target effects for stack 1
+            if (HasFreezeEffect && enemyHealth != null)
+            {
+                enemyHealth.ApplyFreeze(freezeDuration);
+            }
+            if (HasVenomEffect && enemyHealth != null)
+            {
+                int totalTicks = Mathf.RoundToInt(venomDuration);
+                enemyHealth.ApplyDamageOverTime(venomDamagePerSecond, 1f, totalTicks);
+            }
         }
         
         OnHitAnything?.Invoke();
         
+        // Piercing: extend lifetime if stacks > 1
+        if (IsPiercing && piercingStacks > 1)
+        {
+            float extension = (piercingStacks - 1) * lifetimeExtensionPerHit;
+            lifeTimer += extension;
+        }
+        
         // Only destroy if not piercing
-        if (destroyOnHit && !isPiercing)
+        if (destroyOnHit && !IsPiercing)
         {
             GracefulDestroy();
             return true;
         }
         
         return false;
+    }
+    
+    /// <summary>
+    /// Activates the AOE zone child on an enemy (for enemy hits).
+    /// </summary>
+    private void ActivateEnemyAOE(EnemyHealth enemy, AOEEffectZone.EffectType effectType)
+    {
+        if (enemy == null) return;
+        
+        // Find AOE zone child on the enemy
+        AOEEffectZone zone = enemy.GetComponentInChildren<AOEEffectZone>(includeInactive: true);
+        if (zone != null)
+        {
+            float radius = GetCalculatedAOERadius();
+            zone.Activate(effectType, radius, freezeDuration, venomDamagePerSecond, venomDuration, aoeActivationDelay);
+        }
+    }
+    
+    /// <summary>
+    /// Spawns an AOE effect zone for wall hits (no enemy to attach to).
+    /// </summary>
+    private void SpawnWallAOE(Vector3 position, AOEEffectZone.EffectType effectType)
+    {
+        if (aoeEffectPrefab == null) return;
+        
+        GameObject aoe = Instantiate(aoeEffectPrefab, position, Quaternion.identity);
+        AOEEffectZone zone = aoe.GetComponent<AOEEffectZone>();
+        if (zone != null)
+        {
+            float radius = GetCalculatedAOERadius();
+            zone.ConfigureAndStart(effectType, radius, freezeDuration, venomDamagePerSecond, venomDuration, aoeActivationDelay);
+        }
+    }
+    
+    /// <summary>
+    /// Calculates AOE radius based on freeze/venom stacks.
+    /// Stack 2 = base (0.3), Stack 3 = 0.5, Stack 4 = 0.7, Stack 5 = 1.0
+    /// </summary>
+    private float GetCalculatedAOERadius()
+    {
+        // Use the higher of freeze or venom stacks for radius calculation
+        int effectiveStacks = Mathf.Max(freezeShotStacks, venomShotStacks);
+        
+        return effectiveStacks switch
+        {
+            <= 2 => 0.3f,  // Base radius for stack 2
+            3 => 0.5f,     // Stack 3: 0.5
+            4 => 0.7f,     // Stack 4: 0.7 (+0.2)
+            >= 5 => 1.0f,  // Stack 5: 1.0 (+0.3) - max
+        };
     }
     
     private void HandleBounce(RaycastHit hit)
@@ -404,21 +508,45 @@ public class ArrowProjectile : MonoBehaviour
             
             OnHitDamageable?.Invoke(damage);
 
-            // Apply Freeze Effect (reuse enemyHealth from above)
-            if (hasFreezeEffect && enemyHealth != null)
+            // Determine AOE mode (combined if both have 2+ stacks)
+            bool freezeAOE = HasFreezeEffect && freezeShotStacks >= 2 && aoeEffectPrefab != null;
+            bool venomAOE = HasVenomEffect && venomShotStacks >= 2 && aoeEffectPrefab != null;
+            
+            if (freezeAOE && venomAOE)
             {
-                enemyHealth.ApplyFreeze(freezeDuration);
+                ActivateEnemyAOE(enemyHealth, AOEEffectZone.EffectType.Both);
             }
-
-            // Apply Venom Effect (DoT)
-            if (hasVenomEffect && enemyHealth != null)
+            else if (freezeAOE)
             {
-                int totalTicks = Mathf.RoundToInt(venomDuration);
-                enemyHealth.ApplyDamageOverTime(venomDamagePerSecond, 1f, totalTicks);
+                ActivateEnemyAOE(enemyHealth, AOEEffectZone.EffectType.Freeze);
+            }
+            else if (venomAOE)
+            {
+                ActivateEnemyAOE(enemyHealth, AOEEffectZone.EffectType.Venom);
+            }
+            else
+            {
+                // Single target effects for stack 1
+                if (HasFreezeEffect && enemyHealth != null)
+                {
+                    enemyHealth.ApplyFreeze(freezeDuration);
+                }
+                if (HasVenomEffect && enemyHealth != null)
+                {
+                    int totalTicks = Mathf.RoundToInt(venomDuration);
+                    enemyHealth.ApplyDamageOverTime(venomDamagePerSecond, 1f, totalTicks);
+                }
+            }
+            
+            // Piercing: extend lifetime if stacks > 1
+            if (IsPiercing && piercingStacks > 1)
+            {
+                float extension = (piercingStacks - 1) * lifetimeExtensionPerHit;
+                lifeTimer += extension;
             }
             
             // Only destroy if not piercing
-            if (destroyOnHit && !isPiercing)
+            if (destroyOnHit && !IsPiercing)
             {
                 GracefulDestroy();
                 return;

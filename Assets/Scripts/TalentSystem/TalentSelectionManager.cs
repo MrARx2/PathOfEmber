@@ -247,6 +247,12 @@ public class TalentSelectionManager : MonoBehaviour
         {
             Debug.LogWarning($"[TalentSelectionManager] No action found for talent ID: {talent.talentId}");
         }
+        
+        // Signal that selection is complete - allows next queued level-up to be processed
+        if (xpSystem != null)
+        {
+            xpSystem.OnTalentSelectionComplete();
+        }
     }
 
     /// <summary>

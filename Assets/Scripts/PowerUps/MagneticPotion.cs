@@ -41,7 +41,12 @@ public class MagneticPotion : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool debugLog = false;
     
+    [Header("Target Settings")]
+    [SerializeField, Tooltip("Bone name to target on player (e.g., Spine2 for consistent collision)")]
+    private string targetBoneName = "mixamorig:Spine2";
+    
     private Transform playerTransform;
+    private Transform magnetTarget; // The actual target for magnetism (bone or player root)
     private bool isMovingToPlayer = false;
     private bool isCollected = false;
     
@@ -55,6 +60,21 @@ public class MagneticPotion : MonoBehaviour
         if (player != null)
         {
             playerTransform = player.transform;
+            
+            // Try to find the target bone (like CoinManager does)
+            magnetTarget = FindBoneRecursive(playerTransform, targetBoneName);
+            
+            if (magnetTarget == null)
+            {
+                // Fallback to player root + offset
+                magnetTarget = playerTransform;
+                if (debugLog)
+                    Debug.Log($"[MagneticPotion] Bone '{targetBoneName}' not found, using player root");
+            }
+            else if (debugLog)
+            {
+                Debug.Log($"[MagneticPotion] Found bone target: {magnetTarget.name}");
+            }
         }
         else
         {
@@ -71,6 +91,24 @@ public class MagneticPotion : MonoBehaviour
         
         // Begin emergence sequence
         StartCoroutine(EmergenceSequence());
+    }
+    
+    /// <summary>
+    /// Recursively searches for a bone by name in the transform hierarchy.
+    /// </summary>
+    private Transform FindBoneRecursive(Transform parent, string boneName)
+    {
+        if (parent.name == boneName)
+            return parent;
+        
+        foreach (Transform child in parent)
+        {
+            Transform found = FindBoneRecursive(child, boneName);
+            if (found != null)
+                return found;
+        }
+        
+        return null;
     }
     
     private IEnumerator EmergenceSequence()
@@ -121,12 +159,12 @@ public class MagneticPotion : MonoBehaviour
     
     private void Update()
     {
-        if (playerTransform == null || isCollected) return;
+        if (magnetTarget == null || isCollected) return;
         
         if (isMovingToPlayer)
         {
-            // Move toward player (target player's center, slightly above ground)
-            Vector3 targetPos = playerTransform.position + Vector3.up * 0.5f;
+            // Move toward magnet target (Spine2 bone for consistent collision)
+            Vector3 targetPos = magnetTarget.position;
             Vector3 direction = (targetPos - transform.position).normalized;
             transform.position += direction * magnetSpeed * Time.deltaTime;
             

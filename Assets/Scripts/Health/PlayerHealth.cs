@@ -429,10 +429,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     /// with camera shake, then the DoT ticks follow without shake.
     /// If one-time shield blocks the initial hit, no DoT is applied.
     /// </summary>
-    public void ApplyDamageOverTime(int damagePerTick, float tickInterval, int totalTicks, int initialDamage = 0)
+    /// <returns>True if damage was applied, false if blocked by shield/invulnerability.</returns>
+    public bool ApplyDamageOverTime(int damagePerTick, float tickInterval, int totalTicks, int initialDamage = 0)
     {
         // If invulnerable, no damage or DoT
-        if (isInvulnerable) return;
+        if (isInvulnerable) return false;
         
         // If one-time shield is active, it will block this entire attack (including DoT)
         if (hasOneTimeShield)
@@ -445,7 +446,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             if (abilities != null)
                 abilities.OnShieldConsumed();
             
-            return; // Shield consumed, no damage or DoT applied
+            return false; // Shield consumed, no damage or DoT applied
         }
         
         // Apply initial impact damage with camera shake
@@ -457,6 +458,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (dotCoroutine != null)
             StopCoroutine(dotCoroutine);
         dotCoroutine = StartCoroutine(DamageOverTimeRoutine(damagePerTick, tickInterval, totalTicks));
+        
+        return true; // Damage was applied
     }
 
     private IEnumerator DamageOverTimeRoutine(int damagePerTick, float tickInterval, int totalTicks)

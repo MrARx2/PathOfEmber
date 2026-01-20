@@ -405,17 +405,22 @@ public class EnemyProjectile : MonoBehaviour
             if (playerHealth == null)
                 playerHealth = other.GetComponentInParent<PlayerHealth>();
             
-            if (playerHealth != null)
+        if (playerHealth != null)
             {
                 // During fade, no trail = no DoT, just impact damage
                 if (applyDoT && !isFadingOut)
                 {
                     // Use damage as initial hit, or fallback to first tick damage if damage is 0
                     int initialHitDamage = damage > 0 ? damage : dotDamagePerTick;
-                    playerHealth.ApplyDamageOverTime(dotDamagePerTick, dotTickInterval, dotTotalTicks, initialHitDamage);
                     
-                    // Set player on fire for the duration of the DoT
-                    playerHealth.SetOnFire(true, dotTickInterval * dotTotalTicks);
+                    // ApplyDamageOverTime returns true if damage was applied (shield didn't block it)
+                    bool damageApplied = playerHealth.ApplyDamageOverTime(dotDamagePerTick, dotTickInterval, dotTotalTicks, initialHitDamage);
+                    
+                    // Only set on fire if the damage wasn't blocked by a shield
+                    if (damageApplied)
+                    {
+                        playerHealth.SetOnFire(true, dotTickInterval * dotTotalTicks);
+                    }
                 }
                 else
                 {

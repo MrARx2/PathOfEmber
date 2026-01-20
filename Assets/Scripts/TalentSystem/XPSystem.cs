@@ -66,6 +66,14 @@ public class XPSystem : MonoBehaviour
     private Coroutine glowCoroutine;
     private bool isShowingGain = false;
     private Vector3 gainTextOriginalScale;
+    
+    // Level-up queue (for multiple level-ups in quick succession)
+    private int pendingLevelUps = 0;
+    
+    /// <summary>
+    /// Number of pending level-up claims (prayer wheel spins owed to the player).
+    /// </summary>
+    public int PendingLevelUps => pendingLevelUps;
 
     private void Awake()
     {
@@ -124,6 +132,10 @@ public class XPSystem : MonoBehaviour
     {
         if (xpGainText == null) return;
         
+        // Skip visual effects if GameObject is inactive (e.g., during prayer wheel)
+        // XP is still added, we just don't show the gain text animation
+        if (!gameObject.activeInHierarchy) return;
+        
         // Accumulate gain
         accumulatedGain += amount;
         lastGainTime = Time.time;
@@ -172,6 +184,9 @@ public class XPSystem : MonoBehaviour
     private void PulseGlow()
     {
         if (xpBarGlow == null) return;
+        
+        // Skip visual effects if GameObject is inactive
+        if (!gameObject.activeInHierarchy) return;
         
         if (glowCoroutine != null)
             StopCoroutine(glowCoroutine);
@@ -243,8 +258,58 @@ public class XPSystem : MonoBehaviour
         // Scale XP requirement for next level
         maxXP = Mathf.RoundToInt(maxXP * (1f + xpScalingPercent / 100f));
         
-        // Trigger the prayer wheel
-        OnXPFilled?.Invoke();
+        // Queue a level-up (don't fire event immediately - let TalentSelectionManager claim it)
+        pendingLevelUps++;
+        Debug.Log($"[XPSystem] Level up queued! Level: {level}, Pending: {pendingLevelUps}");
+    }
+    
+    /// <summary>
+    /// Returns true if there are pending level-ups to claim.
+    /// </summary>
+    public bool HasPendingLevelUp()
+    {
+        return pendingLevelUps > 0;
+    }
+    
+    /// <summary>
+    /// Claims one pending level-up and fires OnXPFilled.
+    /// Call this after the previous prayer wheel selection is complete.
+    /// </summary>
+    public void ClaimNextLevelUp()
+    {
+        if (pendingLevelUps > 0)
+        {
+            pendingLevelUps--;
+            Debug.Log($"[XPSystem] Level-up claimed! Remaining: {pendingLevelUps}");
+            OnXPFilled?.Invoke();
+        }
+    }
+    
+    /// <summary>
+    /// Triggers the first pending level-up if any exist.
+    /// Called from Update to ensure first level-up is processed.
+    /// </summary>
+    private void Update()
+    {
+        // Auto-trigger first pending level-up (subsequent ones handled by TalentSelectionManager)
+        if (pendingLevelUps > 0 && !isProcessingLevelUp)
+        {
+            isProcessingLevelUp = true;
+            ClaimNextLevelUp();
+        }
+    }
+    
+    private bool isProcessingLevelUp = false;
+    
+    /// <summary>
+    /// Called by TalentSelectionManager when talent selection is complete.
+    /// This allows the next queued level-up to be processed.
+    /// </summary>
+    public void OnTalentSelectionComplete()
+    {
+        isProcessingLevelUp = false;
+        Debug.Log($"[XPSystem] Talent selection complete. Pending level-ups: {pendingLevelUps}");
+        // Next Update() will trigger the next level-up if any pending
     }
 
     private void UpdateUI()
@@ -296,6 +361,15 @@ public class XPSystem : MonoBehaviour
 
     [ContextMenu("Debug: Fill XP Bar")]
     public void DebugFillBar() => AddXP(maxXP - currentXP);
+
+    [ContextMenu("Debug: Double Level-Up (Test Queue)")]
+    public void DebugDoubleLevelUp()
+    {
+        // Adds enough XP to level up twice (tests the queue system)
+        int xpForTwoLevels = maxXP + Mathf.RoundToInt(maxXP * (1f + xpScalingPercent / 100f));
+        Debug.Log($"[XPSystem] Debug: Adding {xpForTwoLevels} XP for double level-up");
+        AddXP(xpForTwoLevels);
+    }
 
     [ContextMenu("Debug: Reset XP")]
     public void DebugReset() => ResetXP();

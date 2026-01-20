@@ -457,11 +457,11 @@ public class PlayerShooting : MonoBehaviour
             // Apply ability effects from PlayerAbilities
             if (abilities != null)
             {
-                projectile.IsPiercing = abilities.HasPiercing;
+                projectile.PiercingStacks = abilities.PiercingStacks;
                 projectile.HasBouncing = abilities.HasBouncingArrows;
                 projectile.MaxBounces = abilities.BouncingArrowsStacks + 1; // +1 so first stack = 2 bounces minimum
-                projectile.HasFreezeEffect = abilities.HasFreezeShot;
-                projectile.HasVenomEffect = abilities.HasVenomShot;
+                projectile.FreezeShotStacks = abilities.FreezeShotStacks;
+                projectile.VenomShotStacks = abilities.VenomShotStacks;
                 projectile.FreezeDuration = abilities.FreezeDuration;
                 projectile.VenomDamagePerSecond = abilities.VenomDamagePerSecond;
                 projectile.VenomDuration = abilities.VenomDuration;
