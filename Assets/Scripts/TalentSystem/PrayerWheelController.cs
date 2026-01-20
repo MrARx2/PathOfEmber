@@ -96,6 +96,10 @@ public class PrayerWheelController : MonoBehaviour
     private SoundEvent stopSoundRare;
     [SerializeField, Tooltip("Legendary stop layer (adds to Common+Rare for Legendary)")]
     private SoundEvent stopSoundLegendary;
+    
+    [Space(5)]
+    [SerializeField, Tooltip("Single sound that plays when spin ends (in addition to layered stop sounds)")]
+    private SoundEvent spinEndSound;
 
     // Assigned talents for current spin (no repetition)
     private TalentData[,] wheel1Talents = new TalentData[3, 5]; // [rarity, socket]
@@ -108,6 +112,11 @@ public class PrayerWheelController : MonoBehaviour
     private TalentData chosenTalent2;
     private bool isSpinning = false;
     private bool talentsPrepared = false; // Tracks if talents were already assigned via PrepareTalents()
+
+    // Cached audio sources for tier sounds (for volume control during spin)
+    private AudioSource commonSpinSource;
+    private AudioSource rareSpinSource;
+    private AudioSource legendarySpinSource;
 
     // Events
     public event System.Action<TalentData, TalentData> OnSpinComplete;
@@ -273,9 +282,16 @@ public class PrayerWheelController : MonoBehaviour
         // Step 7: Animate spin
         yield return StartCoroutine(AnimateSpin(rotationAmountToAdd, originalColors));
 
-        // Step 8: Finalize - Stop spin sounds and play layered stop sounds
+        // Step 8: Finalize - Stop spin sounds and play stop sounds
         StopLayeredSpinSounds();
         PlayLayeredStopSounds();
+        
+        // Play unified spin end sound
+        if (spinEndSound != null && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.Play(spinEndSound);
+            Debug.Log("[PrayerWheelController] Spin end sound played");
+        }
 
         // Determine winners
         int rarityIndex = 0;
@@ -500,6 +516,13 @@ public class PrayerWheelController : MonoBehaviour
                 ApplyTint(wheel1.rareFloor?.floorMaterial, rareTintColor);
                 ApplyTint(wheel2.rareFloor?.floorMaterial, rareTintColor);
                 rareTinted = true;
+                
+                // Unmute rare sound
+                if (rareSpinSource != null && spinSoundRare != null)
+                {
+                    rareSpinSource.volume = spinSoundRare.GetVolume();
+                    Debug.Log("[PrayerWheelController] Rare sound unmuted");
+                }
             }
 
             // 75% - Legendary gets yellow tint, turn off rare
@@ -513,6 +536,13 @@ public class PrayerWheelController : MonoBehaviour
                 ApplyTint(wheel1.legendaryFloor?.floorMaterial, legendaryTintColor);
                 ApplyTint(wheel2.legendaryFloor?.floorMaterial, legendaryTintColor);
                 legendaryTinted = true;
+                
+                // Unmute legendary sound
+                if (legendarySpinSource != null && spinSoundLegendary != null)
+                {
+                    legendarySpinSource.volume = spinSoundLegendary.GetVolume();
+                    Debug.Log("[PrayerWheelController] Legendary sound unmuted");
+                }
             }
 
             yield return null;
@@ -644,36 +674,63 @@ public class PrayerWheelController : MonoBehaviour
 
     #region Layered Audio
     /// <summary>
-    /// Plays layered spin sounds based on current rarity.
-    /// Common = Common only. Rare = Common + Rare. Legendary = Common + Rare + Legendary.
+    /// Plays all tier spin sounds from the start.
+    /// Common plays at normal volume.
+    /// Rare and Legendary start muted (volume 0) and unmute when their tints are applied.
     /// </summary>
     private void PlayLayeredSpinSounds()
     {
         if (AudioManager.Instance == null) return;
         
-        // Common always plays
+        // Clear previous references
+        commonSpinSource = null;
+        rareSpinSource = null;
+        legendarySpinSource = null;
+        
+        // Common always plays at full volume
         if (spinSoundCommon != null)
-            AudioManager.Instance.Play(spinSoundCommon);
+        {
+            commonSpinSource = AudioManager.Instance.PlayAndGetSource(spinSoundCommon, 1f);
+            Debug.Log("[PrayerWheelController] Common spin sound started at full volume");
+        }
         
-        // Rare layer plays for Rare and Legendary
-        if (currentRarity >= TalentData.TalentRarity.Rare && spinSoundRare != null)
-            AudioManager.Instance.Play(spinSoundRare);
+        // Rare starts MUTED (volume 0) - will unmute when rare tint is applied
+        if (spinSoundRare != null && currentRarity >= TalentData.TalentRarity.Rare)
+        {
+            rareSpinSource = AudioManager.Instance.PlayAndGetSource(spinSoundRare, 0f);
+            Debug.Log("[PrayerWheelController] Rare spin sound started MUTED (will unmute at 50%)");
+        }
         
-        // Legendary layer only for Legendary
-        if (currentRarity == TalentData.TalentRarity.Legendary && spinSoundLegendary != null)
-            AudioManager.Instance.Play(spinSoundLegendary);
+        // Legendary starts MUTED (volume 0) - will unmute when legendary tint is applied
+        if (spinSoundLegendary != null && currentRarity == TalentData.TalentRarity.Legendary)
+        {
+            legendarySpinSource = AudioManager.Instance.PlayAndGetSource(spinSoundLegendary, 0f);
+            Debug.Log("[PrayerWheelController] Legendary spin sound started MUTED (will unmute at 75%)");
+        }
     }
     
     /// <summary>
-    /// Stops all layered spin sounds.
+    /// Stops all layered spin sounds by stopping the cached sources.
     /// </summary>
     private void StopLayeredSpinSounds()
     {
-        if (AudioManager.Instance == null) return;
+        if (commonSpinSource != null)
+        {
+            commonSpinSource.Stop();
+            commonSpinSource = null;
+        }
         
-        if (spinSoundCommon != null) AudioManager.Instance.Stop(spinSoundCommon);
-        if (spinSoundRare != null) AudioManager.Instance.Stop(spinSoundRare);
-        if (spinSoundLegendary != null) AudioManager.Instance.Stop(spinSoundLegendary);
+        if (rareSpinSource != null)
+        {
+            rareSpinSource.Stop();
+            rareSpinSource = null;
+        }
+        
+        if (legendarySpinSource != null)
+        {
+            legendarySpinSource.Stop();
+            legendarySpinSource = null;
+        }
     }
     
     /// <summary>

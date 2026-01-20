@@ -69,6 +69,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private SoundEvent fireHurtSound;
     [SerializeField] private SoundEvent healSound;
     [SerializeField] private SoundEvent deathSound;
+    [SerializeField] private SoundEvent invulnerabilitySound;
 
     [Header("Events")]
     public UnityEvent<int> OnDamage;
@@ -497,6 +498,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         isInvulnerable = true;
         SetInvulnerabilityEffectActive(true);
+        
+        // Play invulnerability sound
+        if (invulnerabilitySound != null && AudioManager.Instance != null)
+            AudioManager.Instance.Play(invulnerabilitySound);
 
         yield return new WaitForSeconds(duration);
 

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using Audio;
 
 /// <summary>
 /// Potion behavior: Rise from ground → Idle bobbing → Magnetic attraction → Pickup → Spawn meteor.
@@ -37,6 +38,14 @@ public class MagneticPotion : MonoBehaviour
     [Header("Invulnerability Settings")]
     [SerializeField, Tooltip("Duration of invulnerability when collected")]
     private float invulnerabilityDuration = 2f;
+    
+    [Header("Sound Effects")]
+    [SerializeField, Tooltip("Sound when any potion is picked up")]
+    private SoundEvent pickupSound;
+    [SerializeField, Tooltip("Additional sound for freeze potion pickup")]
+    private SoundEvent freezePickupSound;
+    [SerializeField, Tooltip("Additional sound for venom potion pickup")]
+    private SoundEvent venomPickupSound;
     
     [Header("Debug")]
     [SerializeField] private bool debugLog = false;
@@ -193,6 +202,20 @@ public class MagneticPotion : MonoBehaviour
         
         if (debugLog)
             Debug.Log($"[MagneticPotion] {potionType} potion collected!");
+        
+        // Play pickup sounds
+        if (AudioManager.Instance != null)
+        {
+            // Generic pickup sound
+            if (pickupSound != null)
+                AudioManager.Instance.Play(pickupSound);
+            
+            // Type-specific sounds
+            if (potionType == PotionType.Freeze && freezePickupSound != null)
+                AudioManager.Instance.Play(freezePickupSound);
+            else if (potionType == PotionType.Venom && venomPickupSound != null)
+                AudioManager.Instance.Play(venomPickupSound);
+        }
         
         // Handle based on potion type
         if (potionType == PotionType.Invulnerability)

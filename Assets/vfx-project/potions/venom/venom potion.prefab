@@ -209,6 +209,10 @@ MonoBehaviour:
   bobHeight: 0.2
   effectMeteorPrefab: {fileID: 3236490940164730494, guid: 76a450dfb0b6fc744b4f51ce7c5298a5, type: 3}
   enemySearchRadius: 8
+  invulnerabilityDuration: 2
+  pickupSound: {fileID: 11400000, guid: 06002e1ea90149148ae48601b4551588, type: 2}
+  freezePickupSound: {fileID: 0}
+  venomPickupSound: {fileID: 0}
   debugLog: 0
 --- !u!65 &6377158691849078465
 BoxCollider:

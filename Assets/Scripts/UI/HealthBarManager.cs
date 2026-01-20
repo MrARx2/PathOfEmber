@@ -15,6 +15,8 @@ public class HealthBarManager : MonoBehaviour
     [SerializeField] private GameObject healthBarPrefab;
     [Tooltip("The UI Prefab to spawn for the player (Optional - distinct style).")]
     [SerializeField] private GameObject playerHealthBarPrefab;
+    [Tooltip("The UI Prefab to spawn for Titan body parts (Optional - distinct style).")]
+    [SerializeField] private GameObject titanHealthBarPrefab;
     
     [Tooltip("Offset from the target's position (in World Space) to float the health bar")]
     [SerializeField] private Vector3 heightOffset = new Vector3(0, 2.0f, 0);
@@ -22,11 +24,13 @@ public class HealthBarManager : MonoBehaviour
     // Private class to track active bars
     private class ActiveBar
     {
-        public Component Owner; // The Health Component (EnemyHealth or PlayerHealth)
-        public Transform TargetTransform; // What we follow (e.g. HealthBarPoint)
+        public Component Owner;
+        public Transform TargetTransform;
         public RectTransform Rect;
         public Image FillImage;
         public GameObject GameObject;
+        public bool IsTitanBar; // Titan bars have user-controlled visibility
+        public bool IsUserVisible; // For Titan bars: tracks if user wants it visible
     }
 
     private List<ActiveBar> activeBars = new List<ActiveBar>();
@@ -91,7 +95,19 @@ public class HealthBarManager : MonoBehaviour
 
             if (isOnScreen)
             {
-                if (!bar.GameObject.activeSelf) bar.GameObject.SetActive(true);
+                // For Titan bars, only show if user explicitly wants it visible
+                if (bar.IsTitanBar)
+                {
+                    if (bar.IsUserVisible && !bar.GameObject.activeSelf)
+                        bar.GameObject.SetActive(true);
+                    else if (!bar.IsUserVisible && bar.GameObject.activeSelf)
+                        bar.GameObject.SetActive(false);
+                }
+                else
+                {
+                    // Normal enemy/player bars: show when on screen
+                    if (!bar.GameObject.activeSelf) bar.GameObject.SetActive(true);
+                }
                 bar.Rect.position = screenPos;
             }
             else
@@ -104,23 +120,37 @@ public class HealthBarManager : MonoBehaviour
     public void Register(EnemyHealth enemy)
     {
         RegisterInternal(enemy, enemy.HealthBarPoint, enemy.CurrentHealth, enemy.MaxHealth, 
-            enemy.OnHealthChanged, enemy.OnDeath, isPlayer: false);
+            enemy.OnHealthChanged, enemy.OnDeath, HealthBarType.Enemy);
     }
 
     public void Register(PlayerHealth player)
     {
         RegisterInternal(player, player.HealthBarPoint, player.CurrentHealth, player.MaxHealth, 
-            player.OnHealthChanged, player.OnDeath, isPlayer: true);
+            player.OnHealthChanged, player.OnDeath, HealthBarType.Player);
     }
 
-    private void RegisterInternal(Component owner, Transform point, int current, int max, 
-        UnityEngine.Events.UnityEvent<float> healthEvent, UnityEngine.Events.UnityEvent deathEvent, bool isPlayer)
+    public void Register(Boss.TitanHealth titanPart)
     {
-        GameObject prefabToUse = (isPlayer && playerHealthBarPrefab != null) ? playerHealthBarPrefab : healthBarPrefab;
+        RegisterInternal(titanPart, titanPart.HealthBarPoint, titanPart.CurrentHealth, titanPart.MaxHealth, 
+            titanPart.OnHealthChanged, titanPart.OnDeath, HealthBarType.Titan);
+    }
+
+    private enum HealthBarType { Enemy, Player, Titan }
+
+    private void RegisterInternal(Component owner, Transform point, int current, int max, 
+        UnityEngine.Events.UnityEvent<float> healthEvent, UnityEngine.Events.UnityEvent deathEvent, HealthBarType barType)
+    {
+        // Select prefab based on type
+        GameObject prefabToUse = barType switch
+        {
+            HealthBarType.Player => playerHealthBarPrefab != null ? playerHealthBarPrefab : healthBarPrefab,
+            HealthBarType.Titan => titanHealthBarPrefab != null ? titanHealthBarPrefab : healthBarPrefab,
+            _ => healthBarPrefab
+        };
 
         if (prefabToUse == null)
         {
-            Debug.LogWarning($"[HealthBarManager] No Prefab assigned for {(isPlayer ? "Player" : "Enemy")}!");
+            Debug.LogWarning($"[HealthBarManager] No Prefab assigned for {barType}!");
             return;
         }
 
@@ -141,20 +171,38 @@ public class HealthBarManager : MonoBehaviour
         ActiveBar newBar = new ActiveBar
         {
             Owner = owner,
-            TargetTransform = point != null ? point : null, // If null, we use Owner.transform in generic update but we can't save it easily here without logic change.
-                                                            // Actually Update logic handles null TargetTransform by checking Owner.transform + offset.
+            TargetTransform = point != null ? point : null,
             Rect = rect,
             FillImage = fill,
-            GameObject = go
+            GameObject = go,
+            IsTitanBar = (barType == HealthBarType.Titan),
+            IsUserVisible = false
         };
 
         // Callbacks
         healthEvent.AddListener((pct) => UpdateFill(newBar, pct));
-        deathEvent.AddListener(() => RemoveBar(owner));
+        
+        // For Titan bars, don't remove on death (they regenerate) - just hide
+        // For other types, remove on death
+        if (barType == HealthBarType.Titan)
+        {
+            // Titan bars persist - TitanHealth handles showing/hiding
+            // No death listener needed
+        }
+        else
+        {
+            deathEvent.AddListener(() => RemoveBar(owner));
+        }
 
         // Initial State
         float initialPct = (float)current / max;
         UpdateFill(newBar, initialPct);
+        
+        // Titan bars start hidden (visibility controlled by TitanHealth)
+        if (barType == HealthBarType.Titan)
+        {
+            go.SetActive(false);
+        }
 
         activeBars.Add(newBar);
     }
@@ -162,6 +210,44 @@ public class HealthBarManager : MonoBehaviour
     public void Unregister(Component owner)
     {
         RemoveBar(owner);
+    }
+    
+    /// <summary>
+    /// Shows the health bar for a specific owner. Used by TitanHealth.
+    /// </summary>
+    public void ShowBar(Component owner)
+    {
+        for (int i = 0; i < activeBars.Count; i++)
+        {
+            if (activeBars[i].Owner == owner)
+            {
+                activeBars[i].IsUserVisible = true;
+                if (activeBars[i].GameObject != null)
+                {
+                    activeBars[i].GameObject.SetActive(true);
+                    Debug.Log($"[HealthBarManager] ShowBar: Found and activated bar for {owner.gameObject.name}");
+                }
+                return;
+            }
+        }
+        Debug.LogWarning($"[HealthBarManager] ShowBar: No bar found for {owner.gameObject.name}");
+    }
+    
+    /// <summary>
+    /// Hides the health bar for a specific owner. Used by TitanHealth.
+    /// </summary>
+    public void HideBar(Component owner)
+    {
+        for (int i = 0; i < activeBars.Count; i++)
+        {
+            if (activeBars[i].Owner == owner)
+            {
+                activeBars[i].IsUserVisible = false;
+                if (activeBars[i].GameObject != null)
+                    activeBars[i].GameObject.SetActive(false);
+                return;
+            }
+        }
     }
 
     private void UpdateFill(ActiveBar bar, float pct)
