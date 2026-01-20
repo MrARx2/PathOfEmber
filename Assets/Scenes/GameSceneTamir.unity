@@ -4937,8 +4937,8 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6108249043771841494, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
   m_PrefabInstance: {fileID: 241913751}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &697421226 stripped
-Transform:
+--- !u!224 &697421226 stripped
+RectTransform:
   m_CorrespondingSourceObject: {fileID: 1154860271512434826, guid: 36dbaeb145e0d614cacc53429414ab31, type: 3}
   m_PrefabInstance: {fileID: 5192862523168953076}
   m_PrefabAsset: {fileID: 0}
@@ -6071,6 +6071,7 @@ MonoBehaviour:
   prayerWheelDisplay: {fileID: 1246689979}
   buttonYOffset: 0
   systemsCanvasToHide: {fileID: 1381894438}
+  activeSortOrder: 100
   selectionSound: {fileID: 11400000, guid: 72f4a55d49ea3324394badf05657b9ac, type: 2}
 --- !u!114 &1246689979
 MonoBehaviour:
@@ -6091,7 +6092,8 @@ MonoBehaviour:
   basePositionOffset: {x: 0.02, y: 0.4, z: 0.65}
   baseRotationOffset: {x: -1.49, y: -90, z: -55}
   forwardOffset: 5
-  horizontalOffset: 0.28
+  wheel1HorizontalOffset: 1.5
+  wheel2HorizontalOffset: 1.5
   horizontalShift: -0.02
   verticalOffset: -1.3
   pauseGameWhenVisible: 1
@@ -7746,7 +7748,7 @@ PrefabInstance:
       objectReference: {fileID: 608188081}
     - target: {fileID: 6756301591341001385, guid: 247af827bbd4a994faa8d2a16c57145e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 3.36347
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6756301591341001385, guid: 247af827bbd4a994faa8d2a16c57145e, type: 3}
       propertyPath: m_LocalPosition.y

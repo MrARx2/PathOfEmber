@@ -507,6 +507,40 @@ namespace Boss
         }
         #endregion
 
+        /// <summary>
+        /// Permanently disables targeting for this part (called on Boss Death).
+        /// </summary>
+        public void DisableTargeting()
+        {
+            canRegenerate = false;
+            
+            // Unregister from targeting
+            EnemyRegistry.Unregister(transform);
+            if (HealthBarManager.Instance != null)
+            {
+                HealthBarManager.Instance.Unregister(this);
+                HealthBarManager.Instance.HideBar(this);
+            }
+            
+            // Disable physics and tagging
+            gameObject.tag = "Untagged";
+            gameObject.layer = LayerMask.NameToLayer("Default");
+            
+            var col = GetComponent<Collider>();
+            if (col != null) col.enabled = false;
+            
+            // Stop any active coroutines
+            StopAllCoroutines();
+            
+            // Final visual cleanup
+            ClearEmission();
+        }
+        
+        public void SetRegeneration(bool enabled)
+        {
+            canRegenerate = enabled;
+        }
+
         #region Debug
         [ContextMenu("Debug: Take 100 Damage")]
         private void DebugDamage100() => TakeDamage(100);
@@ -516,6 +550,9 @@ namespace Boss
         
         [ContextMenu("Debug: Full Heal")]
         private void DebugFullHeal() => FullHeal();
+        
+        [ContextMenu("Debug: Disable Targeting")]
+        private void DebugDisableTargeting() => DisableTargeting();
         #endregion
     }
 }

@@ -80,13 +80,123 @@ namespace Boss
         [Header("=== CAMERA ===")]
         [SerializeField, Tooltip("Arena center for boss camera mode")]
         private Transform arenaCenterPoint;
+
+        [Header("=== ENVIRONMENT ===")]
+        [SerializeField] private Hazards.HazardZoneMeteors hazardZone;
+        [SerializeField, Tooltip("Speed to set hazard zone when boss fight starts (usually 0)")]
+        private float bossZoneSpeed = 0f;
+        [SerializeField] private float normalZoneSpeed = 0.55f;
+        [SerializeField, Tooltip("Boundary object to activate when fight starts")]
+        private GameObject bossArenaBoundary;
+        [SerializeField, Tooltip("Delay before activating boundary to ensure player is inside")]
+        private float boundaryActivationDelay = 1.0f;
         
         [Header("=== DEBUG ===")]
         [SerializeField] private bool debugLog = true;
         [SerializeField] private TitanState currentState = TitanState.Idle;
-        
+
+        private void Start()
+        {
+            if (hazardZone == null)
+                hazardZone = FindFirstObjectByType<Hazards.HazardZoneMeteors>();
+        }
+
         // State
         private TitanAttackType currentAttack;
+        
+        // ... (StartBossFight logic below)
+
+        /// <summary>
+        /// Starts the boss fight sequence.
+        /// </summary>
+        public void StartBossFight()
+        {
+            if (isBossFightActive) return;
+            
+            isBossFightActive = true;
+            currentState = TitanState.Idle;
+            attackTimer = initialDelay;
+            
+            // Activate Boundary with delay
+            if (bossArenaBoundary != null)
+            {
+                StartCoroutine(ActivateBoundaryRoutine());
+            }
+
+            // Pause Hazard Zone (Immediate)
+            if (hazardZone != null)
+            {
+                hazardZone.SetSpeed(bossZoneSpeed);
+                if (debugLog) Debug.Log($"[TitanBossController] Hazard Zone speed set to {bossZoneSpeed}");
+            }
+            
+            // Initialize Well bools - both hands start healthy
+            if (animator != null)
+            {
+                animator.SetBool(rightWellHash, rightHandHealth == null || !rightHandHealth.IsDestroyed);
+                animator.SetBool(leftWellHash, leftHandHealth == null || !leftHandHealth.IsDestroyed);
+                if (debugLog) Debug.Log($"[TitanBossController] Initialized Wells: RightWell={!rightHandHealth?.IsDestroyed ?? true}, LeftWell={!leftHandHealth?.IsDestroyed ?? true}");
+            }
+            
+            // Activate camera boss mode
+            if (CameraBossMode.Instance != null && arenaCenterPoint != null)
+            {
+                CameraBossMode.Instance.EnterBossMode(arenaCenterPoint);
+            }
+            
+            OnBossFightStarted?.Invoke();
+            
+            if (debugLog)
+                Debug.Log("[TitanBossController] Boss fight started!");
+            
+            StartCoroutine(BossFightLoop());
+        }
+
+        private IEnumerator ActivateBoundaryRoutine()
+        {
+            if (boundaryActivationDelay > 0)
+                yield return new WaitForSeconds(boundaryActivationDelay);
+                
+            if (bossArenaBoundary != null && isBossFightActive)
+            {
+                bossArenaBoundary.SetActive(true);
+                if (debugLog) Debug.Log("[TitanBossController] Boss Arena Boundary ACTIVATED");
+            }
+        }
+
+        // ... (EndBossFight logic below)
+
+        /// <summary>
+        /// Explicitly ends the boss fight (exits camera mode).
+        /// Call this via Animation Event at the end of death animation.
+        /// </summary>
+        public void EndBossFight()
+        {
+            if (!isBossFightActive) return;
+            isBossFightActive = false;
+            
+            if (debugLog) Debug.Log("[TitanBossController] EndBossFight called - exiting boss mode");
+            
+            // Stop all targeting (Delay this until here so camera stays locked during death anim)
+            if (rightHandSocket != null) rightHandSocket.SetTargetable(false);
+            if (leftHandSocket != null) leftHandSocket.SetTargetable(false);
+            if (coreSocket != null) coreSocket.SetTargetable(false);
+            
+            // Resume Hazard Zone
+            if (hazardZone != null)
+            {
+                hazardZone.SetSpeed(normalZoneSpeed);
+                if (debugLog) Debug.Log($"[TitanBossController] Hazard Zone speed resumed to {normalZoneSpeed}");
+            }
+
+            // Explicitly exit camera boss mode
+            if (CameraBossMode.Instance != null)
+            {
+                CameraBossMode.Instance.ExitBossMode();
+            }
+            
+            OnBossDefeated?.Invoke();
+        }
         private TitanAttackType lastAttack = TitanAttackType.CoreBlast;
         private int currentAttackIndex = 0; // 0=Fist, 1=Summon, 2=Blast, cycles
         private float attackTimer;
@@ -131,7 +241,8 @@ namespace Boss
             if (rightHandHealth != null)
             {
                 rightHandHealth.OnDeath.AddListener(OnRightHandDestroyed);
-                Debug.Log("[TitanBossController] Subscribed to rightHandHealth.OnDeath");
+                rightHandHealth.OnDamage.AddListener(ApplySharedDamageToCore);
+                Debug.Log("[TitanBossController] Subscribed to rightHandHealth events");
             }
             else
             {
@@ -141,7 +252,8 @@ namespace Boss
             if (leftHandHealth != null)
             {
                 leftHandHealth.OnDeath.AddListener(OnLeftHandDestroyed);
-                Debug.Log("[TitanBossController] Subscribed to leftHandHealth.OnDeath");
+                leftHandHealth.OnDamage.AddListener(ApplySharedDamageToCore);
+                Debug.Log("[TitanBossController] Subscribed to leftHandHealth events");
             }
             else
             {
@@ -153,69 +265,23 @@ namespace Boss
         {
             if (coreHealth != null)
                 coreHealth.OnDeath.RemoveListener(OnCoreDestroyed);
+                
             if (rightHandHealth != null)
+            {
                 rightHandHealth.OnDeath.RemoveListener(OnRightHandDestroyed);
+                rightHandHealth.OnDamage.RemoveListener(ApplySharedDamageToCore);
+            }
+                
             if (leftHandHealth != null)
+            {
                 leftHandHealth.OnDeath.RemoveListener(OnLeftHandDestroyed);
+                leftHandHealth.OnDamage.RemoveListener(ApplySharedDamageToCore);
+            }
         }
         
-        /// <summary>
-        /// Starts the boss fight sequence.
-        /// </summary>
-        public void StartBossFight()
-        {
-            if (isBossFightActive) return;
-            
-            isBossFightActive = true;
-            currentState = TitanState.Idle;
-            attackTimer = initialDelay;
-            
-            // Initialize Well bools - both hands start healthy
-            if (animator != null)
-            {
-                animator.SetBool(rightWellHash, rightHandHealth == null || !rightHandHealth.IsDestroyed);
-                animator.SetBool(leftWellHash, leftHandHealth == null || !leftHandHealth.IsDestroyed);
-                if (debugLog) Debug.Log($"[TitanBossController] Initialized Wells: RightWell={!rightHandHealth?.IsDestroyed ?? true}, LeftWell={!leftHandHealth?.IsDestroyed ?? true}");
-            }
-            
-            // Activate camera boss mode
-            if (CameraBossMode.Instance != null && arenaCenterPoint != null)
-            {
-                CameraBossMode.Instance.EnterBossMode(arenaCenterPoint);
-            }
-            
-            OnBossFightStarted?.Invoke();
-            
-            if (debugLog)
-                Debug.Log("[TitanBossController] Boss fight started!");
-            
-            StartCoroutine(BossFightLoop());
-        }
+
         
-        /// <summary>
-        /// Explicitly ends the boss fight (exits camera mode).
-        /// Call this via Animation Event at the end of death animation.
-        /// </summary>
-        public void EndBossFight()
-        {
-            if (!isBossFightActive) return;
-            isBossFightActive = false;
-            
-            if (debugLog) Debug.Log("[TitanBossController] EndBossFight called - exiting boss mode");
-            
-            // Stop all targeting (Delay this until here so camera stays locked during death anim)
-            if (rightHandSocket != null) rightHandSocket.SetTargetable(false);
-            if (leftHandSocket != null) leftHandSocket.SetTargetable(false);
-            if (coreSocket != null) coreSocket.SetTargetable(false);
-            
-            // Explicitly exit camera boss mode
-            if (CameraBossMode.Instance != null)
-            {
-                CameraBossMode.Instance.ExitBossMode();
-            }
-            
-            OnBossDefeated?.Invoke();
-        }
+
         
         /// <summary>
         /// Main boss fight loop.
@@ -332,6 +398,8 @@ namespace Boss
         /// </summary>
         private IEnumerator PerformAttack(TitanAttackType attackType)
         {
+            if (currentState == TitanState.Death) yield break;
+            
             currentState = TitanState.Attacking;
             lastAttack = attackType;
             OnAttackStarted?.Invoke(attackType);
@@ -375,6 +443,13 @@ namespace Boss
             // Wait for animation
             yield return new WaitForSecondsRealtime(waitDuration);
             
+            // CRITICAL CHECK: ensure we didn't die while waiting
+            if (currentState == TitanState.Death)
+            {
+                DisableAllParts();
+                yield break;
+            }
+            
             // If rage was performed, heal the hand and set Well = true
             if (isRageNeeded)
             {
@@ -402,6 +477,8 @@ namespace Boss
         /// </summary>
         private void OnRightHandDestroyed()
         {
+            if (currentState == TitanState.Death) return;
+            
             Debug.Log($"[TitanBossController] OnRightHandDestroyed called! Animator: {animator != null}, rightWellHash: {rightWellHash}");
             
             if (animator != null)
@@ -423,6 +500,8 @@ namespace Boss
         /// </summary>
         private void OnLeftHandDestroyed()
         {
+            if (currentState == TitanState.Death) return;
+            
             Debug.Log($"[TitanBossController] OnLeftHandDestroyed called! Animator: {animator != null}, leftWellHash: {leftWellHash}");
             
             if (animator != null)
@@ -445,6 +524,8 @@ namespace Boss
         /// </summary>
         public void RepairHands()
         {
+            if (currentState == TitanState.Death) return;
+            
             Debug.Log("[TitanBossController] RepairHands called");
             
             // Heal both hands
@@ -497,8 +578,6 @@ namespace Boss
         /// </summary>
         private void OnCoreDestroyed()
         {
-            if (currentState == TitanState.Death) return;
-            
             StartCoroutine(PerformDeath());
         }
         
@@ -507,10 +586,9 @@ namespace Boss
         /// </summary>
         private IEnumerator PerformDeath()
         {
+            if (currentState == TitanState.Death) yield break;
+            
             currentState = TitanState.Death;
-            // Note: We do NOT set isBossFightActive = false here anymore.
-            // It must be called manually via EndBossFight() (e.g. by animation event) 
-            // to keep the camera in boss mode during the death animation.
             
             if (debugLog)
                 Debug.Log($"[TitanBossController] TITAN DEFEATED! Triggering death anim: {deathParam}");
@@ -521,14 +599,57 @@ namespace Boss
                 animator.SetTrigger(deathHash);
             }
             
-            // Note: Targeting is disabled and Camera Exit is handled in EndBossFight(), 
-            // called by animation event at the end of the death animation.
-            // Death sound is triggered by animation event via TitanAnimationRelay.OnPlayDeath
+            // Wait for death animation to play out (5 seconds safe duration)
+            // During this time, the boss is untargetable via normal means (if we want),
+            // BUT for now we keep physics active so the animation (if root motion or ragdoll) works.
+            // ACTUALLY: The user wants targetability disabled immediately for CORE death.
+            // We will do a "Soft Disable" first - cancel logic, stop targeting search.
+            // But we MUST NOT disable the collider if it affects the animation/physics ground check.
             
-            yield return null;
+            // However, since we are using "DisableAllParts", which calls "DisableTargeting" on TitanHealth...
+            // Let's modify DisableTargeting in TitanHealth to be safer, OR just wait here.
+            
+            // Strategy: 
+            // 1. Immediately stop the boss logic (currentState = Death handles this).
+            // 2. Play animation.
+            // 3. Wait for animation to finish.
+            // 4. THEN cleanup physics/layers.
+            
+            yield return new WaitForSeconds(5f); // Wait for long death animation
+            
+            // Permanently disable all parts (Collision, Tags, Layers)
+            DisableAllParts();
+            
+            // Finalize
+            EndBossFight();
         }
         
-        // SelectRandomAttack removed - now using fixed cycle via GetAttackFromIndex
+        private void DisableAllParts()
+        {
+            if (debugLog) Debug.Log("[TitanBossController] Disabling all Titan parts permanently.");
+            
+            if (rightHandHealth != null) rightHandHealth.DisableTargeting();
+            if (leftHandHealth != null) leftHandHealth.DisableTargeting();
+            if (coreHealth != null) coreHealth.DisableTargeting();
+        }
+
+        /// <summary>
+        /// Applies 25% of damage taken by hands to the core.
+        /// </summary>
+        private void ApplySharedDamageToCore(int damage)
+        {
+            if (currentState == TitanState.Death) return;
+            if (coreHealth == null || coreHealth.IsDestroyed) return;
+            
+            // Prevent recursive loop if core somehow triggers hand damage (unlikely but safe)
+            // Core damage logic is separate.
+            
+            int sharedDamage = damage / 4;
+            if (sharedDamage > 0)
+            {
+                coreHealth.TakeDamage(sharedDamage);
+            }
+        }
         
         #region Debug
         [ContextMenu("Debug: Start Boss Fight")]
@@ -563,3 +684,4 @@ namespace Boss
         #endregion
     }
 }
+

@@ -678,5 +678,22 @@ public class PlayerShooting : MonoBehaviour
         tripleshotStacks = Mathf.Max(0, stacks);
         tripleshotAngle = angle;
     }
+    
+    /// <summary>
+    /// Adds a temporary attack range bonus.
+    /// </summary>
+    public void AddAttackRangeBonus(float bonus)
+    {
+        attackRange += bonus;
+    }
+    
+    /// <summary>
+    /// Removes a previously applied attack range bonus.
+    /// </summary>
+    public void RemoveAttackRangeBonus(float bonus)
+    {
+        attackRange -= bonus;
+        if (attackRange < 1f) attackRange = 1f; // Safety floor
+    }
     #endregion
 }

@@ -274,6 +274,12 @@ namespace Hazards
             }
         }
 
+        public void SetSpeed(float speed)
+        {
+            zoneAdvanceSpeed = speed;
+            if (debugLog) Debug.Log($"[HazardZone] Speed set to: {speed}");
+        }
+
         private void HandleZoneExpansion()
         {
             if (!expandWhenPlayerInside) return;

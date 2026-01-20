@@ -65,6 +65,19 @@ namespace Boss
         [SerializeField, Tooltip("Death sound")]
         private SoundEvent deathSound;
         
+        [Header("=== SOUND POSITIONS (3D Spatial Audio) ===")]
+        [SerializeField, Tooltip("Position for fist sounds (right hand)")]
+        private Transform fistSoundPosition;
+        
+        [SerializeField, Tooltip("Position for summon sounds (left hand)")]
+        private Transform summonSoundPosition;
+        
+        [SerializeField, Tooltip("Position for core sounds")]
+        private Transform coreSoundPosition;
+        
+        [SerializeField, Tooltip("Fallback position for general boss sounds (rage, death)")]
+        private Transform bossCenterPosition;
+        
         [Header("Debug")]
         [SerializeField] private bool debugLog = false;
         
@@ -153,85 +166,91 @@ namespace Boss
         public void TriggerCoreBlast() => OnCoreBlast();
         #endregion
         
-        #region Sound Events (All 7 Sounds)
+        #region Sound Events (All 7 Sounds - 3D Spatialized)
+        
+        private Vector3 GetFistPosition() => fistSoundPosition != null ? fistSoundPosition.position : transform.position;
+        private Vector3 GetSummonPosition() => summonSoundPosition != null ? summonSoundPosition.position : transform.position;
+        private Vector3 GetCorePosition() => coreSoundPosition != null ? coreSoundPosition.position : transform.position;
+        private Vector3 GetBossPosition() => bossCenterPosition != null ? bossCenterPosition.position : transform.position;
+        
         /// <summary>
-        /// Play Fist Call sound (windup).
+        /// Play Fist Call sound (windup) - 3D at fist position.
         /// </summary>
         public void OnPlayFistCall()
         {
             if (debugLog) Debug.Log("[TitanAnimationRelay] OnPlayFistCall");
             if (fistCallSound != null && AudioManager.Instance != null)
-                AudioManager.Instance.Play(fistCallSound);
+                AudioManager.Instance.PlayAtPosition(fistCallSound, GetFistPosition());
         }
         
         /// <summary>
-        /// Play Fist Impact sound.
+        /// Play Fist Impact sound - 3D at fist position.
         /// </summary>
         public void OnPlayFistImpact()
         {
             if (debugLog) Debug.Log("[TitanAnimationRelay] OnPlayFistImpact");
             if (fistImpactSound != null && AudioManager.Instance != null)
-                AudioManager.Instance.Play(fistImpactSound);
+                AudioManager.Instance.PlayAtPosition(fistImpactSound, GetFistPosition());
         }
         
         /// <summary>
-        /// Play Ground Crack sound.
+        /// Play Ground Crack sound - 3D at fist position.
         /// </summary>
         public void OnPlayGroundCrack()
         {
             if (debugLog) Debug.Log("[TitanAnimationRelay] OnPlayGroundCrack");
             if (groundCrackSound != null && AudioManager.Instance != null)
-                AudioManager.Instance.Play(groundCrackSound);
+                AudioManager.Instance.PlayAtPosition(groundCrackSound, GetFistPosition());
         }
         
         /// <summary>
-        /// Play Summon Call sound.
+        /// Play Summon Call sound - 3D at summon/left hand position.
         /// </summary>
         public void OnPlaySummonCall()
         {
             if (debugLog) Debug.Log("[TitanAnimationRelay] OnPlaySummonCall");
             if (summonCallSound != null && AudioManager.Instance != null)
-                AudioManager.Instance.Play(summonCallSound);
+                AudioManager.Instance.PlayAtPosition(summonCallSound, GetSummonPosition());
         }
         
         /// <summary>
-        /// Play Core Blast Raiser sound (charge up).
+        /// Play Core Blast Raiser sound (charge up) - 3D at core position.
         /// </summary>
         public void OnPlayCoreBlastRaiser()
         {
             if (debugLog) Debug.Log("[TitanAnimationRelay] OnPlayCoreBlastRaiser");
             if (coreBlastRaiserSound != null && AudioManager.Instance != null)
-                AudioManager.Instance.Play(coreBlastRaiserSound);
+                AudioManager.Instance.PlayAtPosition(coreBlastRaiserSound, GetCorePosition());
         }
         
         /// <summary>
-        /// Play Core Blast Blast sound (fire).
+        /// Play Core Blast Blast sound (fire) - 3D at core position.
         /// </summary>
         public void OnPlayCoreBlastBlast()
         {
             if (debugLog) Debug.Log("[TitanAnimationRelay] OnPlayCoreBlastBlast");
             if (coreBlastBlastSound != null && AudioManager.Instance != null)
-                AudioManager.Instance.Play(coreBlastBlastSound);
+                AudioManager.Instance.PlayAtPosition(coreBlastBlastSound, GetCorePosition());
         }
         
         /// <summary>
-        /// Play Rage sound.
+        /// Play Rage sound - 3D at boss center.
         /// </summary>
         public void OnPlayRage()
         {
             if (debugLog) Debug.Log("[TitanAnimationRelay] OnPlayRage");
             if (rageSound != null && AudioManager.Instance != null)
-                AudioManager.Instance.Play(rageSound);
+                AudioManager.Instance.PlayAtPosition(rageSound, GetBossPosition());
         }
         
         /// <summary>
-        /// Play Death sound.
+        /// Play Death sound - 3D at boss center.
         /// </summary>
         public void OnPlayDeath()
         {
             if (debugLog) Debug.Log("[TitanAnimationRelay] OnPlayDeath");
             if (deathSound != null && AudioManager.Instance != null)
-                AudioManager.Instance.Play(deathSound);
+                AudioManager.Instance.PlayAtPosition(deathSound, GetBossPosition());
         }
         #endregion
         

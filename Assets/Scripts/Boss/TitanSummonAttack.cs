@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using Audio; // Required for SoundEvent and AudioManager
 
 namespace Boss
 {
@@ -13,8 +15,11 @@ namespace Boss
         [SerializeField, Tooltip("Chaser enemy prefab to spawn")]
         private GameObject chaserPrefab;
         
-        [SerializeField, Tooltip("Spawn points for chasers")]
+        [SerializeField, Tooltip("Spawn points for chasers (Fallback if area not set)")]
         private Transform[] spawnPoints;
+
+        [SerializeField, Tooltip("Area to spawn chasers randomly within")]
+        private BoxCollider spawnArea;
         
         [SerializeField, Tooltip("Number of chasers to spawn per execution")]
         private int spawnCount = 3;
@@ -22,6 +27,28 @@ namespace Boss
         [SerializeField, Tooltip("Delay between each chaser spawn")]
         private float spawnDelay = 0.3f;
         
+        [Header("Spawn Indicators")]
+        [SerializeField, Tooltip("If true, shows indicator decals before spawning enemies")]
+        private bool useSpawnIndicator = true;
+        
+        [SerializeField, Tooltip("Prefab for the indicator decal/VFX")]
+        private GameObject indicatorPrefab;
+        
+        [SerializeField, Tooltip("Delay before enemy spawns while indicator is shown")]
+        private float indicatorDuration = 1.5f;
+        
+        [SerializeField] private Vector3 indicatorPositionOffset = new Vector3(0f, 0.05f, 0f);
+        [SerializeField] private Vector3 indicatorRotationOffset = new Vector3(90f, 0f, 0f);
+        
+        [Header("Spawn VFX")]
+        [SerializeField, Tooltip("Optional VFX to play when enemy actually spawns")]
+        private GameObject spawnVFXPrefab;
+        
+        [SerializeField] private Vector3 spawnVFXPositionOffset = Vector3.zero;
+        [SerializeField] private Vector3 spawnVFXRotationOffset = new Vector3(-90f, 0f, 0f);
+        
+        [SerializeField] private Audio.SoundEvent spawnSound;
+
         [Header("Animation Sync")]
         [SerializeField, Tooltip("Delay after animation trigger before spawning starts")]
         private float startDelay = 0.5f;
@@ -81,38 +108,102 @@ namespace Boss
                 yield break;
             }
             
-            // Spawn chasers
-            int spawned = 0;
-            int spawnIndex = 0;
+            // 1. Calculate all spawn positions first
+            var spawnData = CalculateSpawnPositions();
             
-            while (spawned < spawnCount)
+            // 2. Show indicators if enabled
+            List<GameObject> activeIndicators = new List<GameObject>();
+            if (useSpawnIndicator && indicatorPrefab != null)
             {
-                // Get spawn position (cycle through spawn points or use random)
-                Vector3 spawnPos;
-                if (spawnPoints != null && spawnPoints.Length > 0)
+                foreach (var pos in spawnData)
                 {
-                    spawnPos = spawnPoints[spawnIndex % spawnPoints.Length].position;
-                    spawnIndex++;
-                }
-                else
-                {
-                    // Random position around the boss
-                    Vector2 offset = Random.insideUnitCircle * 5f;
-                    spawnPos = transform.position + new Vector3(offset.x, 0, offset.y);
+                    Vector3 indPos = pos + indicatorPositionOffset;
+                    Quaternion indRot = Quaternion.Euler(indicatorRotationOffset);
+                    GameObject indicator = Instantiate(indicatorPrefab, indPos, indRot);
+                    activeIndicators.Add(indicator);
                 }
                 
-                // Spawn chaser
-                GameObject chaser = Instantiate(chaserPrefab, spawnPos, Quaternion.identity);
-                spawned++;
+                // Wait for indicator duration
+                yield return new WaitForSeconds(indicatorDuration);
+            }
+            
+            // 3. Spawn enemies
+            for (int i = 0; i < spawnData.Count; i++)
+            {
+                Vector3 pos = spawnData[i];
+                
+                // Spawn VFX
+                if (spawnVFXPrefab != null)
+                {
+                    Vector3 vfxPos = pos + spawnVFXPositionOffset;
+                    Quaternion vfxRot = Quaternion.Euler(spawnVFXRotationOffset);
+                    GameObject vfx = Instantiate(spawnVFXPrefab, vfxPos, vfxRot);
+                    Destroy(vfx, 3f);
+                }
+                
+                // Play Sound
+                if (spawnSound != null && AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayAtPosition(spawnSound, pos);
+                }
+                
+                // Spawn Enemy
+                GameObject chaser = Instantiate(chaserPrefab, pos, Quaternion.identity);
                 
                 if (debugLog)
-                    Debug.Log($"[TitanSummonAttack] Spawned chaser {spawned}/{spawnCount} at {spawnPos}");
+                    Debug.Log($"[TitanSummonAttack] Spawned chaser {i+1}/{spawnCount} at {pos}");
                 
-                yield return new WaitForSeconds(spawnDelay);
+                // Remove specific indicator if list corresponds (fairly safe assumption)
+                if (i < activeIndicators.Count && activeIndicators[i] != null)
+                {
+                    Destroy(activeIndicators[i]);
+                }
+                
+                // Stagger delay
+                if (spawnDelay > 0 && i < spawnData.Count - 1)
+                    yield return new WaitForSeconds(spawnDelay);
+            }
+            
+            // Cleanup any remaining indicators (just in case)
+            foreach (var ind in activeIndicators)
+            {
+                if (ind != null) Destroy(ind);
             }
             
             if (debugLog)
                 Debug.Log("[TitanSummonAttack] Summon complete");
+        }
+        
+        private System.Collections.Generic.List<Vector3> CalculateSpawnPositions()
+        {
+            var positions = new System.Collections.Generic.List<Vector3>();
+            int spawnIndex = 0;
+            
+            for (int i = 0; i < spawnCount; i++)
+            {
+                Vector3 pos;
+                if (spawnArea != null)
+                {
+                    // Random position within BoxCollider bounds
+                    Bounds bounds = spawnArea.bounds;
+                    float rx = Random.Range(bounds.min.x, bounds.max.x);
+                    float rz = Random.Range(bounds.min.z, bounds.max.z);
+                    pos = new Vector3(rx, bounds.center.y, rz);
+                }
+                else if (spawnPoints != null && spawnPoints.Length > 0)
+                {
+                    pos = spawnPoints[spawnIndex % spawnPoints.Length].position;
+                    spawnIndex++;
+                }
+                else
+                {
+                    // Fallback randomness
+                    Vector2 offset = Random.insideUnitCircle * 5f;
+                    pos = transform.position + new Vector3(offset.x, 0, offset.y);
+                }
+                positions.Add(pos);
+            }
+            return positions;
         }
         
         private IEnumerator EmissionRampRoutine()
@@ -152,14 +243,23 @@ namespace Boss
         
         private void OnDrawGizmosSelected()
         {
-            if (spawnPoints == null) return;
-            
             Gizmos.color = Color.magenta;
-            foreach (var point in spawnPoints)
+            
+            if (spawnArea != null)
             {
-                if (point != null)
+                Gizmos.matrix = spawnArea.transform.localToWorldMatrix;
+                Gizmos.DrawWireCube(spawnArea.center, spawnArea.size);
+                return;
+            }
+            
+            if (spawnPoints != null)
+            {
+                foreach (var point in spawnPoints)
                 {
-                    Gizmos.DrawWireSphere(point.position, 0.5f);
+                    if (point != null)
+                    {
+                        Gizmos.DrawWireSphere(point.position, 0.5f);
+                    }
                 }
             }
         }
