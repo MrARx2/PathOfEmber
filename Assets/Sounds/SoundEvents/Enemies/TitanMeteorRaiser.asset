@@ -10,14 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 768f2fdfaa9b88345b4a03db84ad1b05, type: 3}
-  m_Name: TitanFist
+  m_Name: TitanMeteorRaiser
   m_EditorClassIdentifier: Assembly-CSharp::Audio.SoundEvent
   clips:
-  - {fileID: 8300000, guid: ca091107c6acfee4ca4183cec63afe5a, type: 3}
+  - {fileID: 8300000, guid: 8826e481b3c895b4595c19e84fee93c6, type: 3}
   volume: 1
+  randomizeVolume: 0
+  volumeVariation: 0.1
   pitch: 1
   randomizePitch: 0
   pitchVariation: 0.1
+  loop: 0
   mixerGroup: {fileID: -5302755927721441297, guid: 192a397c5486ee64b9f6be8c47dcef29, type: 2}
   maxInstances: 3
   stealMode: 1
@@ -25,3 +28,4 @@ MonoBehaviour:
   spatialBlend: 1
   minDistance: 1
   maxDistance: 5
+  affectedByTimeSlowdown: 1

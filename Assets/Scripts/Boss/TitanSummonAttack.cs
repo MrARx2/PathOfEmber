@@ -27,11 +27,8 @@ namespace Boss
         private float startDelay = 0.5f;
         
         [Header("Material Emission")]
-        [SerializeField, Tooltip("Renderer for the hand with emission")]
-        private Renderer handRenderer;
-        
-        [SerializeField, Tooltip("Material index on the renderer (0 for first material)")]
-        private int materialIndex = 0;
+        [SerializeField, Tooltip("Material for the hand with emission (assign directly)")]
+        private Material handMaterial;
         
         [SerializeField, Tooltip("Emission color when summoning")]
         private Color emissionColor = new Color(1f, 0.5f, 0f, 1f); // Orange
@@ -48,21 +45,16 @@ namespace Boss
         [Header("Debug")]
         [SerializeField] private bool debugLog = false;
         
-        private Material handMaterial;
         private Color originalEmission;
         private bool hadEmissionEnabled;
         
         private void Awake()
         {
-            // Cache material for emission control
-            if (handRenderer != null && handRenderer.materials.Length > materialIndex)
+            // Cache original emission state
+            if (handMaterial != null && handMaterial.HasProperty("_EmissionColor"))
             {
-                handMaterial = handRenderer.materials[materialIndex];
-                if (handMaterial.HasProperty("_EmissionColor"))
-                {
-                    originalEmission = handMaterial.GetColor("_EmissionColor");
-                    hadEmissionEnabled = handMaterial.IsKeywordEnabled("_EMISSION");
-                }
+                originalEmission = handMaterial.GetColor("_EmissionColor");
+                hadEmissionEnabled = handMaterial.IsKeywordEnabled("_EMISSION");
             }
         }
         

@@ -13,11 +13,14 @@ MonoBehaviour:
   m_Name: TitanDie
   m_EditorClassIdentifier: Assembly-CSharp::Audio.SoundEvent
   clips:
-  - {fileID: 8300000, guid: 022c0743ddd1dab4087cb58947644c27, type: 3}
-  volume: 1
+  - {fileID: 8300000, guid: 6a0f7f29dcc694a4799e350110ec7b62, type: 3}
+  volume: 0.5
+  randomizeVolume: 0
+  volumeVariation: 0.1
   pitch: 1
   randomizePitch: 0
   pitchVariation: 0.1
+  loop: 0
   mixerGroup: {fileID: -5302755927721441297, guid: 192a397c5486ee64b9f6be8c47dcef29, type: 2}
   maxInstances: 3
   stealMode: 1
@@ -25,3 +28,4 @@ MonoBehaviour:
   spatialBlend: 1
   minDistance: 1
   maxDistance: 5
+  affectedByTimeSlowdown: 1

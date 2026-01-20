@@ -10,23 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 768f2fdfaa9b88345b4a03db84ad1b05, type: 3}
-  m_Name: MeteorFall
+  m_Name: TitanFistBoom
   m_EditorClassIdentifier: Assembly-CSharp::Audio.SoundEvent
   clips:
-  - {fileID: 8300000, guid: 6b14f4e3ea5c2664786f13396fbf0f2f, type: 3}
-  - {fileID: 8300000, guid: e59787274e748ed448770a8a6f3821fa, type: 3}
-  volume: 0.1
-  randomizeVolume: 1
-  volumeVariation: 0.1477
+  - {fileID: 8300000, guid: 92b11cef29cda3043a35c14bbb10971f, type: 3}
+  volume: 1
+  randomizeVolume: 0
+  volumeVariation: 0.1
   pitch: 1
-  randomizePitch: 1
-  pitchVariation: 0.147
+  randomizePitch: 0
+  pitchVariation: 0.1
   loop: 0
   mixerGroup: {fileID: -5302755927721441297, guid: 192a397c5486ee64b9f6be8c47dcef29, type: 2}
   maxInstances: 3
   stealMode: 1
   cooldown: 0
   spatialBlend: 1
-  minDistance: 2
-  maxDistance: 10
+  minDistance: 1
+  maxDistance: 5
   affectedByTimeSlowdown: 1

@@ -75,12 +75,7 @@ namespace Boss
         [SerializeField, Tooltip("Trigger param for death animation")]
         private string deathParam = "Death";
         
-        [Header("=== SOUND EFFECTS ===")]
-        [SerializeField] private SoundEvent fistSound;
-        [SerializeField] private SoundEvent summonSound;
-        [SerializeField] private SoundEvent coreBlastSound;
-        [SerializeField] private SoundEvent rageSound;
-        [SerializeField] private SoundEvent deathSound;
+        // NOTE: Sound effects are now handled via animation events in TitanAnimationRelay
         
         [Header("=== CAMERA ===")]
         [SerializeField, Tooltip("Arena center for boss camera mode")]
@@ -108,6 +103,7 @@ namespace Boss
         public event System.Action OnRageStarted;
         
         public TitanState CurrentState => currentState;
+        public Animator Animator => animator;
         public bool IsBossFightActive => isBossFightActive;
         
         private void Awake()
@@ -340,61 +336,40 @@ namespace Boss
             lastAttack = attackType;
             OnAttackStarted?.Invoke(attackType);
             
+            // NOTE: Index is now controlled ONLY by animation events (SetIndex0/1/2)
+            // via TitanAnimationRelay - no code-based index changes here
+            
             float waitDuration = 2f;
-            int attackIndex = currentAttackIndex; // Use current cycle index
             bool isRageNeeded = false;
             
             switch (attackType)
             {
                 case TitanAttackType.Fist:
-                    attackIndex = 0;
                     isRageNeeded = rightHandHealth != null && rightHandHealth.IsDestroyed;
-                    if (!isRageNeeded)
-                    {
-                        if (fistSound != null && AudioManager.Instance != null)
-                            AudioManager.Instance.Play(fistSound);
-                        // Fist attack triggered by animation event via TitanAnimationRelay
-                    }
+                    // Sound triggered by animation event via TitanAnimationRelay.OnPlayFistCall
                     waitDuration = fistAttackDuration;
                     break;
                     
                 case TitanAttackType.Summon:
-                    attackIndex = 1;
                     isRageNeeded = leftHandHealth != null && leftHandHealth.IsDestroyed;
-                    if (!isRageNeeded)
-                    {
-                        if (summonSound != null && AudioManager.Instance != null)
-                            AudioManager.Instance.Play(summonSound);
-                        // Summon attack triggered by animation event via TitanAnimationRelay
-                    }
+                    // Sound triggered by animation event via TitanAnimationRelay.OnPlaySummonCall
                     waitDuration = summonAttackDuration;
                     break;
                     
                 case TitanAttackType.CoreBlast:
-                    attackIndex = 2;
-                    if (coreBlastSound != null && AudioManager.Instance != null)
-                        AudioManager.Instance.Play(coreBlastSound);
-                    // CoreBlast triggered by animation event via TitanAnimationRelay
+                    // Sound triggered by animation event via TitanAnimationRelay.OnPlayCoreBlastRaiser
                     waitDuration = coreBlastAttackDuration;
                     break;
             }
             
-            // If rage is needed, play rage sound and set targeting
+            // If rage is needed, set targeting (sound triggered by animation event)
             if (isRageNeeded)
             {
-                if (rageSound != null && AudioManager.Instance != null)
-                    AudioManager.Instance.Play(rageSound);
+                // Sound triggered by animation event via TitanAnimationRelay.OnPlayRage
                 waitDuration = rageRecoveryTime;
                 currentState = TitanState.Rage;
                 OnRageStarted?.Invoke();
                 SetRageTargeting(true);
-            }
-            
-            // Set index in animator
-            if (animator != null)
-            {
-                animator.SetInteger(indexHash, attackIndex);
-                if (debugLog) Debug.Log($"[TitanBossController] Set Index = {attackIndex} for {attackType}, Rage: {isRageNeeded}");
             }
             
             // Wait for animation
@@ -548,9 +523,7 @@ namespace Boss
             
             // Note: Targeting is disabled and Camera Exit is handled in EndBossFight(), 
             // called by animation event at the end of the death animation.
-            
-            if (deathSound != null && AudioManager.Instance != null)
-                AudioManager.Instance.Play(deathSound);
+            // Death sound is triggered by animation event via TitanAnimationRelay.OnPlayDeath
             
             yield return null;
         }
