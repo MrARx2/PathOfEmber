@@ -58,6 +58,10 @@ namespace Hazards
         [SerializeField, Tooltip("Curve controlling spawn rate based on depth (0=edge, 1=deep).")]
         private AnimationCurve spawnRateCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
+        [SerializeField, Tooltip("Randomness factor for spawn intervals (0 = strict rhythm, 1 = chaotic).")]
+        [Range(0f, 1f)]
+        private float spawnRandomness = 0.4f;
+
         [Header("=== SPAWN DISTANCE ===")]
         [SerializeField, Tooltip("Minimum distance from player to spawn meteors.")]
         private float minSpawnDistance = 1.5f;
@@ -127,7 +131,7 @@ namespace Hazards
         private float _currentIntensity;
         private float _advanceTimer;
         private float _totalDistanceMoved;
-        private float _meteorAccumulator; // Accumulates fractional meteors
+        private float _nextSpawnTime; // Replaces meteorAccumulator
         private PlayerHealth _playerHealth;
         private PlayerAbilities _playerAbilities;
 
@@ -142,6 +146,7 @@ namespace Hazards
             _originalSize = _zoneCollider.size;
             _advanceTimer = advanceStartDelay;
             _totalDistanceMoved = 0f;
+            _nextSpawnTime = 0f;
 
             advanceDirection = advanceDirection.normalized;
 
@@ -357,37 +362,48 @@ namespace Hazards
             if (meteorStrikePrefab == null || player == null) return;
 
             float meteorsPerSecond = 0f;
+            bool isActive = false;
 
             if (_playerInZone)
             {
                 // Inside zone: scale with depth
                 meteorsPerSecond = Mathf.Lerp(minMeteorsPerSecond, maxMeteorsPerSecond, _currentIntensity);
+                isActive = true;
             }
             else if (_playerInEarlyWarning)
             {
                 // Early warning phase
                 meteorsPerSecond = earlyWarningMeteorsPerSecond;
+                isActive = true;
             }
-            else
+            // else: Not in range
+
+            if (!isActive || meteorsPerSecond <= 0.001f)
             {
-                // Not in range
-                _meteorAccumulator = 0f;
+                // Push timer into future so we don't spawn instantly upon re-entry
+                // Keeps it "ready" but creates a small delay
+                _nextSpawnTime = Time.time + (1f / Mathf.Max(minMeteorsPerSecond, 0.1f));
                 return;
             }
 
-            // Accumulate meteors over time
-            _meteorAccumulator += meteorsPerSecond * Time.deltaTime;
-
-            // Spawn whole meteors
-            while (_meteorAccumulator >= 1f)
+            // Check if it's time to spawn
+            if (Time.time >= _nextSpawnTime)
             {
-                _meteorAccumulator -= 1f;
                 SpawnMeteor();
-            }
 
-            if (debugLog && _playerInZone && Time.frameCount % 60 == 0)
-            {
-                Debug.Log($"[HazardZone] Depth: {_currentDepth:F2}, Rate: {meteorsPerSecond:F1}/s");
+                // Calculate next interval with randomness
+                float baseInterval = 1f / meteorsPerSecond;
+                
+                // Apply randomness: e.g. randomness 0.4 => multiplier [0.6, 1.4]
+                float randomFactor = Random.Range(1f - spawnRandomness, 1f + spawnRandomness);
+                float nextInterval = baseInterval * randomFactor;
+
+                _nextSpawnTime = Time.time + nextInterval;
+
+                if (debugLog && _playerInZone && Time.frameCount % 60 == 0)
+                {
+                    Debug.Log($"[HazardZone] Depth: {_currentDepth:F2}, Rate: {meteorsPerSecond:F1}/s, Next in: {nextInterval:F3}s");
+                }
             }
         }
 

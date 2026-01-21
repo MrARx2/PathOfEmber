@@ -121,6 +121,67 @@ public class CameraShakeManager : MonoBehaviour
         Shake(CameraShakePreset.Medium);
     }
 
+    // Backup storage for muting
+    private struct ShakeBackup
+    {
+        public float light;
+        public float medium;
+        public float heavy;
+        public float meteor;
+    }
+    private ShakeBackup? intensityBackup = null;
+
+    /// <summary>
+    /// Mutes (or unmutes) all camera shake presets.
+    /// Useful for UI screens where shake is distracting (e.g. Prayer Wheel).
+    /// </summary>
+    public static void MuteShakes(bool mute)
+    {
+        if (Instance == null) return;
+        Instance.SetMuteState(mute);
+    }
+    
+    private void SetMuteState(bool mute)
+    {
+        if (mute)
+        {
+            // Only backup if not already muted
+            if (intensityBackup == null)
+            {
+                intensityBackup = new ShakeBackup
+                {
+                    light = lightShake.intensity,
+                    medium = mediumShake.intensity,
+                    heavy = heavyShake.intensity,
+                    meteor = meteorShake.intensity
+                };
+                
+                // Zero out intensities
+                lightShake.intensity = 0f;
+                mediumShake.intensity = 0f;
+                heavyShake.intensity = 0f;
+                meteorShake.intensity = 0f;
+                
+                if (debugLog) Debug.Log("[CameraShakeManager] Shakes MUTED");
+            }
+        }
+        else
+        {
+            // Restore from backup
+            if (intensityBackup.HasValue)
+            {
+                lightShake.intensity = intensityBackup.Value.light;
+                mediumShake.intensity = intensityBackup.Value.medium;
+                heavyShake.intensity = intensityBackup.Value.heavy;
+                meteorShake.intensity = intensityBackup.Value.meteor;
+                
+                intensityBackup = null;
+                
+                if (debugLog) Debug.Log("[CameraShakeManager] Shakes UNMUTED (Restored)");
+            }
+        }
+    }
+
     private ShakeSettings GetSettings(CameraShakePreset preset)
     {
         return preset switch

@@ -205,6 +205,10 @@ public class PrayerWheelController : MonoBehaviour
     private IEnumerator SpinSequence()
     {
         isSpinning = true;
+        
+        // Mute camera shake so the wheel is easy to see
+        if (CameraShakeManager.Instance != null)
+            CameraShakeManager.MuteShakes(true);
 
         // Step 1: Roll rarity
         if (useDebugRarity)
@@ -306,6 +310,10 @@ public class PrayerWheelController : MonoBehaviour
         chosenTalent2 = wheel2Talents[rarityIndex, currentSocketIndex];
 
         isSpinning = false;
+        
+        // Unmute camera shake
+        if (CameraShakeManager.Instance != null)
+            CameraShakeManager.MuteShakes(false);
 
         Debug.Log("======================================");
         Debug.Log($"[PrayerWheelController] SPIN COMPLETE!");

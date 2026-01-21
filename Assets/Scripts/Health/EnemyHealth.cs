@@ -566,6 +566,16 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         dotCoroutine = null;
         freezeCoroutine = null;
         
+        // Force unfreeze if dying while frozen
+        if (isFrozen)
+        {
+            isFrozen = false;
+            // Restore animator speed so death animation plays
+            if (animator != null) animator.speed = 1f;
+            // Hide freeze particles
+            if (freezeParticles != null) freezeParticles.SetActive(false);
+        }
+        
         // Clear any visual effects
         ClearTint();
         ClearEmission();

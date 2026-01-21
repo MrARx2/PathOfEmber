@@ -196,18 +196,10 @@ public class PrayerWheelDisplay : MonoBehaviour
         // Start slowdown if configured (only after initialization to avoid startup issues)
         if (pauseGameWhenVisible && isInitialized)
         {
-            // Only capture previousTimeScale if it's a reasonable value
-            // If we're showing while time is still slowed (e.g., second wheel after first), use default 1.0
-            if (Time.timeScale > 0.5f)
-            {
-                previousTimeScale = Time.timeScale;
-            }
-            else
-            {
-                // Time is still slowed from previous wheel - use normal speed as target
-                previousTimeScale = 1f;
-                Debug.Log("[PrayerWheelDisplay] Time still slowed, using 1.0 as resume target.");
-            }
+            // Always assume we want to return to full speed (1.0)
+            // This prevents issues with double level-ups where the second wheel captures 
+            // the slowed time of the first wheel's transition.
+            previousTimeScale = 1f;
             
             if (useSmoothSlowdown)
             {
