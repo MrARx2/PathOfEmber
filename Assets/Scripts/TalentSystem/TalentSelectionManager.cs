@@ -14,6 +14,7 @@ public class TalentSelectionManager : MonoBehaviour
     [SerializeField] private PrayerWheelController prayerWheelController;
     [SerializeField] private PlayerAbilities playerAbilities;
     [SerializeField] private TalentDatabase talentDatabase;
+    [SerializeField] private RunTalentRegistry runTalentRegistry;
 
     [Header("Configuration")]
     [SerializeField, Tooltip("If true, finds PlayerAbilities on tagged 'Player' object")]
@@ -242,6 +243,9 @@ public class TalentSelectionManager : MonoBehaviour
         {
             action.Invoke();
             Debug.Log($"[TalentSelectionManager] Talent '{talent.talentName}' applied successfully!");
+            
+            // Track in run registry for UI display
+            runTalentRegistry?.AddTalent(talent);
         }
         else
         {

@@ -77,6 +77,7 @@ public class PlayerShooting : MonoBehaviour
     private float baseShootingTempo;
     private Collider[] cachedPlayerColliders; // Cached at Start to avoid per-arrow allocation
     private int cachedProjectileLayer = -1; // Cached layer for pooled arrows
+    private bool forceStopped = false; // Set to true on death to stop all shooting
 
     private void Awake()
     {
@@ -183,6 +184,9 @@ public class PlayerShooting : MonoBehaviour
 
     private void Update()
     {
+        // Don't process if dead (controlled externally via StopAllShooting)
+        if (forceStopped) return;
+        
         // Update target periodically
         targetRefreshTimer -= Time.deltaTime;
         if (targetRefreshTimer <= 0f)
@@ -256,6 +260,9 @@ public class PlayerShooting : MonoBehaviour
 
     private void LateUpdate()
     {
+        // Don't rotate if dead
+        if (forceStopped) return;
+        
         // Apply visual aim after Animator updates to ensure rotation sticks
         if (movement != null && movement.IsMoving) return;
         var vis = GetEffectiveRotateTarget();
@@ -357,6 +364,8 @@ public class PlayerShooting : MonoBehaviour
 
     private void ReleasePreparedShot()
     {
+        // Don't shoot if forcibly stopped (player dead)
+        if (forceStopped) { awaitingRelease = false; return; }
         if (!awaitingRelease) return;
         if (projectilePrefab == null) { awaitingRelease = false; return; }
 
@@ -694,6 +703,20 @@ public class PlayerShooting : MonoBehaviour
     {
         attackRange -= bonus;
         if (attackRange < 1f) attackRange = 1f; // Safety floor
+    }
+    
+    /// <summary>
+    /// Completely stops all shooting behavior. Called on player death.
+    /// </summary>
+    public void StopAllShooting()
+    {
+        forceStopped = true;
+        awaitingRelease = false;
+        currentTarget = null;
+        SetShootingState(false);
+        
+        // Stop any ongoing multishot coroutines
+        StopAllCoroutines();
     }
     #endregion
 }

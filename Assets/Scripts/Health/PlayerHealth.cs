@@ -48,7 +48,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private Animator animator;
     [SerializeField] private string healTrigger = "Heal";
     [SerializeField] private string hitTrigger = "Hit";
-    [SerializeField] private string deathTrigger = "Death";
+    [SerializeField] private string deathTrigger = "Die";
+    
+    [Header("Death Sequence")]
+    [SerializeField, Tooltip("Duration to wait for death animation before showing popup")]
+    private float deathAnimationDuration = 4f;
+    [SerializeField, Tooltip("Death popup panel to show after animation")]
+    private DeathPopupController deathPopup;
 
     [Header("Hit Flash Settings")]
     [SerializeField, Tooltip("Enable flash effect when hit")]
@@ -536,16 +542,80 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private void Die()
     {
+        if (isDead) return; // Prevent multiple calls
         isDead = true;
+
+        Debug.Log("[PlayerHealth] Die() called!");
+
+        // Disable player controls
+        DisablePlayerControls();
 
         // Play death sound
         if (deathSound != null && AudioManager.Instance != null)
             AudioManager.Instance.Play(deathSound);
 
+        // Trigger death animation
         if (animator != null && !string.IsNullOrEmpty(deathTrigger))
+        {
+            Debug.Log($"[PlayerHealth] Setting trigger '{deathTrigger}' on animator: {animator.name}");
             animator.SetTrigger(deathTrigger);
+        }
+        else
+        {
+            Debug.LogWarning($"[PlayerHealth] Cannot trigger animation! Animator: {(animator != null ? animator.name : "NULL")}, deathTrigger: '{deathTrigger}'");
+        }
 
         OnDeath?.Invoke();
+
+        // Start death sequence coroutine
+        StartCoroutine(DeathSequenceRoutine());
+    }
+    
+    private System.Collections.IEnumerator DeathSequenceRoutine()
+    {
+        // Wait for death animation to complete
+        yield return new WaitForSeconds(deathAnimationDuration);
+        
+        // Show death popup
+        if (deathPopup != null)
+        {
+            deathPopup.Show();
+        }
+        else
+        {
+            Debug.LogWarning("[PlayerHealth] Death popup not assigned! Assign DeathPopupPanel to PlayerHealth.");
+        }
+    }
+    
+    private void DisablePlayerControls()
+    {
+        // Disable movement
+        var movement = GetComponent<PlayerMovement>();
+        if (movement != null)
+            movement.enabled = false;
+        
+        // Stop all shooting and targeting
+        var shooting = GetComponent<PlayerShooting>();
+        if (shooting != null)
+        {
+            shooting.StopAllShooting();
+            shooting.enabled = false;
+        }
+        
+        // Disable all colliders to prevent enemies from pushing the corpse
+        var colliders = GetComponentsInChildren<Collider>();
+        foreach (var col in colliders)
+        {
+            col.enabled = false;
+        }
+        
+        // Also disable rigidbody if present (prevent physics forces)
+        var rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.isKinematic = true;
+        }
     }
 
     private void NotifyHealthChanged()

@@ -16,6 +16,9 @@ public class XPSystem : MonoBehaviour
     [SerializeField] private int level = 1;
     [SerializeField, Tooltip("XP required increases by this percentage each level")]
     private float xpScalingPercent = 15f;
+    
+    // Total XP tracking
+    private int totalXPEarned = 0;
 
     [Header("UI References")]
     [SerializeField, Tooltip("XP bar fill image (Image.fillAmount)")]
@@ -24,6 +27,8 @@ public class XPSystem : MonoBehaviour
     private TMPro.TextMeshProUGUI xpText;
     [SerializeField, Tooltip("Optional: Text showing current level")]
     private TMPro.TextMeshProUGUI levelText;
+    [SerializeField, Tooltip("Optional: Text showing TOTAL XP/Coins collected")]
+    private TMPro.TextMeshProUGUI totalXPText;
     
     [Header("XP Gain Display")]
     [SerializeField, Tooltip("Text showing +XP gained (e.g., '+15')")]
@@ -56,6 +61,7 @@ public class XPSystem : MonoBehaviour
     public int CurrentXP => currentXP;
     public int MaxXP => maxXP;
     public int Level => level;
+    public int TotalXPEarned => totalXPEarned;
     public float NormalizedXP => maxXP > 0 ? (float)currentXP / maxXP : 0f;
 
     // XP gain accumulation
@@ -113,6 +119,7 @@ public class XPSystem : MonoBehaviour
         if (amount <= 0) return;
 
         currentXP += amount;
+        totalXPEarned += amount;
 
         // Check for level up (can level up multiple times if huge XP gain)
         while (currentXP >= maxXP)
@@ -330,6 +337,11 @@ public class XPSystem : MonoBehaviour
         {
             levelText.text = $"Lv. {level}";
         }
+        
+        if (totalXPText != null)
+        {
+            totalXPText.text = $"{totalXPEarned}";
+        }
 
         OnXPChanged?.Invoke(normalized);
     }
@@ -343,6 +355,8 @@ public class XPSystem : MonoBehaviour
         level = 1;
         maxXP = 100;
         accumulatedGain = 0;
+        totalXPEarned = 0;
+        
         UpdateUI();
         
         if (xpGainText != null)
