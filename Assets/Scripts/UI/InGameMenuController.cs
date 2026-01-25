@@ -58,6 +58,9 @@ public class InGameMenuController : MonoBehaviour
     [SerializeField, Tooltip("Enable debug logging")]
     private bool debugLog = true;
     
+    [SerializeField, Tooltip("If true, talents will be reset when loading game or returning to menu. Disable to keep talents for testing.")]
+    private bool resetTalentsOnLoad = true;
+    
     // Time management
     private float previousTimeScale = 1f;
     private bool isOpen = false;
@@ -71,6 +74,23 @@ public class InGameMenuController : MonoBehaviour
         if (menuPanel != null)
         {
             menuPanel.SetActive(false);
+        }
+
+        // Extra validation: reset talents when the game scene loads
+        // This ensures fresh state even if something went wrong previously
+        if (runTalentRegistry != null)
+        {
+            if (resetTalentsOnLoad)
+            {
+                runTalentRegistry.Clear();
+                if (debugLog)
+                    Debug.Log("[InGameMenuController] Cleared RunTalentRegistry on Awake");
+            }
+            else
+            {
+                if (debugLog)
+                    Debug.Log("[InGameMenuController] resetTalentsOnLoad is FALSE - Keeping existing talents on Awake");
+            }
         }
     }
     
@@ -454,6 +474,23 @@ public class InGameMenuController : MonoBehaviour
     {
         if (debugLog)
             Debug.Log($"[InGameMenuController] Loading {mainMenuSceneName}");
+        
+        // Reset talents so they don't persist to the next run
+        // This is important because the registry is a ScriptableObject
+        if (runTalentRegistry != null)
+        {
+            if (resetTalentsOnLoad)
+            {
+                runTalentRegistry.Clear();
+                if (debugLog)
+                    Debug.Log("[InGameMenuController] Cleared RunTalentRegistry on Exit");
+            }
+            else
+            {
+                if (debugLog)
+                    Debug.Log("[InGameMenuController] resetTalentsOnLoad is FALSE - Keeping talents on Exit");
+            }
+        }
         
         // Restore time before loading (important!)
         Time.timeScale = 1f;

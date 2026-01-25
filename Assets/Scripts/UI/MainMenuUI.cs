@@ -24,9 +24,9 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField, Tooltip("Name of the game scene to load")]
     private string gameSceneName = "GameScene";
 
-    [Header("Currency Display")]
-    [SerializeField] private TextMeshProUGUI coinsText;
-    [SerializeField] private TextMeshProUGUI gemsText;
+    // Duplicate removed
+
+    // Currency display has been moved to CurrencyUIController (Persistent UI)
 
     [Header("Talent Display")]
     [SerializeField, Tooltip("Image on the roll button - shows cube initially, then talent icon after roll")]
@@ -57,27 +57,43 @@ public class MainMenuUI : MonoBehaviour
         Debug.Log($"[MainMenuUI] Awake - playButton assigned: {playButton != null}");
         Debug.Log($"[MainMenuUI] Awake - rollTalentButton assigned: {rollTalentButton != null}");
         Debug.Log($"[MainMenuUI] Awake - talentDatabase assigned: {talentDatabase != null}");
+        Debug.Log($"[MainMenuUI] Awake - Script Enabled: {enabled}, GameObject Active: {gameObject.activeInHierarchy}");
+    }
+
+    private void OnEnable()
+    {
+        Debug.Log("[MainMenuUI] OnEnable called");
+        // Start delayed reset to handle scene load race conditions
+        StartCoroutine(ForceResetRoutine());
+    }
+
+    private System.Collections.IEnumerator ForceResetRoutine()
+    {
+        // Wait for end of frame to ensure UI layout and references are stable
+        yield return new WaitForEndOfFrame();
+        
+        Debug.Log("[MainMenuUI] ForceResetRoutine executing after delay");
+        ResetTalentDisplay();
     }
 
     private void Start()
     {
+        Debug.Log("[MainMenuUI] Start called");
+        
         SetupButtons();
-        UpdateCurrencyDisplay();
+        // Currency is now handled to CurrencyUIController (Persistent UI)
+        
+        // Debug reference status
+        Debug.Log($"[MainMenuUI] defaultCubeSprite is null? {defaultCubeSprite == null}");
+        Debug.Log($"[MainMenuUI] talentIcon is null? {talentIcon == null}");
+        Debug.Log($"[MainMenuUI] talentDatabase is null? {talentDatabase == null}");
+        
         ResetTalentDisplay(); // Show cube initially, no talent selected
-
-        // Subscribe to currency changes
-        if (PlayerCurrency.Instance != null)
-        {
-            PlayerCurrency.Instance.OnCurrencyChanged += UpdateCurrencyDisplay;
-        }
     }
-
+    
     private void OnDestroy()
     {
-        if (PlayerCurrency.Instance != null)
-        {
-            PlayerCurrency.Instance.OnCurrencyChanged -= UpdateCurrencyDisplay;
-        }
+        // No cleanup needed
     }
 
     private void SetupButtons()
@@ -102,23 +118,7 @@ public class MainMenuUI : MonoBehaviour
         }
     }
 
-    private void UpdateCurrencyDisplay()
-    {
-        if (PlayerCurrency.Instance != null)
-        {
-            if (coinsText != null)
-                coinsText.text = PlayerCurrency.Instance.Coins.ToString();
-            
-            if (gemsText != null)
-                gemsText.text = PlayerCurrency.Instance.Gems.ToString();
-        }
-        else
-        {
-            // Fallback if PlayerCurrency isn't set up yet
-            if (coinsText != null) coinsText.text = "0";
-            if (gemsText != null) gemsText.text = "0";
-        }
-    }
+    // Currency logic moved to CurrencyUIController
 
     /// <summary>
     /// Resets the talent display to show the default cube and text.
@@ -126,6 +126,7 @@ public class MainMenuUI : MonoBehaviour
     private void ResetTalentDisplay()
     {
         selectedTalent = null;
+        Debug.Log("[MainMenuUI] ResetTalentDisplay called");
 
         if (talentIcon != null)
         {
@@ -133,11 +134,17 @@ public class MainMenuUI : MonoBehaviour
             {
                 talentIcon.sprite = defaultCubeSprite;
                 talentIcon.enabled = true;
+                Debug.Log($"[MainMenuUI] Set talentIcon sprite to {defaultCubeSprite.name}");
             }
             else
             {
                 talentIcon.enabled = false;
+                Debug.LogWarning("[MainMenuUI] defaultCubeSprite is NULL! Disabling icon.");
             }
+        }
+        else
+        {
+            Debug.LogError("[MainMenuUI] talentIcon Image is NULL!");
         }
 
         if (talentNameText != null)

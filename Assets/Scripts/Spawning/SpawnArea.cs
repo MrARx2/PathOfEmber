@@ -211,25 +211,10 @@ public class SpawnArea : MonoBehaviour
     {
         isSpawning = true;
         
-        // Collect wave 2 spawn data
-        List<SpawnData> wave2Data = new List<SpawnData>();
-        for (int i = 0; i < wave2EnemyCount; i++)
-        {
-            GameObject prefab = prefabs[Random.Range(0, prefabs.Length)];
-            if (prefab == null) continue;
-            
-            Vector3 spawnPos = volumeArea != null 
-                ? GetRandomPositionInVolume() 
-                : transform.position + Random.insideUnitSphere * 3f;
-            spawnPos.y = transform.position.y; // Keep at spawn area height
-            
-            wave2Data.Add(new SpawnData
-            {
-                prefab = prefab,
-                position = spawnPos,
-                rotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0)
-            });
-        }
+        // Use the generalized CollectSpawnData method to get wave 2 positions
+        // This ensures it follows the exact same logic (points vs volume) as wave 1
+        // We pass the wave 2 prefabs and wave 2 count (used only if in volume mode)
+        List<SpawnData> wave2Data = CollectSpawnData(prefabs, wave2EnemyCount);
         
         // Show indicators if enabled
         if (useSpawnIndicator && indicatorPrefab != null)
@@ -305,15 +290,18 @@ public class SpawnArea : MonoBehaviour
     {
         isSpawning = true;
 
-        // Mode 1: Use only random positions within volume
-        if (useOnlyVolumeRandomPositions && volumeArea != null)
+        // Use the same data collection logic for consistency
+        List<SpawnData> spawnDataList = CollectSpawnData();
+
+        for (int i = 0; i < spawnDataList.Count; i++)
         {
-            yield return StartCoroutine(SpawnAtRandomVolumePositionsCoroutine(false));
-        }
-        else
-        {
-            // Mode 2: Use spawn points
-            yield return StartCoroutine(SpawnAtPointsCoroutine(false));
+            var data = spawnDataList[i];
+            SpawnEnemyAt(data.prefab, data.position, data.rotation, i);
+
+            if (spawnStagger > 0 && i < spawnDataList.Count - 1)
+            {
+                yield return new WaitForSeconds(spawnStagger);
+            }
         }
 
         FinishSpawning();
@@ -368,19 +356,26 @@ public class SpawnArea : MonoBehaviour
 
     /// <summary>
     /// Collects all spawn positions and prefabs based on current settings.
+    /// Allows overrides for Wave 2 or other variations.
     /// </summary>
-    private List<SpawnData> CollectSpawnData()
+    /// <param name="prefabsOverride">Optional. Use these prefabs instead of default. (e.g. Wave 2 list)</param>
+    /// <param name="countOverride">Optional. Use this count for random volume spawning. (e.g. Wave 2 count)</param>
+    private List<SpawnData> CollectSpawnData(GameObject[] prefabsOverride = null, int countOverride = -1)
     {
         List<SpawnData> dataList = new List<SpawnData>();
+        
+        // Determine which config to use
+        GameObject[] targetPrefabs = (prefabsOverride != null && prefabsOverride.Length > 0) ? prefabsOverride : enemyPrefabs;
+        int targetCount = (countOverride >= 0) ? countOverride : volumeSpawnCount;
 
         if (useOnlyVolumeRandomPositions && volumeArea != null)
         {
             // Volume random mode
-            for (int i = 0; i < volumeSpawnCount; i++)
+            for (int i = 0; i < targetCount; i++)
             {
                 GameObject prefab = randomizePrefabs 
-                    ? enemyPrefabs[Random.Range(0, enemyPrefabs.Length)]
-                    : enemyPrefabs[i % enemyPrefabs.Length];
+                    ? targetPrefabs[Random.Range(0, targetPrefabs.Length)]
+                    : targetPrefabs[i % targetPrefabs.Length];
                     
                 if (prefab == null) continue;
 
@@ -402,8 +397,8 @@ public class SpawnArea : MonoBehaviour
                 if (spawnPoints[i] == null) continue;
 
                 GameObject prefab = randomizePrefabs
-                    ? enemyPrefabs[Random.Range(0, enemyPrefabs.Length)]
-                    : enemyPrefabs[i % enemyPrefabs.Length];
+                    ? targetPrefabs[Random.Range(0, targetPrefabs.Length)]
+                    : targetPrefabs[i % targetPrefabs.Length];
 
                 if (prefab == null) continue;
 

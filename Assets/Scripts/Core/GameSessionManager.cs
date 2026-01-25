@@ -12,6 +12,13 @@ public class GameSessionManager : MonoBehaviour
     [Tooltip("The talent selected in the Main Menu (set before loading GameScene)")]
     public TalentData StartingTalent;
 
+    [Header("UI References")]
+    [Tooltip("The Canvas or Layout group containing the persistent UI (PlayerBox, GemBox, etc)")]
+    public GameObject persistentUIRoot;
+    
+    [Tooltip("Names of scenes where the persistent UI should be visible (e.g. Main_Menu)")]
+    public string[] menuSceneNames = new string[] { "Main_Menu", "MainMenu" };
+
     private void Awake()
     {
         // Singleton pattern with DontDestroyOnLoad
@@ -23,6 +30,37 @@ public class GameSessionManager : MonoBehaviour
         
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        
+        // Subscribe to scene events
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDestroy()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        UpdateUIVisibility(scene.name);
+    }
+
+    private void UpdateUIVisibility(string sceneName)
+    {
+        if (persistentUIRoot == null) return;
+
+        bool shouldShow = false;
+        foreach (string menuName in menuSceneNames)
+        {
+            if (sceneName == menuName)
+            {
+                shouldShow = true;
+                break;
+            }
+        }
+
+        persistentUIRoot.SetActive(shouldShow);
+        Debug.Log($"[GameSessionManager] Scene loaded: {sceneName}. Persistent UI visible: {shouldShow}");
     }
 
     /// <summary>
