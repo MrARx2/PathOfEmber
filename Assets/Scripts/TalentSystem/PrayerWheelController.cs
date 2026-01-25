@@ -490,9 +490,40 @@ public class PrayerWheelController : MonoBehaviour
         bool rareTinted = false;
         bool legendaryTinted = false;
 
+        bool audioPaused = false;
+
         while (elapsed < spinDuration)
         {
-            elapsed += Time.unscaledDeltaTime; 
+            // Hybrid Approach:
+            // 1. If Time.timeScale is 0 (Pause Menu), the wheel should STOP.
+            // 2. If Time.timeScale is > 0 (e.g. 0.15 Slow Mo), the wheel should spin at NORMAL speed (Unscaled).
+            float dt = (Time.timeScale == 0f) ? 0f : Time.unscaledDeltaTime;
+            
+            // Audio Pause Logic
+            if (Time.timeScale == 0f)
+            {
+                if (!audioPaused)
+                {
+                    if (commonSpinSource != null) commonSpinSource.Pause();
+                    if (rareSpinSource != null) rareSpinSource.Pause();
+                    if (legendarySpinSource != null) legendarySpinSource.Pause();
+                    audioPaused = true;
+                    Debug.Log("[PrayerWheelController] Audio Paused due to Game Pause");
+                }
+            }
+            else
+            {
+                if (audioPaused)
+                {
+                    if (commonSpinSource != null) commonSpinSource.UnPause();
+                    if (rareSpinSource != null) rareSpinSource.UnPause();
+                    if (legendarySpinSource != null) legendarySpinSource.UnPause();
+                    audioPaused = false;
+                    Debug.Log("[PrayerWheelController] Audio Resumed");
+                }
+            }
+
+            elapsed += dt; 
             float normalizedTime = elapsed / spinDuration;
             
             float speed = speedRamp.Evaluate(normalizedTime);

@@ -249,7 +249,25 @@ public class PrayerWheelDisplay : MonoBehaviour
             if (useSmoothSlowdown)
             {
                 // Smooth resume from frozen/slowed state
-                StartCoroutine(SmoothTimeTransition(previousTimeScale, resumeDuration));
+                // Check if game is externally paused (Time.timeScale == 0) before trying to resume.
+                // If paused, we just set the target, but don't force the transition yet, 
+                // or we rely on the Menu Controller to restore time when IT closes.
+                // However, if we just finished the Wheel, we probably want to return to 1.0 eventually.
+                
+                // Safe Resume: Only resume if we are not totally paused by something else (like Menu)
+                // BUT: We just came from a frozen state (Show->Freeze), so Time relies on us.
+                // The issue is if Menu opened on TOP of us.
+                
+                if (Time.timeScale > 0.001f || !useSmoothSlowdown)
+                {
+                    StartCoroutine(SmoothTimeTransition(previousTimeScale, resumeDuration));
+                }
+                else
+                {
+                    // If time is 0 (Paused by Menu?), just set the scale instantly to what it should be
+                    // so when Menu unpauses, it goes back to normal.
+                    Time.timeScale = previousTimeScale;
+                }
                 Debug.Log($"[PrayerWheelDisplay] Smooth resume started (target: {previousTimeScale}, duration: {resumeDuration}s).");
             }
             else

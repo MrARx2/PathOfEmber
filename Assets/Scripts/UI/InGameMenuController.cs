@@ -12,6 +12,9 @@ public class InGameMenuController : MonoBehaviour
     [Header("Panel References")]
     [SerializeField, Tooltip("The main menu panel (hidden by default)")]
     private GameObject menuPanel;
+
+    [SerializeField, Tooltip("The sound settings panel (hidden by default)")]
+    private GameObject soundSettingsPanel;
     
     [Header("Button References")]
     [SerializeField, Tooltip("Hamburger button that opens the menu")]
@@ -192,7 +195,32 @@ public class InGameMenuController : MonoBehaviour
         }
         
         // Restore other canvases
-        SetOtherCanvasesActive(true);
+        // Check if Prayer Wheel is active first
+        bool prayerWheelActive = false;
+        var prayerWheelDisplay = FindFirstObjectByType<PrayerWheelDisplay>();
+        if (prayerWheelDisplay != null && prayerWheelDisplay.IsVisible)
+        {
+            prayerWheelActive = true;
+        }
+
+        if (canvasesToHide != null)
+        {
+            foreach (var canvas in canvasesToHide)
+            {
+                if (canvas == null) continue;
+
+                // SPECIAL RULE: If Prayer Wheel is active, do NOT restore "Systems" canvas (health bars etc)
+                // But DO restore "Joystick" or others so player can move.
+                if (prayerWheelActive && canvas.name.Contains("Systems"))
+                {
+                    if (debugLog) Debug.Log($"[InGameMenuController] Keeping {canvas.name} HIDDEN because Prayer Wheel is active.");
+                    continue; 
+                }
+
+                canvas.SetActive(true);
+                if (debugLog) Debug.Log($"[InGameMenuController] Restored {canvas.name}");
+            }
+        }
     }
     
     /// <summary>
@@ -456,15 +484,24 @@ public class InGameMenuController : MonoBehaviour
         spawnedIcons.Clear();
     }
     
+
+
     /// <summary>
     /// Called when Sound Settings button is clicked.
     /// </summary>
     private void OnSoundSettingsClicked()
     {
         if (debugLog)
-            Debug.Log("[InGameMenuController] Sound Settings clicked - not implemented yet");
-        
-        // TODO: Show sound settings panel
+            Debug.Log("[InGameMenuController] Sound Settings clicked");
+            
+        if (soundSettingsPanel != null)
+        {
+            soundSettingsPanel.SetActive(true);
+        }
+        else
+        {
+            Debug.LogError("[InGameMenuController] Sound Settings Panel not assigned!");
+        }
     }
     
     /// <summary>

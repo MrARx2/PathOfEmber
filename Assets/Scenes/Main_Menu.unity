@@ -4214,6 +4214,92 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6203997211077769488, guid: bdb83863f1d4947468c49e403c09d18a, type: 3}
   m_PrefabInstance: {fileID: 998183758}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1482850786
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1482850788}
+  - component: {fileID: 1482850787}
+  m_Layer: 0
+  m_Name: MusicManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1482850787
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482850786}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cf67dc230f415945989380b9c861ba8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Audio.MusicManager
+  mainMenuMusic: {fileID: 11400000, guid: 6c7df723dd85f8f41bec3e9ec194c39a, type: 2}
+  mainMenuScenes:
+  - Main_Menu
+  - MainMenu
+  gameScenes:
+  - GameScene
+  - GameScene (Updated)
+  gameMusicTracks:
+  - music: {fileID: 0}
+    startZ: 0
+    fadeInDistance: 20
+    endZ: 100
+    fadeOutDistance: 20
+    keepSync: 0
+    source: {fileID: 0}
+    currentVelocity: 0
+  - music: {fileID: 11400000, guid: edb4203cb8e269b4db7752b00774d9d0, type: 2}
+    startZ: 0
+    fadeInDistance: 0
+    endZ: 130
+    fadeOutDistance: 5
+    keepSync: 0
+    source: {fileID: 0}
+    currentVelocity: 0
+  - music: {fileID: 11400000, guid: 9d89ae148737e7e4bb2da28831f80c4d, type: 2}
+    startZ: 130
+    fadeInDistance: 5
+    endZ: 220
+    fadeOutDistance: 5
+    keepSync: 0
+    source: {fileID: 0}
+    currentVelocity: 0
+  - music: {fileID: 11400000, guid: f9d42132c09cb4f4c8fda75e2c406909, type: 2}
+    startZ: 220
+    fadeInDistance: 5
+    endZ: 320
+    fadeOutDistance: 5
+    keepSync: 0
+    source: {fileID: 0}
+    currentVelocity: 0
+  volumeSmoothTime: 0.5
+  showDebug: 0
+--- !u!4 &1482850788
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482850786}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -0.86}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1919458633}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1489944949
 GameObject:
   m_ObjectHideFlags: 0
@@ -5829,7 +5915,7 @@ MonoBehaviour:
   bgmVolumeParam: BGMVolume
   sfxVolumeParam: SFXVolume
   ambientVolumeParam: AmbientVolume
-  poolSize: 20
+  poolSize: 50
   masterVolume: 1
   bgmVolume: 1
   sfxVolume: 1
@@ -5847,10 +5933,11 @@ Transform:
   m_GameObject: {fileID: 1919458631}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -5.83, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1482850788}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1919894878

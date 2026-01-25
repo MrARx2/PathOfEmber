@@ -466,6 +466,21 @@ public class ArrowProjectile : MonoBehaviour
         transform.position = hit.point + newDir * 0.1f;
     }
     
+
+
+    /// <summary>
+    /// Registers a hit on an enemy collider. Returns true if this is the first time hitting this enemy.
+    /// Used by ArrowExtensionZone to share hit history.
+    /// </summary>
+    public bool RegisterHit(Collider enemy)
+    {
+        if (alreadyHitEnemies.Contains(enemy)) return false;
+        alreadyHitEnemies.Add(enemy);
+        return true;
+    }
+
+
+    
     private void SpawnWallHitVFX(Vector3 hitPoint)
     {
         if (wallHitVFXPrefab != null)
@@ -481,7 +496,7 @@ public class ArrowProjectile : MonoBehaviour
         if (other.CompareTag("Player")) return; // Don't hit the player who shot this
         
         // Skip if already hit by SphereCast this arrow's lifetime (prevents double damage)
-        if (alreadyHitEnemies.Contains(other)) return;
+        if (!RegisterHit(other)) return;
         
         // Try to find IDamageable on the object or its parent
         IDamageable damageable = other.GetComponent<IDamageable>();

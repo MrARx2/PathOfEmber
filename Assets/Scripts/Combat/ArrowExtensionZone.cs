@@ -145,6 +145,9 @@ public class ArrowExtensionZone : MonoBehaviour
             return;
         }
         
+        // Check if we already hit this enemy (either via arrow or extension)
+        if (!parentArrow.RegisterHit(other)) return;
+        
         // Check if it's an enemy
         EnemyHealth enemyHealth = other.GetComponent<EnemyHealth>();
         if (enemyHealth == null)

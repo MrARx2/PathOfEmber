@@ -20,6 +20,12 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField, Tooltip("Roll Talent button - rolls a random talent without starting the game")]
     private Button rollTalentButton;
 
+    [SerializeField, Tooltip("Settings button to open sound settings")]
+    private Button settingsButton;
+
+    [SerializeField, Tooltip("Sound settings panel object")]
+    private GameObject soundSettingsPanel;
+
     [Header("Scene Names")]
     [SerializeField, Tooltip("Name of the game scene to load")]
     private string gameSceneName = "GameScene";
@@ -115,6 +121,24 @@ public class MainMenuUI : MonoBehaviour
         else
         {
             Debug.LogError("[MainMenuUI] rollTalentButton is NOT assigned in Inspector!");
+        }
+        
+        // Settings Button
+        if (settingsButton != null)
+        {
+            settingsButton.onClick.AddListener(OnSettingsClicked);
+        }
+    }
+    
+    private void OnSettingsClicked()
+    {
+        if (soundSettingsPanel != null)
+        {
+            soundSettingsPanel.SetActive(true);
+        }
+        else
+        {
+            Debug.LogError("[MainMenuUI] Sound Settings Panel not assigned!");
         }
     }
 
