@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
+using Audio;
 
 /// <summary>
 /// Main menu UI controller with Shop, Play, and Talent Roll buttons.
@@ -19,6 +20,16 @@ public class MainMenuUI : MonoBehaviour
     
     [SerializeField, Tooltip("Roll Talent button - rolls a random talent without starting the game")]
     private Button rollTalentButton;
+
+    [Header("Button Sounds")]
+    [SerializeField, Tooltip("Sound when Shop button is clicked")]
+    private SoundEvent shopButtonSound;
+    
+    [SerializeField, Tooltip("Sound when Play button is clicked")]
+    private SoundEvent playButtonSound;
+    
+    [SerializeField, Tooltip("Sound when Roll button is clicked")]
+    private SoundEvent rollButtonSound;
 
     [Header("Scene Names")]
     [SerializeField, Tooltip("Name of the game scene to load")]
@@ -82,7 +93,11 @@ public class MainMenuUI : MonoBehaviour
 
     private void SetupButtons()
     {
-        // Shop button - no auto-setup, user handles manually
+        // Shop button - plays sound when clicked
+        if (shopButton != null)
+        {
+            shopButton.onClick.AddListener(OnShopClicked);
+        }
 
         // Play button - starts game with selected talent
         if (playButton != null)
@@ -189,8 +204,25 @@ public class MainMenuUI : MonoBehaviour
     /// </summary>
     private void OnRollTalentClicked()
     {
+        // Play roll button sound
+        if (rollButtonSound != null && AudioManager.Instance != null)
+            AudioManager.Instance.Play(rollButtonSound);
+        
         RollRandomTalent();
         Debug.Log("[MainMenuUI] Roll button clicked - talent rolled, waiting for Play");
+    }
+
+    /// <summary>
+    /// Called when Shop button is clicked.
+    /// Currently just plays sound - shop not implemented yet.
+    /// </summary>
+    private void OnShopClicked()
+    {
+        // Play shop button sound
+        if (shopButtonSound != null && AudioManager.Instance != null)
+            AudioManager.Instance.Play(shopButtonSound);
+        
+        Debug.Log("[MainMenuUI] Shop button clicked - shop not implemented yet");
     }
 
     /// <summary>
@@ -199,6 +231,14 @@ public class MainMenuUI : MonoBehaviour
     /// </summary>
     private void OnPlayClicked()
     {
+        // Play play button sound
+        if (playButtonSound != null && AudioManager.Instance != null)
+            AudioManager.Instance.Play(playButtonSound);
+        
+        // Stop main menu music before loading next scene
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.StopBGM();
+        
         // Ensure GameSessionManager exists before setting data
         GameSessionManager.EnsureExists();
         
