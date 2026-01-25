@@ -45,6 +45,26 @@ public class SpawnAreaRegistry : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    private void OnEnable()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        // When returning to the Main Menu, we assume the run is over.
+        // Clear the registry so the next run starts fresh.
+        if (scene.name == "Main_Menu" || scene.name == "MainMenu")
+        {
+            ClearAll();
+        }
+    }
+
     /// <summary>
     /// Check if a SpawnArea has already spawned.
     /// </summary>
