@@ -3522,11 +3522,11 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1919458633}
+    m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 8228765868131629275, guid: 34e570e1dea23e345bb565992076aab0, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 90.91298
+      value: 85.08298
       objectReference: {fileID: 0}
     - target: {fileID: 8228765868131629275, guid: 34e570e1dea23e345bb565992076aab0, type: 3}
       propertyPath: m_LocalPosition.y
@@ -4158,11 +4158,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1252047784}
   m_CullTransparentMesh: 1
---- !u!4 &1294278240 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8228765868131629275, guid: 34e570e1dea23e345bb565992076aab0, type: 3}
-  m_PrefabInstance: {fileID: 1032381353}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1308612562 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8984555623327054125, guid: c616c3cecbf77a445b5182403932dde0, type: 3}
@@ -4181,7 +4176,7 @@ GameObject:
   - component: {fileID: 1377502091}
   - component: {fileID: 1377502090}
   m_Layer: 0
-  m_Name: Canvas
+  m_Name: PlayerInfoCanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6193,7 +6188,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1294278240}
   - {fileID: 1859067352}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -6697,4 +6691,5 @@ SceneRoots:
   - {fileID: 1003102466}
   - {fileID: 87958051}
   - {fileID: 2120041694}
+  - {fileID: 1032381353}
   - {fileID: 1919458633}

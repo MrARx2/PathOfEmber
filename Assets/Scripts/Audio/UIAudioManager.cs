@@ -136,7 +136,7 @@ namespace Audio
         /// </summary>
         public void HookAllButtons()
         {
-            Button[] allButtons = FindObjectsOfType<Button>(true);
+            Button[] allButtons = FindObjectsByType<Button>(FindObjectsSortMode.None);
             foreach (var button in allButtons)
             {
                 // Add click listener (uses closure to capture button reference)

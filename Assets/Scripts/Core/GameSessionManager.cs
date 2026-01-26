@@ -34,8 +34,7 @@ public class GameSessionManager : MonoBehaviour
         // Subscribe to scene events
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
 
-        // Ensure Music Manager exists
-        Audio.MusicManager.EnsureExists();
+
     }
 
     private void OnDestroy()

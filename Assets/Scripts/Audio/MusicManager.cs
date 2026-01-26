@@ -53,16 +53,22 @@ namespace Audio
         {
             if (Instance == null)
             {
-                GameObject go = new GameObject("Audio_MusicManager");
-                go.AddComponent<MusicManager>();
-                Debug.Log("[MusicManager] Created instance via EnsureExists");
+                // First try to find one in the scene that hasn't initialized yet
+                Instance = FindFirstObjectByType<MusicManager>();
+                
+                if (Instance == null)
+                {
+                    GameObject go = new GameObject("Audio_MusicManager");
+                    Instance = go.AddComponent<MusicManager>();
+                    Debug.Log("[MusicManager] Created instance via EnsureExists");
+                }
             }
         }
 
         [Header("Scene Configuration")]
         [SerializeField] private SoundEvent mainMenuMusic;
         [SerializeField] private string[] mainMenuScenes = new string[] { "Main_Menu", "MainMenu" };
-        [SerializeField] private string[] gameScenes = new string[] { "GameScene", "Game_Scene" };
+        [SerializeField] private string[] gameScenes = new string[] { "GameScene", "Game_Scene", "GameScene (Updated)" };
 
         [Header("Game Music Configuration")]
         [SerializeField, Tooltip("List of tracks that play/fade based on progression")]
@@ -88,6 +94,12 @@ namespace Audio
             }
 
             Instance = this;
+            
+            // Ensure we are a root object before calling DontDestroyOnLoad to avoid warnings/errors
+            if (transform.parent != null)
+            {
+                transform.SetParent(null);
+            }
             DontDestroyOnLoad(gameObject);
 
             SceneManager.sceneLoaded += OnSceneLoaded;
