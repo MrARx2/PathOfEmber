@@ -325,9 +325,7 @@ public class InGameMenuController : MonoBehaviour
                 if (frameImage != null)
                 {
                     frameImage.enabled = true;
-                    // Clear any sprite so the color shows as solid
-                    frameImage.sprite = null;
-                    
+                    // Tint the frame image with rarity color (keep the sprite, just change color)
                     Color rarityColor = GetRarityColor(talent.rarity);
                     frameImage.color = rarityColor;
                     
@@ -493,6 +491,10 @@ public class InGameMenuController : MonoBehaviour
     {
         if (debugLog)
             Debug.Log("[InGameMenuController] Sound Settings clicked");
+        
+        // Hide menu panel while in sound settings
+        if (menuPanel != null)
+            menuPanel.SetActive(false);
             
         if (soundSettingsPanel != null)
         {
@@ -502,6 +504,22 @@ public class InGameMenuController : MonoBehaviour
         {
             Debug.LogError("[InGameMenuController] Sound Settings Panel not assigned!");
         }
+    }
+    
+    /// <summary>
+    /// Called when closing sound settings (e.g., from back button in SoundSettingsUI).
+    /// Restores the main menu panel.
+    /// </summary>
+    public void OnSoundSettingsClosed()
+    {
+        if (debugLog)
+            Debug.Log("[InGameMenuController] Sound Settings closed, restoring menu panel");
+        
+        if (soundSettingsPanel != null)
+            soundSettingsPanel.SetActive(false);
+        
+        if (menuPanel != null)
+            menuPanel.SetActive(true);
     }
     
     /// <summary>

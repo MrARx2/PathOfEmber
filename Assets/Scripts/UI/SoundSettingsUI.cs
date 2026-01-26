@@ -97,6 +97,16 @@ public class SoundSettingsUI : MonoBehaviour
 
     private void OnBackClicked()
     {
-        gameObject.SetActive(false);
+        // Try to notify InGameMenuController to restore the menu panel
+        var menuController = FindFirstObjectByType<InGameMenuController>();
+        if (menuController != null)
+        {
+            menuController.OnSoundSettingsClosed();
+        }
+        else
+        {
+            // Fallback: just hide this panel
+            gameObject.SetActive(false);
+        }
     }
 }
