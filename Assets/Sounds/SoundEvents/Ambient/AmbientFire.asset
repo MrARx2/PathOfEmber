@@ -18,7 +18,7 @@ MonoBehaviour:
   randomizeVolume: 0
   volumeVariation: 0.1
   pitch: 1
-  randomizePitch: 0
+  randomizePitch: 1
   pitchVariation: 0.1
   loop: 1
   mixerGroup: {fileID: 8273569630929193260, guid: 192a397c5486ee64b9f6be8c47dcef29, type: 2}
@@ -28,3 +28,4 @@ MonoBehaviour:
   spatialBlend: 1
   minDistance: 0.5
   maxDistance: 3
+  affectedByTimeSlowdown: 1
