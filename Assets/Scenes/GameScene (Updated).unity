@@ -1002,11 +1002,11 @@ PrefabInstance:
     - target: {fileID: 3789153983700288973, guid: a16986d5b83ccbb4eb682754759c668b, type: 3}
       propertyPath: 'lavaBiomePrefabs.Array.data[1]'
       value: 
-      objectReference: {fileID: 2115992667875279889, guid: 33ed3a6866f01354dbcbf9fb6aa4a1a0, type: 3}
+      objectReference: {fileID: 2115992667875279889, guid: 3162e2da7ab8cdf499c60a4799de7e60, type: 3}
     - target: {fileID: 3789153983700288973, guid: a16986d5b83ccbb4eb682754759c668b, type: 3}
       propertyPath: 'grassBiomePrefabs.Array.data[6]'
       value: 
-      objectReference: {fileID: 2115992667875279889, guid: 3162e2da7ab8cdf499c60a4799de7e60, type: 3}
+      objectReference: {fileID: 2115992667875279889, guid: 33ed3a6866f01354dbcbf9fb6aa4a1a0, type: 3}
     - target: {fileID: 7313182976643741273, guid: a16986d5b83ccbb4eb682754759c668b, type: 3}
       propertyPath: m_Name
       value: Chunk System - Procedural Map Generation
@@ -2251,7 +2251,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 295, y: 615}
+  m_AnchoredPosition: {x: 295, y: 630}
   m_SizeDelta: {x: 300, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &228951312
@@ -2999,7 +2999,7 @@ PrefabInstance:
       objectReference: {fileID: 11400000, guid: c66c7c23efdda6a45ba64e35c62608ee, type: 2}
     - target: {fileID: 1681347285293982752, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
       propertyPath: useDebugRarity
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1681347285293982752, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
       propertyPath: rareTintColor.b
@@ -11962,7 +11962,7 @@ MonoBehaviour:
   prayerWheel2: {fileID: 1673963525}
   wheelBasePrefab: {fileID: 5803703339601921278, guid: 60434430080642b44bab43de06916e8d, type: 3}
   basePositionOffset: {x: 0, y: 1.38, z: 1.25}
-  baseRotationOffset: {x: -1.1, y: -88.55, z: -53}
+  baseRotationOffset: {x: -1.1, y: -88.55, z: -57}
   forwardOffset: 5
   wheel1HorizontalOffset: 0.31
   wheel2HorizontalOffset: 0.28
@@ -11970,7 +11970,7 @@ MonoBehaviour:
   verticalOffset: -1.3
   positionSmoothTime: 0.02
   rotationSmoothTime: 0.1
-  snapDistanceThreshold: 10
+  snapDistanceThreshold: 0.5
   pauseGameWhenVisible: 1
   wheelLayer: 0
   useSmoothSlowdown: 1
@@ -14873,7 +14873,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -295, y: 615}
+  m_AnchoredPosition: {x: -295, y: 630}
   m_SizeDelta: {x: 300, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1773529640
