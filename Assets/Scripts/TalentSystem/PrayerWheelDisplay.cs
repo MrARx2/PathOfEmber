@@ -44,6 +44,16 @@ public class PrayerWheelDisplay : MonoBehaviour
     [SerializeField, Tooltip("Vertical offset (positive = up)")]
     private float verticalOffset = 0f;
 
+    [Header("Smoothing (Jitter Fix)")]
+    [SerializeField, Tooltip("Smooth time for position following (0.05 = tight, 0.2 = loose). Uses unscaled time to fix slow-mo jitter.")]
+    private float positionSmoothTime = 0.05f;
+    
+    [SerializeField, Tooltip("Smooth time for base rotation (0.1 = smooth, 0.05 = snappy).")]
+    private float rotationSmoothTime = 0.1f;
+
+    [SerializeField, Tooltip("Distance threshold to snap immediately (e.g. on teleport).")]
+    private float snapDistanceThreshold = 10f;
+
     [Header("Settings")]
     [SerializeField, Tooltip("If true, pauses the game when wheels are shown and resumes when hidden")]
     private bool pauseGameWhenVisible = true;
@@ -70,6 +80,12 @@ public class PrayerWheelDisplay : MonoBehaviour
     private float previousTimeScale = 1f;
     private bool isInitialized = false;
     private GameObject spawnedBase; // Spawned instance of the base
+    
+    // Smoothing velocities
+    private Vector3 wheel1Velocity;
+    private Vector3 wheel2Velocity;
+    private Vector3 baseVelocity;
+    private float baseRotationVelocity; // For SmoothDampAngle
 
     /// <summary>
     /// Returns whether the prayer wheels are currently visible.
@@ -302,52 +318,118 @@ public class PrayerWheelDisplay : MonoBehaviour
         // Apply horizontal shift (moves both wheels together)
         basePosition += cameraTransform.right * horizontalShift;
 
-        // Position wheel 1 (left side) - only position, NO rotation change
+        // Update base position to stay centered between wheels
+        // Note: UpdateBasePosition handles its own smoothing now
+        UpdateBasePosition(basePosition);
+
+        // --- Smooth Follow Implementation ---
+        // We use SmoothDamp with Time.unscaledDeltaTime to ensure smooth movement 
+        // even when the game is in slow motion (Time.timeScale < 1).
+        
+        // Position wheel 1 (left side)
         if (prayerWheel1 != null)
         {
-            prayerWheel1.position = basePosition - cameraTransform.right * wheel1HorizontalOffset;
+            Vector3 targetPos1 = basePosition - cameraTransform.right * wheel1HorizontalOffset;
+            
+            // Ref check: if distance is huge (teleport), snap immediately
+            if (Vector3.Distance(prayerWheel1.position, targetPos1) > snapDistanceThreshold)
+            {
+                prayerWheel1.position = targetPos1;
+                wheel1Velocity = Vector3.zero;
+            }
+            else
+            {
+                prayerWheel1.position = Vector3.SmoothDamp(
+                    prayerWheel1.position, 
+                    targetPos1, 
+                    ref wheel1Velocity, 
+                    positionSmoothTime, 
+                    float.MaxValue, 
+                    Time.unscaledDeltaTime
+                );
+            }
         }
 
-        // Position wheel 2 (right side) - only position, NO rotation change
+        // Position wheel 2 (right side)
         if (prayerWheel2 != null)
         {
-            prayerWheel2.position = basePosition + cameraTransform.right * wheel2HorizontalOffset;
+            Vector3 targetPos2 = basePosition + cameraTransform.right * wheel2HorizontalOffset;
+             
+            if (Vector3.Distance(prayerWheel2.position, targetPos2) > snapDistanceThreshold)
+            {
+                prayerWheel2.position = targetPos2;
+                wheel2Velocity = Vector3.zero;
+            }
+            else
+            {
+                prayerWheel2.position = Vector3.SmoothDamp(
+                    prayerWheel2.position, 
+                    targetPos2, 
+                    ref wheel2Velocity, 
+                    positionSmoothTime, 
+                    float.MaxValue, 
+                    Time.unscaledDeltaTime
+                );
+            }
         }
-
-        // Update base position to stay centered between wheels
-        UpdateBasePosition();
     }
 
-    private void UpdateBasePosition()
+    private void UpdateBasePosition(Vector3 wheelCenterAnchor)
     {
         if (spawnedBase == null || cameraTransform == null) return;
         
-        // Calculate anchor position in front of camera (same as wheels started)
-        Vector3 anchorPos = cameraTransform.position + cameraTransform.forward * forwardOffset;
+        // Use the passed anchor (which is centered between wheels + offsets)
+        // Add Base-Specific Offsets
+        Vector3 targetPos = wheelCenterAnchor;
         
-        // Apply Global Group Offsets (so base moves with the main controls)
-        anchorPos += Vector3.up * verticalOffset;
-        anchorPos += cameraTransform.right * horizontalShift;
-
-        // Apply Base-Specific Offsets
-        // X = Horizontal Offset for Base (New!)
-        anchorPos += cameraTransform.right * basePositionOffset.x;
+        // X = Horizontal Offset for Base
+        targetPos += cameraTransform.right * basePositionOffset.x;
         // Y = Vertical Tweak for Base
-        anchorPos += Vector3.up * basePositionOffset.y;
+        targetPos += Vector3.up * basePositionOffset.y;
         // Z = Forward/Back Tweak for Base
-        anchorPos += cameraTransform.forward * basePositionOffset.z;
+        targetPos += cameraTransform.forward * basePositionOffset.z;
 
-        spawnedBase.transform.position = anchorPos;
+        // Smooth Move Base
+        if (Vector3.Distance(spawnedBase.transform.position, targetPos) > snapDistanceThreshold)
+        {
+            spawnedBase.transform.position = targetPos;
+            baseVelocity = Vector3.zero;
+        }
+        else
+        {
+            spawnedBase.transform.position = Vector3.SmoothDamp(
+                spawnedBase.transform.position,
+                targetPos,
+                ref baseVelocity,
+                positionSmoothTime,
+                float.MaxValue,
+                Time.unscaledDeltaTime
+            );
+        }
         
         // Rotation: match camera's Y rotation (face same direction as camera), then apply offset
-        // This keeps the base facing "forward" like the wheels appear to
-        float cameraYRotation = cameraTransform.eulerAngles.y;
+        // We smooth this too because if the camera is hard-locked to the player physics, it will also jitter in slow-mo.
+        float currentY = spawnedBase.transform.eulerAngles.y;
+        float targetY = cameraTransform.eulerAngles.y + baseRotationOffset.y;
+        
+        float smoothedY = Mathf.SmoothDampAngle(
+            currentY,
+            targetY,
+            ref baseRotationVelocity,
+            rotationSmoothTime,
+            float.MaxValue,
+            Time.unscaledDeltaTime
+        );
+
         spawnedBase.transform.rotation = Quaternion.Euler(
             baseRotationOffset.x,
-            cameraYRotation + baseRotationOffset.y,
+            smoothedY,
             baseRotationOffset.z
         );
     }
+
+    [System.Obsolete("Use UpdateBasePosition(Vector3) instead")]
+    private void UpdateBasePosition() { } // Legacy stub to satisfy compiler if needed, but we removed call site
 
     /// <summary>
     /// Sets the offset values at runtime and updates positions if visible.
@@ -414,15 +496,40 @@ public class PrayerWheelDisplay : MonoBehaviour
         if (wheelBasePrefab == null) return;
         if (spawnedBase != null) return; // Already spawned
         
-        // Spawn at origin first, UpdateBasePosition will place it correctly
+        // Spawn at origin first
         spawnedBase = Instantiate(wheelBasePrefab, Vector3.zero, Quaternion.identity);
         spawnedBase.name = "PrayerWheelBase(Spawned)";
         
         // Set to same layer as wheels
         SetLayerRecursive(spawnedBase, wheelLayer);
         
-        // Position it correctly relative to camera
-        UpdateBasePosition();
+        // Use exact same logic as UpdateBasePosition to get the initial target
+        if (cameraTransform != null)
+        {
+            Vector3 targetPos = cameraTransform.position + cameraTransform.forward * forwardOffset;
+            targetPos += Vector3.up * verticalOffset;
+            targetPos += cameraTransform.right * horizontalShift;
+            
+            // Add Base-Specific Offsets
+            targetPos += cameraTransform.right * basePositionOffset.x;
+            targetPos += Vector3.up * basePositionOffset.y;
+            targetPos += cameraTransform.forward * basePositionOffset.z;
+            
+            // HARD SNAP Position
+            spawnedBase.transform.position = targetPos;
+            
+            // HARD SNAP Rotation
+            float cameraYRotation = cameraTransform.eulerAngles.y;
+            spawnedBase.transform.rotation = Quaternion.Euler(
+                baseRotationOffset.x,
+                cameraYRotation + baseRotationOffset.y,
+                baseRotationOffset.z
+            );
+            
+            // RESET Velocities so SmoothDamp doesn't try to continue from a previous state or 0
+            baseVelocity = Vector3.zero;
+            baseRotationVelocity = 0f;
+        }
         
         Debug.Log($"[PrayerWheelDisplay] Spawned base at {spawnedBase.transform.position}");
     }

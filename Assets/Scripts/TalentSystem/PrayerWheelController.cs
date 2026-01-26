@@ -118,6 +118,9 @@ public class PrayerWheelController : MonoBehaviour
     private AudioSource rareSpinSource;
     private AudioSource legendarySpinSource;
 
+    // Track original colors at class level to restore them if disabled
+    private Dictionary<Material, Color> originalColors = new Dictionary<Material, Color>();
+
     // Events
     public event System.Action<TalentData, TalentData> OnSpinComplete;
 
@@ -140,6 +143,32 @@ public class PrayerWheelController : MonoBehaviour
 
         // Auto-wire from PrayerWheelSetup if assigned
         AutoWireFromSetup();
+    }
+
+    private void OnDisable()
+    {
+        if (isSpinning)
+        {
+            Debug.Log("[PrayerWheelController] OnDisable called while spinning - Resetting state and colors.");
+            
+            // Stop logic
+            isSpinning = false;
+            StopAllCoroutines();
+            
+            // Stop sound
+            StopLayeredSpinSounds();
+            
+            // Reset colors
+            if (originalColors != null && originalColors.Count > 0)
+            {
+                ResetMaterialColors(originalColors);
+                originalColors.Clear();
+            }
+            
+            // Unmute camera shake if we muted it
+            if (CameraShakeManager.Instance != null)
+                CameraShakeManager.MuteShakes(false);
+        }
     }
 
     /// <summary>
@@ -272,7 +301,8 @@ public class PrayerWheelController : MonoBehaviour
         Debug.Log($"[PrayerWheelController] Target: {targetSocketAngle}°, ToAdd: {rotationAmountToAdd:F1}° (Offset: {calibrationOffset})");
 
         // Step 5: Store original material colors for reset
-        Dictionary<Material, Color> originalColors = new Dictionary<Material, Color>();
+        // Use class member so we can restore if disabled mid-spin in OnDisable
+        originalColors.Clear();
         StoreMaterialColors(wheel1, originalColors);
         StoreMaterialColors(wheel2, originalColors);
 
