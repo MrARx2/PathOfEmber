@@ -111,13 +111,26 @@ public class SpawnArea : MonoBehaviour
     public int CurrentWave => currentWave;
     public List<GameObject> SpawnedEnemies => spawnedEnemies;
 
-    private void Start()
+    private void OnEnable()
     {
-        // Cache squared distance for performance (avoid sqrt in Update)
+        // Reset state for pooling
+        hasSpawned = false;
+        isSpawning = false;
+        wave2Triggered = false;
+        isCheckingForWave2 = false;
+        currentWave = 0;
+        spawnedEnemies.Clear();
+        activeIndicators.Clear();
+        
+        // Cache squared distance
         activationDistanceSqr = activationDistance * activationDistance;
         
         if (player == null)
         {
+            // Try to find player efficiently - optimized for 2023+
+            // If ObjectPoolManager exists, player might be cached there? No.
+            // Helper: FindFirstObjectByType is better than FindGameObjectWithTag performance-wise usually? 
+            // Stick to Tag as it's standard here.
             var playerObj = GameObject.FindGameObjectWithTag("Player");
             if (playerObj != null)
                 player = playerObj.transform;
@@ -128,11 +141,32 @@ public class SpawnArea : MonoBehaviour
             CollectChildSpawnPoints();
         }
         
-        // Generate unique ID if not set
-        if (string.IsNullOrEmpty(uniqueId))
-        {
-            uniqueId = GenerateUniqueId();
-        }
+        // Always recalculate ID if it's auto-generated (empty in inspector)
+        // because the chunk might be at a new position now.
+        // We only clear uniqueId if it looks like an auto-generated one (contains name and coord)
+        // OR simply: if inspector field is empty, always regenerate.
+        // NOTE: We cannot easily distinguish inspector value vs runtime value if we overwrote it.
+        // But since we are pooling, we should re-generate it based on new position.
+        // Assuming uniqueId field in inspector is meant to be permanent if set.
+        // If it was empty in inspector, we want to regenerate.
+        // We can't know if it was empty in inspector at runtime easily unless we check prefab?
+        // Let's assume if it starts with gameObject.name it might be auto-generated.
+        // Safer: Just regenerate if it's not explicitly manually set (hard to track).
+        // Best approach: If we are pooling, we *must* regenerate ID based on position, 
+        // otherwise all recycled chunks share the same ID as their previous life.
+        
+        // We will regenerate uniqueID if it was NOT set in inspector (we assume empty string means auto).
+        // But 'uniqueId' variable is serialized. 
+        // We need to keep the "original inspector value" separate? No.
+        // Let's just regenerate it every OnEnable if UseGlobalRegistry is true.
+        // Wait, if user SET a specific ID in inspector, they want THAT ID.
+        // Use a private flag? 
+        // Actually, for procedurally generated chunks, the ID *must* be position-based.
+        // If the user manually placed a SpawnArea in a fixed scene, they might want a fixed ID.
+        // But these are CHUNKS. They move.
+        // So we should ALWAYS regenerate the ID based on current position.
+        
+        uniqueId = GenerateUniqueId();
         
         // Check if already spawned in global registry
         if (useGlobalRegistry && SpawnAreaRegistry.Instance.HasSpawned(uniqueId))

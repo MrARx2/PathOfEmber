@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Pool;
+using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
@@ -167,6 +168,48 @@ public class ObjectPoolManager : MonoBehaviour
         {
             obj.SetActive(false);
             pool.Release(obj);
+        }
+    }
+
+    /// <summary>
+    /// Pre-warms a pool asynchronously (spread over multiple frames).
+    /// Prevents lag spikes during loading screens.
+    /// </summary>
+    public IEnumerator PrewarmAsync(GameObject prefab, int count, int itemsPerFrame)
+    {
+        if (prefab == null || count <= 0) yield break;
+
+        // Ensure pool exists
+        if (!_pools.TryGetValue(prefab, out var pool))
+        {
+            pool = CreatePool(prefab);
+            _pools[prefab] = pool;
+        }
+
+        var tempList = new List<GameObject>(itemsPerFrame);
+        int totalCreated = 0;
+
+        while (totalCreated < count)
+        {
+            int batchSize = Mathf.Min(itemsPerFrame, count - totalCreated);
+            tempList.Clear();
+
+            for (int i = 0; i < batchSize; i++)
+            {
+                GameObject obj = pool.Get();
+                _instanceToPrefab[obj] = prefab;
+                tempList.Add(obj);
+            }
+
+            // Return immediately
+            foreach (var obj in tempList)
+            {
+                obj.SetActive(false);
+                pool.Release(obj);
+            }
+
+            totalCreated += batchSize;
+            yield return null; // Wait for next frame
         }
     }
 

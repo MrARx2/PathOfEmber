@@ -24,10 +24,17 @@ public class ChunkManager : MonoBehaviour
     public int chunksAhead = 3;
     public int chunksBehind = 1;
 
+    [Header("Initialization")]
+    [Tooltip("If true, functionality runs in Start(). If false, waits for Initialize() call.")]
+    public bool autoInitialize = true;
+
     private Dictionary<int, GameObject> activeChunks = new Dictionary<int, GameObject>();
     private int currentChunkIndex = 0;
     private Vector3 firstChunkPosition;
     private readonly List<GameObject> chunkSequence = new List<GameObject>();
+    private bool isInitialized = false;
+
+    public System.Action OnInitialGenerationFinished;
 
     private void BuildChunkSequence()
     {
@@ -80,6 +87,19 @@ public class ChunkManager : MonoBehaviour
             return;
         }
 
+        if (autoInitialize)
+        {
+            Initialize();
+        }
+    }
+
+    /// <summary>
+    /// Initializes the chunk system. Call this from AssetPreloader.
+    /// </summary>
+    public void Initialize()
+    {
+        if (isInitialized) return;
+
         BuildChunkSequence();
 
         if (chunkSequence.Count == 0)
@@ -89,15 +109,18 @@ public class ChunkManager : MonoBehaviour
         }
 
         // Store the first chunk's position as reference
-        // Use this manager's transform as the origin so all chunks align consistently
         firstChunkPosition = transform.position;
 
         // Load initial chunks
         UpdateChunks();
+
+        isInitialized = true;
+        OnInitialGenerationFinished?.Invoke();
     }
 
     private void Update()
     {
+        if (!isInitialized) return;
         if (player == null) return;
         if (chunkSequence.Count == 0) return;
 
@@ -169,8 +192,24 @@ public class ChunkManager : MonoBehaviour
         float zOffset = chunkIndex * (chunkLength + chunkGap);
         Vector3 position = firstChunkPosition + new Vector3(0, 0, zOffset);
 
-        // Spawn chunk with prefab's original rotation
-        GameObject chunk = Instantiate(prefabToUse, position, prefabToUse.transform.rotation, transform);
+        // Use Instantiate via ObjectPoolManager if available, otherwise fallback
+        GameObject chunk;
+        if (ObjectPoolManager.Instance != null)
+        {
+            chunk = ObjectPoolManager.Instance.Get(prefabToUse, position, prefabToUse.transform.rotation);
+            // Ensure parenting (PoolManager puts it under itself by default usually, but we want it organized?)
+            // Actually ObjectPoolManager keeps them under itself when inactive. When active, we can reparent.
+            // But for Chunks, let's keep them clean in hierarchy? 
+            // NOTE: ObjectPoolManager.Get sets position/rotation but parent handling is up to us if we want specific hierarchy.
+            // But ObjectPoolManager.Get does NOT allow setting parent in arguments.
+            // Let's re-parent.
+            chunk.transform.SetParent(transform);
+        }
+        else
+        {
+            chunk = Instantiate(prefabToUse, position, prefabToUse.transform.rotation, transform);
+        }
+        
         chunk.name = $"Chunk_{chunkIndex}";
 
         // Keep original materials; no debug coloring
@@ -184,9 +223,33 @@ public class ChunkManager : MonoBehaviour
     {
         if (activeChunks.TryGetValue(chunkIndex, out GameObject chunk))
         {
-            Destroy(chunk);
+            if (ObjectPoolManager.Instance != null)
+            {
+                ObjectPoolManager.Instance.Return(chunk);
+            }
+            else
+            {
+                Destroy(chunk);
+            }
             activeChunks.Remove(chunkIndex);
         }
+    }
+
+    /// <summary>
+    /// Returns all unique prefabs used in the biome generation (for prewarming).
+    /// </summary>
+    public HashSet<GameObject> GetAllBiomePrefabs()
+    {
+        HashSet<GameObject> unique = new HashSet<GameObject>();
+        
+        if (firstChunkPrefab != null) unique.Add(firstChunkPrefab);
+        if (lastChunkPrefab != null) unique.Add(lastChunkPrefab);
+        
+        if (lavaBiomePrefabs != null) foreach (var p in lavaBiomePrefabs) if(p) unique.Add(p);
+        if (grassBiomePrefabs != null) foreach (var p in grassBiomePrefabs) if(p) unique.Add(p);
+        if (mudBiomePrefabs != null) foreach (var p in mudBiomePrefabs) if(p) unique.Add(p);
+        
+        return unique;
     }
 
     private void OnDrawGizmosSelected()

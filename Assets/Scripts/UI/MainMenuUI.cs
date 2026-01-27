@@ -247,7 +247,15 @@ public class MainMenuUI : MonoBehaviour
             Debug.Log("[MainMenuUI] Play clicked without talent - starting normal mode");
         }
         
-        SceneManager.LoadScene(gameSceneName);
+        if (LoadingScreenManager.Instance != null)
+        {
+            LoadingScreenManager.Instance.LoadScene(gameSceneName);
+        }
+        else
+        {
+            Debug.LogWarning("[MainMenuUI] LoadingScreenManager not found! Doing standard LoadScene.");
+            SceneManager.LoadScene(gameSceneName);
+        }
     }
 
     /// <summary>
