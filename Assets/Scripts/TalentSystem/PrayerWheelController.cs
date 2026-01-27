@@ -101,6 +101,10 @@ public class PrayerWheelController : MonoBehaviour
     [SerializeField, Tooltip("Single sound that plays when spin ends (in addition to layered stop sounds)")]
     private SoundEvent spinEndSound;
 
+    [Space(5)]
+    [SerializeField, Tooltip("Spin noise that plays once at the start of every spin")]
+    private SoundEvent spinNoiseSound;
+
     // Assigned talents for current spin (no repetition)
     private TalentData[,] wheel1Talents = new TalentData[3, 5]; // [rarity, socket]
     private TalentData[,] wheel2Talents = new TalentData[3, 5];
@@ -309,6 +313,10 @@ public class PrayerWheelController : MonoBehaviour
         // EXTRA: Force-disable emission at start
         DisableEmissionForWheel(wheel1);
         DisableEmissionForWheel(wheel2);
+
+        // Play spin noise once at start
+        if (spinNoiseSound != null && AudioManager.Instance != null)
+            AudioManager.Instance.Play(spinNoiseSound);
 
         // Step 6: Play layered spin sounds based on rarity
         PlayLayeredSpinSounds();
