@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 6368902412919713982}
   m_Layer: 0
   m_Name: Box Volume
-  m_TagString: Untagged
+  m_TagString: Collider
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -48,7 +48,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -81,27 +81,27 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: b6eebde83e0e20041962533ad181a1c8, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.16
+      value: 0.66761214
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b6eebde83e0e20041962533ad181a1c8, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.16
+      value: 0.66761214
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b6eebde83e0e20041962533ad181a1c8, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.16
+      value: 0.66761214
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b6eebde83e0e20041962533ad181a1c8, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.352
+      value: -0.49766684
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b6eebde83e0e20041962533ad181a1c8, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.218
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b6eebde83e0e20041962533ad181a1c8, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 19.706
+      value: -1.2049327
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b6eebde83e0e20041962533ad181a1c8, type: 3}
       propertyPath: m_LocalRotation.w
