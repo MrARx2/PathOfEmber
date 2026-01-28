@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 4430219414725507301}
   m_Layer: 8
   m_Name: Box Volume
-  m_TagString: Untagged
+  m_TagString: Collider
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -48,7 +48,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -93,15 +93,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 52721650f19799d479eb90b2c2ddff39, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.081
+      value: 1.1843878
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 52721650f19799d479eb90b2c2ddff39, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.1908462
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 52721650f19799d479eb90b2c2ddff39, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 21.081
+      value: -1.0402489
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 52721650f19799d479eb90b2c2ddff39, type: 3}
       propertyPath: m_LocalRotation.w
