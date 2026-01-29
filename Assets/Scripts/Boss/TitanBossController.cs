@@ -94,11 +94,61 @@ namespace Boss
         [Header("=== DEBUG ===")]
         [SerializeField] private bool debugLog = false;
         [SerializeField] private TitanState currentState = TitanState.Idle;
+        
+        [Header("=== UI ===")]
+        [SerializeField, Tooltip("Death panel to show when boss is defeated (can be deactivated in hierarchy)")]
+        private GameObject deathPanel;
+        
+        [SerializeField, Tooltip("Delay before showing the death panel (seconds)")]
+        private float deathPanelDelay = 2f;
 
         private void Start()
         {
             if (hazardZone == null)
                 hazardZone = FindFirstObjectByType<Hazards.HazardZoneMeteors>();
+            
+            // Always find and verify death panel
+            FindDeathPanel();
+        }
+        
+        private void FindDeathPanel()
+        {
+            // If already assigned, verify it's valid
+            if (deathPanel != null)
+            {
+                Debug.Log($"[TitanBossController] Death panel already assigned: {deathPanel.name}, active: {deathPanel.activeSelf}");
+                return;
+            }
+            
+            Debug.Log("[TitanBossController] Searching for death panel...");
+            
+            // Method 1: Find by TitanDeathPanelController component (includes inactive)
+            var allPanels = Resources.FindObjectsOfTypeAll<TitanDeathPanelController>();
+            Debug.Log($"[TitanBossController] Found {allPanels.Length} TitanDeathPanelController(s)");
+            
+            foreach (var panel in allPanels)
+            {
+                if (panel != null && panel.gameObject.scene.isLoaded)
+                {
+                    deathPanel = panel.gameObject;
+                    Debug.Log($"[TitanBossController] Auto-found death panel by component: {deathPanel.name}");
+                    return;
+                }
+            }
+            
+            // Method 2: Search by name
+            var allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+            foreach (var obj in allObjects)
+            {
+                if (obj.name.Contains("TitanDeathPanel") && obj.scene.isLoaded)
+                {
+                    deathPanel = obj;
+                    Debug.Log($"[TitanBossController] Auto-found death panel by name: {deathPanel.name}");
+                    return;
+                }
+            }
+            
+            Debug.LogError("[TitanBossController] Could NOT find TitanDeathPanel in scene!");
         }
 
         // State
@@ -195,7 +245,44 @@ namespace Boss
                 CameraBossMode.Instance.ExitBossMode();
             }
             
+            // Show death panel with delay
+            if (deathPanel != null)
+            {
+                StartCoroutine(ShowDeathPanelDelayed());
+            }
+            else
+            {
+                Debug.LogError("[TitanBossController] Death panel is NULL - cannot show victory UI!");
+            }
+            
             OnBossDefeated?.Invoke();
+        }
+        
+        private IEnumerator ShowDeathPanelDelayed()
+        {
+            Debug.Log($"[TitanBossController] ShowDeathPanelDelayed started, waiting {deathPanelDelay}s...");
+            
+            yield return new WaitForSeconds(deathPanelDelay);
+            
+            Debug.Log($"[TitanBossController] Delay complete, deathPanel is: {(deathPanel != null ? deathPanel.name : "NULL")}");
+            
+            // Re-find if null (reference might have been lost)
+            if (deathPanel == null)
+            {
+                Debug.Log("[TitanBossController] Death panel is null after delay, trying to find again...");
+                FindDeathPanel();
+            }
+            
+            if (deathPanel != null)
+            {
+                Debug.Log($"[TitanBossController] Activating death panel: {deathPanel.name}");
+                deathPanel.SetActive(true);
+                Debug.Log($"[TitanBossController] Death panel SetActive(true) called, now active: {deathPanel.activeSelf}");
+            }
+            else
+            {
+                Debug.LogError("[TitanBossController] CRITICAL: Could not find or show death panel!");
+            }
         }
         private TitanAttackType lastAttack = TitanAttackType.CoreBlast;
         private int currentAttackIndex = 0; // 0=Fist, 1=Summon, 2=Blast, cycles
@@ -680,6 +767,20 @@ namespace Boss
         {
             if (coreHealth != null)
                 coreHealth.TakeDamage(coreHealth.CurrentHealth);
+        }
+        
+        [ContextMenu("Debug: Show Death Panel")]
+        private void DebugShowDeathPanel()
+        {
+            if (deathPanel != null)
+            {
+                Debug.Log($"[TitanBossController] DEBUG: Forcing death panel visible: {deathPanel.name}");
+                deathPanel.SetActive(true);
+            }
+            else
+            {
+                Debug.LogError("[TitanBossController] DEBUG: deathPanel is NULL!");
+            }
         }
         #endregion
     }
