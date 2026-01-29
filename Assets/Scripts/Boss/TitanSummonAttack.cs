@@ -104,7 +104,7 @@ namespace Boss
             
             if (chaserPrefab == null)
             {
-                Debug.LogWarning("[TitanSummonAttack] Chaser prefab is not assigned!");
+                if (debugLog) Debug.LogWarning("[TitanSummonAttack] Chaser prefab is not assigned!");
                 yield break;
             }
             

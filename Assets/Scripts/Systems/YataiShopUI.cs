@@ -26,6 +26,12 @@ public class YataiShopUI : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float costPctRare = 0.6f;      // 60%
     [SerializeField, Range(0f, 1f)] private float costPctLegendary = 0.9f; // 90%
 
+    [Header("Button Colors")]
+    [SerializeField] private Color colorCommon = Color.white;
+    [SerializeField] private Color colorRare = new Color(0.2f, 0.4f, 1f); // Blue-ish
+    [SerializeField] private Color colorLegendary = new Color(1f, 0.8f, 0f); // Gold
+    [SerializeField] private Color colorDisabled = Color.gray;
+
     [Header("System References")]
     [SerializeField] private XPSystem xpSystem;
     [SerializeField] private PrayerWheelController wheelController;
@@ -60,7 +66,7 @@ public class YataiShopUI : MonoBehaviour
 
         // Pause Game
         if (timeScaleManager != null)
-            timeScaleManager.SetTimeScaleImmediate(0f); // FIXED: Use existing hard-set method
+            timeScaleManager.SetTimeScaleImmediate(0f);
         else
             Time.timeScale = 0f;
 
@@ -74,7 +80,7 @@ public class YataiShopUI : MonoBehaviour
 
         // Resume Game
         if (timeScaleManager != null)
-            timeScaleManager.SetTimeScaleImmediate(1f); // FIXED: Resume to full speed
+            timeScaleManager.SetTimeScaleImmediate(1f);
         else
             Time.timeScale = 1f;
     }
@@ -101,30 +107,30 @@ public class YataiShopUI : MonoBehaviour
 
         // Common
         bool canAffordCommon = currentXP >= costCommon;
-        SetButtonState(btnCommon, canAffordCommon);
+        SetButtonState(btnCommon, canAffordCommon, colorCommon);
         if (txtCommonCost) txtCommonCost.text = $"{costCommon} XP (30%)";
 
         // Rare
         bool canAffordRare = currentXP >= costRare;
-        SetButtonState(btnRare, canAffordRare);
+        SetButtonState(btnRare, canAffordRare, colorRare);
         if (txtRareCost) txtRareCost.text = $"{costRare} XP (60%)";
 
         // Legendary
         bool canAffordLegendary = currentXP >= costLegendary;
-        SetButtonState(btnLegendary, canAffordLegendary);
+        SetButtonState(btnLegendary, canAffordLegendary, colorLegendary);
         if (txtLegendaryCost) txtLegendaryCost.text = $"{costLegendary} XP (90%)";
     }
 
-    private void SetButtonState(Button btn, bool interactable)
+    private void SetButtonState(Button btn, bool interactable, Color activeColor)
     {
         if (btn == null) return;
         btn.interactable = interactable;
         
-        // OptionalVisuals: Grey out image if not interactable
+        // Change Image Color
         var img = btn.GetComponent<Image>();
         if (img != null)
         {
-            img.color = interactable ? Color.white : Color.gray;
+            img.color = interactable ? activeColor : colorDisabled;
         }
     }
 

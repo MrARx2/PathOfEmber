@@ -11,6 +11,10 @@ public class PlayerCurrency : MonoBehaviour
     private static PlayerCurrency instance;
     public static PlayerCurrency Instance => instance;
 
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
+
     public event System.Action OnCurrencyChanged;
 
     private void Awake()
@@ -51,13 +55,13 @@ public class PlayerCurrency : MonoBehaviour
     public void AddCoins(int amount)
     {
         Coins += amount;
-        Debug.Log($"[PlayerCurrency] Added {amount} coins. Total: {Coins}");
+        if (debugLog) Debug.Log($"[PlayerCurrency] Added {amount} coins. Total: {Coins}");
     }
 
     public void AddGems(int amount)
     {
         Gems += amount;
-        Debug.Log($"[PlayerCurrency] Added {amount} gems. Total: {Gems}");
+        if (debugLog) Debug.Log($"[PlayerCurrency] Added {amount} gems. Total: {Gems}");
     }
 
     public bool SpendCoins(int amount)
@@ -65,10 +69,10 @@ public class PlayerCurrency : MonoBehaviour
         if (Coins >= amount)
         {
             Coins -= amount;
-            Debug.Log($"[PlayerCurrency] Spent {amount} coins. Remaining: {Coins}");
+            if (debugLog) Debug.Log($"[PlayerCurrency] Spent {amount} coins. Remaining: {Coins}");
             return true;
         }
-        Debug.LogWarning($"[PlayerCurrency] Not enough coins! Have {Coins}, need {amount}");
+        if (debugLog) Debug.LogWarning($"[PlayerCurrency] Not enough coins! Have {Coins}, need {amount}");
         return false;
     }
 
@@ -77,10 +81,10 @@ public class PlayerCurrency : MonoBehaviour
         if (Gems >= amount)
         {
             Gems -= amount;
-            Debug.Log($"[PlayerCurrency] Spent {amount} gems. Remaining: {Gems}");
+            if (debugLog) Debug.Log($"[PlayerCurrency] Spent {amount} gems. Remaining: {Gems}");
             return true;
         }
-        Debug.LogWarning($"[PlayerCurrency] Not enough gems! Have {Gems}, need {amount}");
+        if (debugLog) Debug.LogWarning($"[PlayerCurrency] Not enough gems! Have {Gems}, need {amount}");
         return false;
     }
 
@@ -96,7 +100,7 @@ public class PlayerCurrency : MonoBehaviour
     {
         Coins = 0;
         Gems = 0;
-        Debug.Log("[PlayerCurrency] Currency reset to 0.");
+        if (debugLog) Debug.Log("[PlayerCurrency] Currency reset to 0.");
     }
     #endregion
 }

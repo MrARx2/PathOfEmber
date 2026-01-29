@@ -80,6 +80,10 @@ public class PrayerWheelDisplay : MonoBehaviour
     private float previousTimeScale = 1f;
     private bool isInitialized = false;
     private GameObject spawnedBase; // Spawned instance of the base
+
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
     
     // Smoothing velocities
     private Vector3 wheel1Velocity;
@@ -110,7 +114,7 @@ public class PrayerWheelDisplay : MonoBehaviour
             if (mainCam != null)
             {
                 cameraTransform = mainCam.transform;
-                Debug.Log("[PrayerWheelDisplay] Auto-assigned main camera transform.");
+                if (debugLog) Debug.Log("[PrayerWheelDisplay] Auto-assigned main camera transform.");
             }
             else
             {
@@ -135,7 +139,7 @@ public class PrayerWheelDisplay : MonoBehaviour
         // Ensure time scale is normal on start
         Time.timeScale = 1f;
         
-        Debug.Log($"[PrayerWheelDisplay] Initialized. Wheel1: {(prayerWheel1 != null ? prayerWheel1.name : "NULL")}, Wheel2: {(prayerWheel2 != null ? prayerWheel2.name : "NULL")}");
+        if (debugLog) Debug.Log($"[PrayerWheelDisplay] Initialized. Wheel1: {(prayerWheel1 != null ? prayerWheel1.name : "NULL")}, Wheel2: {(prayerWheel2 != null ? prayerWheel2.name : "NULL")}");
     }
 
     /// <summary>
@@ -156,13 +160,13 @@ public class PrayerWheelDisplay : MonoBehaviour
         if (prayerWheel1 != null)
         {
             SetLayerRecursive(prayerWheel1.gameObject, wheelLayer);
-            Debug.Log($"[PrayerWheelDisplay] Set wheel 1 to layer {wheelLayer}.");
+            if (debugLog) Debug.Log($"[PrayerWheelDisplay] Set wheel 1 to layer {wheelLayer}.");
         }
 
         if (prayerWheel2 != null)
         {
             SetLayerRecursive(prayerWheel2.gameObject, wheelLayer);
-            Debug.Log($"[PrayerWheelDisplay] Set wheel 2 to layer {wheelLayer}.");
+            if (debugLog) Debug.Log($"[PrayerWheelDisplay] Set wheel 2 to layer {wheelLayer}.");
         }
     }
 
@@ -201,7 +205,7 @@ public class PrayerWheelDisplay : MonoBehaviour
 
         isVisible = true;
         
-        Debug.Log("[PrayerWheelDisplay] Show() called.");
+        if (debugLog) Debug.Log("[PrayerWheelDisplay] Show() called.");
 
         // Show wheels first
         SetWheelsVisible(true);
@@ -221,17 +225,17 @@ public class PrayerWheelDisplay : MonoBehaviour
             {
                 // Start smooth slowdown to target (not 0 - player can still move during spin)
                 StartCoroutine(SmoothTimeTransition(slowdownTargetTimeScale, slowdownDuration));
-                Debug.Log($"[PrayerWheelDisplay] Smooth slowdown started (target: {slowdownTargetTimeScale}, duration: {slowdownDuration}s).");
+                if (debugLog) Debug.Log($"[PrayerWheelDisplay] Smooth slowdown started (target: {slowdownTargetTimeScale}, duration: {slowdownDuration}s).");
             }
             else
             {
                 // Legacy instant freeze
                 Time.timeScale = 0f;
-                Debug.Log("[PrayerWheelDisplay] Game paused (instant).");
+                if (debugLog) Debug.Log("[PrayerWheelDisplay] Game paused (instant).");
             }
         }
 
-        Debug.Log("[PrayerWheelDisplay] Wheels shown.");
+        if (debugLog) Debug.Log("[PrayerWheelDisplay] Wheels shown.");
     }
 
     /// <summary>
@@ -242,7 +246,7 @@ public class PrayerWheelDisplay : MonoBehaviour
         if (useSmoothSlowdown && isInitialized)
         {
             Time.timeScale = 0f;
-            Debug.Log("[PrayerWheelDisplay] Game frozen completely for selection.");
+            if (debugLog) Debug.Log("[PrayerWheelDisplay] Game frozen completely for selection.");
         }
     }
 
@@ -284,17 +288,17 @@ public class PrayerWheelDisplay : MonoBehaviour
                     // so when Menu unpauses, it goes back to normal.
                     Time.timeScale = previousTimeScale;
                 }
-                Debug.Log($"[PrayerWheelDisplay] Smooth resume started (target: {previousTimeScale}, duration: {resumeDuration}s).");
+                if (debugLog) Debug.Log($"[PrayerWheelDisplay] Smooth resume started (target: {previousTimeScale}, duration: {resumeDuration}s).");
             }
             else
             {
                 // Legacy instant resume
                 Time.timeScale = previousTimeScale;
-                Debug.Log("[PrayerWheelDisplay] Game resumed (instant).");
+                if (debugLog) Debug.Log("[PrayerWheelDisplay] Game resumed (instant).");
             }
         }
 
-        Debug.Log("[PrayerWheelDisplay] Wheels hidden.");
+        if (debugLog) Debug.Log("[PrayerWheelDisplay] Wheels hidden.");
     }
 
     /// <summary>
@@ -458,12 +462,12 @@ public class PrayerWheelDisplay : MonoBehaviour
 
     private void SetWheelsVisible(bool visible)
     {
-        Debug.Log($"[PrayerWheelDisplay] SetWheelsVisible({visible})");
+        if (debugLog) Debug.Log($"[PrayerWheelDisplay] SetWheelsVisible({visible})");
         
         if (prayerWheel1 != null)
         {
             prayerWheel1.gameObject.SetActive(visible);
-            Debug.Log($"[PrayerWheelDisplay] Wheel1 SetActive({visible})");
+            if (debugLog) Debug.Log($"[PrayerWheelDisplay] Wheel1 SetActive({visible})");
         }
         else
         {
@@ -473,7 +477,7 @@ public class PrayerWheelDisplay : MonoBehaviour
         if (prayerWheel2 != null)
         {
             prayerWheel2.gameObject.SetActive(visible);
-            Debug.Log($"[PrayerWheelDisplay] Wheel2 SetActive({visible})");
+            if (debugLog) Debug.Log($"[PrayerWheelDisplay] Wheel2 SetActive({visible})");
         }
         else
         {
@@ -531,7 +535,7 @@ public class PrayerWheelDisplay : MonoBehaviour
             baseRotationVelocity = 0f;
         }
         
-        Debug.Log($"[PrayerWheelDisplay] Spawned base at {spawnedBase.transform.position}");
+        if (debugLog) Debug.Log($"[PrayerWheelDisplay] Spawned base at {spawnedBase.transform.position}");
     }
 
     private void DestroyBase()
@@ -540,7 +544,7 @@ public class PrayerWheelDisplay : MonoBehaviour
         {
             Destroy(spawnedBase);
             spawnedBase = null;
-            Debug.Log("[PrayerWheelDisplay] Destroyed base.");
+            if (debugLog) Debug.Log("[PrayerWheelDisplay] Destroyed base.");
         }
     }
 

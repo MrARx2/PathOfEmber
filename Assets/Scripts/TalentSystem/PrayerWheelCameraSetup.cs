@@ -48,6 +48,10 @@ public class PrayerWheelCameraSetup : MonoBehaviour
     [SerializeField, Tooltip("Default rotation for the wheels (e.g. 0, 180, 0 if they face backwards)")]
     private Vector3 wheelDefaultRotation = Vector3.zero;
 
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
+
     [Header("Animation")]
     // Note: Fade animation not currently implemented - fadeDuration removed
 
@@ -80,7 +84,7 @@ public class PrayerWheelCameraSetup : MonoBehaviour
         
         if (wheelLayer == -1)
         {
-            Debug.LogWarning($"[PrayerWheelCameraSetup] Layer '{wheelLayerName}' not found! " +
+            if (debugLog) Debug.LogWarning($"[PrayerWheelCameraSetup] Layer '{wheelLayerName}' not found! " +
                            $"Please create it in Edit > Project Settings > Tags and Layers. " +
                            $"Using Default layer for now.");
             wheelLayer = 0; // Default layer
@@ -108,7 +112,7 @@ public class PrayerWheelCameraSetup : MonoBehaviour
             wheelCameraObject.transform.localPosition = new Vector3(0, 0, -cameraDistance);
             wheelCameraObject.transform.localRotation = Quaternion.identity;
             
-            Debug.Log("[PrayerWheelCameraSetup] Created dedicated wheel camera");
+            if (debugLog) Debug.Log("[PrayerWheelCameraSetup] Created dedicated wheel camera");
         }
         else
         {
@@ -146,7 +150,7 @@ public class PrayerWheelCameraSetup : MonoBehaviour
             // Set layer recursively (Always do this!)
             SetLayerRecursive(prayerWheel1.gameObject, wheelLayer);
             
-            if (autoPositionWheels)
+            if (autoPositionWheels && debugLog)
                 Debug.Log($"[PrayerWheelCameraSetup] Auto-Positioned wheel 1 at {prayerWheel1.localPosition}");
         }
 
@@ -167,7 +171,7 @@ public class PrayerWheelCameraSetup : MonoBehaviour
             
             SetLayerRecursive(prayerWheel2.gameObject, wheelLayer);
             
-            if (autoPositionWheels)
+            if (autoPositionWheels && debugLog)
                 Debug.Log($"[PrayerWheelCameraSetup] Auto-Positioned wheel 2 at {prayerWheel2.localPosition}");
         }
     }
@@ -202,7 +206,7 @@ public class PrayerWheelCameraSetup : MonoBehaviour
         // Try URP Setup
         SetupURP();
 
-        Debug.Log("[PrayerWheelCameraSetup] Wheels shown");
+        if (debugLog) Debug.Log("[PrayerWheelCameraSetup] Wheels shown");
     }
 
     /// <summary>
@@ -222,7 +226,7 @@ public class PrayerWheelCameraSetup : MonoBehaviour
         
         CleanupURP();
 
-        Debug.Log("[PrayerWheelCameraSetup] Wheels hidden");
+        if (debugLog) Debug.Log("[PrayerWheelCameraSetup] Wheels hidden");
     }
 
     private void SetWheelsActive(bool active)
@@ -304,7 +308,7 @@ public class PrayerWheelCameraSetup : MonoBehaviour
             if (!mainCamData.cameraStack.Contains(wheelCamera))
             {
                 mainCamData.cameraStack.Add(wheelCamera);
-                Debug.Log("[PrayerWheelCameraSetup] Native URP: Added wheel camera to stack.");
+                if (debugLog) Debug.Log("[PrayerWheelCameraSetup] Native URP: Added wheel camera to stack.");
             }
         }
     }

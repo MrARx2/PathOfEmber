@@ -60,7 +60,7 @@ namespace Audio
                 {
                     GameObject go = new GameObject("Audio_MusicManager");
                     Instance = go.AddComponent<MusicManager>();
-                    Debug.Log("[MusicManager] Created instance via EnsureExists");
+                    if (Instance.showDebug) Debug.Log("[MusicManager] Created instance via EnsureExists");
                 }
             }
         }

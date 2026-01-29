@@ -25,6 +25,10 @@ public class TimeScaleManager : MonoBehaviour
     [SerializeField, Tooltip("Easing type for transitions")]
     private EasingType easingType = EasingType.CubicEaseOut;
 
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
+
     public enum EasingType
     {
         Linear,
@@ -103,7 +107,7 @@ public class TimeScaleManager : MonoBehaviour
         }
 
         activeTransition = StartCoroutine(TransitionTimeScale(targetTimeScale, duration, onComplete));
-        Debug.Log($"[TimeScaleManager] Starting smooth slowdown: {Time.timeScale} → {targetTimeScale} over {duration}s");
+        if (debugLog) Debug.Log($"[TimeScaleManager] Starting smooth slowdown: {Time.timeScale} → {targetTimeScale} over {duration}s");
     }
 
     /// <summary>
@@ -134,7 +138,7 @@ public class TimeScaleManager : MonoBehaviour
         }
 
         activeTransition = StartCoroutine(TransitionTimeScale(targetTimeScale, duration, onComplete));
-        Debug.Log($"[TimeScaleManager] Starting smooth resume: {Time.timeScale} → {targetTimeScale} over {duration}s");
+        if (debugLog) Debug.Log($"[TimeScaleManager] Starting smooth resume: {Time.timeScale} → {targetTimeScale} over {duration}s");
     }
 
     /// <summary>
@@ -152,7 +156,7 @@ public class TimeScaleManager : MonoBehaviour
         Time.fixedDeltaTime = originalFixedDeltaTime * Mathf.Max(timeScale, 0.01f);
         isSlowed = timeScale < 0.5f;
         
-        Debug.Log($"[TimeScaleManager] Immediate time scale set to: {timeScale}");
+        if (debugLog) Debug.Log($"[TimeScaleManager] Immediate time scale set to: {timeScale}");
     }
 
     /// <summary>
@@ -196,7 +200,7 @@ public class TimeScaleManager : MonoBehaviour
         activeTransition = null;
         onComplete?.Invoke();
         
-        Debug.Log($"[TimeScaleManager] Transition complete. TimeScale: {Time.timeScale}");
+        if (debugLog) Debug.Log($"[TimeScaleManager] Transition complete. TimeScale: {Time.timeScale}");
     }
 
     private float ApplyEasing(float t)

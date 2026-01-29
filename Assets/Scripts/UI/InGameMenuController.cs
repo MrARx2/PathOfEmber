@@ -59,7 +59,7 @@ public class InGameMenuController : MonoBehaviour
     
     [Header("Debug")]
     [SerializeField, Tooltip("Enable debug logging")]
-    private bool debugLog = true;
+    private bool debugLog = false;
     
     [SerializeField, Tooltip("If true, talents will be reset when loading game or returning to menu. Disable to keep talents for testing.")]
     private bool resetTalentsOnLoad = true;
@@ -110,7 +110,7 @@ public class InGameMenuController : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[InGameMenuController] HamburgerButton not assigned!");
+            if (debugLog) Debug.LogWarning("[InGameMenuController] HamburgerButton not assigned!");
         }
         
         if (continueButton != null)
@@ -248,13 +248,13 @@ public class InGameMenuController : MonoBehaviour
     {
         if (abilitiesContent == null)
         {
-            Debug.LogError("[InGameMenuController] AbilitiesContent not assigned! Drag the Content object from AbilitiesGridPanel > Viewport > Content");
+            if (debugLog) Debug.LogError("[InGameMenuController] AbilitiesContent not assigned! Drag the Content object from AbilitiesGridPanel > Viewport > Content");
             return;
         }
         
         if (runTalentRegistry == null)
         {
-            Debug.LogError("[InGameMenuController] RunTalentRegistry not assigned! Drag your RunTalentRegistry asset here.");
+            if (debugLog) Debug.LogError("[InGameMenuController] RunTalentRegistry not assigned! Drag your RunTalentRegistry asset here.");
             return;
         }
         
@@ -273,12 +273,12 @@ public class InGameMenuController : MonoBehaviour
         // Get all acquired talents
         var entries = runTalentRegistry.Entries;
         
-        Debug.Log($"[InGameMenuController] RunTalentRegistry.Entries count: {entries.Length}");
-        Debug.Log($"[InGameMenuController] RunTalentRegistry.UniqueTalentCount: {runTalentRegistry.UniqueTalentCount}");
+        if (debugLog) Debug.Log($"[InGameMenuController] RunTalentRegistry.Entries count: {entries.Length}");
+        if (debugLog) Debug.Log($"[InGameMenuController] RunTalentRegistry.UniqueTalentCount: {runTalentRegistry.UniqueTalentCount}");
         
         if (entries.Length == 0)
         {
-            Debug.LogWarning("[InGameMenuController] No talents in registry! Grid will be empty.");
+            if (debugLog) Debug.LogWarning("[InGameMenuController] No talents in registry! Grid will be empty.");
             return;
         }
         
@@ -287,15 +287,15 @@ public class InGameMenuController : MonoBehaviour
         {
             if (entry.talent == null)
             {
-                Debug.LogWarning("[InGameMenuController] Found null talent entry, skipping");
+                if (debugLog) Debug.LogWarning("[InGameMenuController] Found null talent entry, skipping");
                 continue;
             }
             
-            Debug.Log($"[InGameMenuController] Creating icon for: {entry.talent.talentName} (stacks: {entry.stacks})");
+            if (debugLog) Debug.Log($"[InGameMenuController] Creating icon for: {entry.talent.talentName} (stacks: {entry.stacks})");
             CreateTalentIcon(entry.talent, entry.stacks);
         }
         
-        Debug.Log($"[InGameMenuController] Created {spawnedIcons.Count} talent icons");
+        if (debugLog) Debug.Log($"[InGameMenuController] Created {spawnedIcons.Count} talent icons");
     }
     
     /// <summary>
@@ -314,8 +314,8 @@ public class InGameMenuController : MonoBehaviour
             iconGO = Instantiate(talentIconPrefab, abilitiesContent);
             iconGO.name = $"TalentDisplay_{talent.talentName}";
             
-            Debug.Log($"[InGameMenuController] === Creating icon for {talent.talentName} ===");
-            Debug.Log($"[InGameMenuController] Talent icon sprite: {(talent.icon != null ? talent.icon.name : "NULL")}");
+            if (debugLog) Debug.Log($"[InGameMenuController] === Creating icon for {talent.talentName} ===");
+            if (debugLog) Debug.Log($"[InGameMenuController] Talent icon sprite: {(talent.icon != null ? talent.icon.name : "NULL")}");
             
             // Find TalentFrame by name recursively
             var frameTransform = FindChildRecursive(iconGO.transform, "TalentFrame");
@@ -329,12 +329,12 @@ public class InGameMenuController : MonoBehaviour
                     Color rarityColor = GetRarityColor(talent.rarity);
                     frameImage.color = rarityColor;
                     
-                    Debug.Log($"[InGameMenuController] {talent.talentName} rarity={talent.rarity}, color=({rarityColor.r:F2},{rarityColor.g:F2},{rarityColor.b:F2})");
+                    if (debugLog) Debug.Log($"[InGameMenuController] {talent.talentName} rarity={talent.rarity}, color=({rarityColor.r:F2},{rarityColor.g:F2},{rarityColor.b:F2})");
                 }
             }
             else
             {
-                Debug.LogWarning($"[InGameMenuController] TalentFrame not found!");
+                if (debugLog) Debug.LogWarning($"[InGameMenuController] TalentFrame not found!");
             }
             
             // Find TalentImage by name recursively
@@ -351,21 +351,21 @@ public class InGameMenuController : MonoBehaviour
                         talentImage.sprite = talent.icon;
                         talentImage.preserveAspect = true;
                         talentImage.color = Color.white;
-                        Debug.Log($"[InGameMenuController] SUCCESS: Set TalentImage sprite to {talent.icon.name}");
+                        if (debugLog) Debug.Log($"[InGameMenuController] SUCCESS: Set TalentImage sprite to {talent.icon.name}");
                     }
                     else
                     {
-                        Debug.LogError($"[InGameMenuController] FAILED: Talent {talent.talentName} has NULL icon!");
+                        if (debugLog) Debug.LogError($"[InGameMenuController] FAILED: Talent {talent.talentName} has NULL icon!");
                     }
                 }
                 else
                 {
-                    Debug.LogWarning($"[InGameMenuController] TalentImage found but no Image component!");
+                    if (debugLog) Debug.LogWarning($"[InGameMenuController] TalentImage found but no Image component!");
                 }
             }
             else
             {
-                Debug.LogError($"[InGameMenuController] TalentImage NOT FOUND in prefab hierarchy!");
+                if (debugLog) Debug.LogError($"[InGameMenuController] TalentImage NOT FOUND in prefab hierarchy!");
                 // List all children for debugging
                 ListAllChildren(iconGO.transform, 0);
             }
@@ -381,7 +381,7 @@ public class InGameMenuController : MonoBehaviour
                     {
                         stacksText.text = $"x{stacks}";
                         stacksText.gameObject.SetActive(true);
-                        Debug.Log($"[InGameMenuController] Set stacks text: x{stacks}");
+                        if (debugLog) Debug.Log($"[InGameMenuController] Set stacks text: x{stacks}");
                     }
                     else
                     {
@@ -447,7 +447,7 @@ public class InGameMenuController : MonoBehaviour
         string indent = new string(' ', depth * 2);
         foreach (Transform child in parent)
         {
-            Debug.Log($"{indent}- {child.name}");
+            if (debugLog) Debug.Log($"{indent}- {child.name}");
             ListAllChildren(child, depth + 1);
         }
     }
@@ -502,7 +502,7 @@ public class InGameMenuController : MonoBehaviour
         }
         else
         {
-            Debug.LogError("[InGameMenuController] Sound Settings Panel not assigned!");
+            if (debugLog) Debug.LogError("[InGameMenuController] Sound Settings Panel not assigned!");
         }
     }
     

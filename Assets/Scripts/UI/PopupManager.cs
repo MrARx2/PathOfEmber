@@ -86,6 +86,10 @@ public class PopupManager : MonoBehaviour
     [SerializeField, Tooltip("Burst: Initial speed multiplier for burst")]
     private float burstSpeed = 2.5f;
 
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
+
     // Active popup tracking
     private class ActivePopup
     {
@@ -324,7 +328,7 @@ public class PopupManager : MonoBehaviour
     {
         if (damagePopupPrefab == null)
         {
-            Debug.LogWarning("[PopupManager] No damage popup prefab assigned!");
+            if (debugLog) Debug.LogWarning("[PopupManager] No damage popup prefab assigned!");
             return;
         }
 
@@ -398,7 +402,7 @@ public class PopupManager : MonoBehaviour
     {
         if (xpPopupPrefab == null)
         {
-            Debug.LogWarning("[PopupManager] No XP popup prefab assigned!");
+            if (debugLog) Debug.LogWarning("[PopupManager] No XP popup prefab assigned!");
             return;
         }
 

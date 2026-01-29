@@ -147,7 +147,7 @@ namespace Boss
         {
             if (meteorStrikePrefab == null)
             {
-                Debug.LogWarning("[TitanCoreBlast] MeteorStrike prefab not assigned!");
+                if (debugLog) Debug.LogWarning("[TitanCoreBlast] MeteorStrike prefab not assigned!");
                 return;
             }
             

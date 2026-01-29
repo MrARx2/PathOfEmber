@@ -2290,6 +2290,7 @@ MonoBehaviour:
   shopUI: {fileID: 0}
   interactionIndicator: {fileID: 51636035}
   cooldownDuration: 0.5
+  debugLog: 0
 --- !u!1 &227616224
 GameObject:
   m_ObjectHideFlags: 0
@@ -6393,6 +6394,10 @@ MonoBehaviour:
   costPctCommon: 0.3
   costPctRare: 0.6
   costPctLegendary: 0.9
+  colorCommon: {r: 0, g: 1, b: 0.14117648, a: 1}
+  colorRare: {r: 0.2, g: 0.5019608, b: 1, a: 1}
+  colorLegendary: {r: 1, g: 0.8, b: 0.2, a: 1}
+  colorDisabled: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   xpSystem: {fileID: 1818749728}
   wheelController: {fileID: 1246689980}
   timeScaleManager: {fileID: 1924618434}
@@ -13300,7 +13305,7 @@ MonoBehaviour:
   talentNameRight: {fileID: 228951312}
   wheel1RarityGlow: {fileID: 0}
   wheel2RarityGlow: {fileID: 0}
-  commonColor: {r: 0, g: 0.8018868, b: 0.111244455, a: 1}
+  commonColor: {r: 0, g: 1, b: 0.13725495, a: 1}
   rareColor: {r: 0.2, g: 0.5, b: 1, a: 1}
   legendaryColor: {r: 1, g: 0.8, b: 0.2, a: 1}
   OnTalentSelected:
@@ -13311,6 +13316,7 @@ MonoBehaviour:
   systemsCanvasToHide: {fileID: 1381894438}
   activeSortOrder: 100
   selectionSound: {fileID: 11400000, guid: 72f4a55d49ea3324394badf05657b9ac, type: 2}
+  debugLog: 0
 --- !u!114 &1246689979
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13343,6 +13349,7 @@ MonoBehaviour:
   slowdownTargetTimeScale: 0.15
   slowdownDuration: 1.2
   resumeDuration: 0.3
+  debugLog: 0
 --- !u!114 &1246689980 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1681347285293982752, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
@@ -16249,6 +16256,7 @@ MonoBehaviour:
   swayAmount: 15
   swaySpeed: 4
   burstSpeed: 1.5
+  debugLog: 0
 --- !u!114 &1695477746 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2527684859505602684, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
@@ -17893,6 +17901,7 @@ MonoBehaviour:
   resumeDuration: 0.25
   targetSlowedTimeScale: 0.002
   easingType: 1
+  debugLog: 0
 --- !u!4 &1924618435
 Transform:
   m_ObjectHideFlags: 0
@@ -19295,6 +19304,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: FinalMud11
       objectReference: {fileID: 0}
+    - target: {fileID: 2909463715258918853, guid: 3162e2da7ab8cdf499c60a4799de7e60, type: 3}
+      propertyPath: hazardZone
+      value: 
+      objectReference: {fileID: 1919586483}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

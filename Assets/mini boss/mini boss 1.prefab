@@ -927,6 +927,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f7d2e64e5f9d6a94f973c6112223ab3e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1845210097542777460}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f7d2e64e5f9d6a94f973c6112223ab3e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8883227138847846606}
   m_SourcePrefab: {fileID: 100100000, guid: f7d2e64e5f9d6a94f973c6112223ab3e, type: 3}
 --- !u!4 &298093328679818237 stripped
 Transform:
@@ -1198,6 +1201,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI.EnemyAnimationRelay
   enemyAI: {fileID: 0}
+--- !u!114 &8883227138847846606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1249695390844391780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 356fc6e80c3890a45b45dc899b1583ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyAI.MinibossHazardZoneResume
+  normalZoneSpeed: 0.55
+  pauseOnSpawn: 1
 --- !u!4 &1881413905654827998 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f7d2e64e5f9d6a94f973c6112223ab3e, type: 3}

@@ -20,6 +20,10 @@ public class TalentSelectionManager : MonoBehaviour
     [SerializeField, Tooltip("If true, finds PlayerAbilities on tagged 'Player' object")]
     private bool autoFindPlayer = true;
 
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
+
     private Dictionary<string, System.Action> talentActions;
 
     private void Awake()
@@ -69,7 +73,7 @@ public class TalentSelectionManager : MonoBehaviour
                 if (databases.Length > 0)
                 {
                     talentDatabase = databases[0];
-                    Debug.Log($"[TalentSelectionManager] Found TalentDatabase via Resources.FindObjectsOfTypeAll");
+                    if (debugLog) Debug.Log($"[TalentSelectionManager] Found TalentDatabase via Resources.FindObjectsOfTypeAll");
                 }
             }
         }
@@ -87,7 +91,7 @@ public class TalentSelectionManager : MonoBehaviour
         if (xpSystem != null)
         {
             xpSystem.OnXPFilled.AddListener(OnXPFilled);
-            Debug.Log("[TalentSelectionManager] Subscribed to XPSystem.OnXPFilled");
+            if (debugLog) Debug.Log("[TalentSelectionManager] Subscribed to XPSystem.OnXPFilled");
         }
         else
         {
@@ -97,7 +101,7 @@ public class TalentSelectionManager : MonoBehaviour
         if (prayerWheelUI != null)
         {
             prayerWheelUI.OnTalentSelected.AddListener(OnTalentSelected);
-            Debug.Log("[TalentSelectionManager] Subscribed to PrayerWheelUI.OnTalentSelected");
+            if (debugLog) Debug.Log("[TalentSelectionManager] Subscribed to PrayerWheelUI.OnTalentSelected");
         }
         else
         {
@@ -106,7 +110,7 @@ public class TalentSelectionManager : MonoBehaviour
 
         if (playerAbilities != null)
         {
-            Debug.Log($"[TalentSelectionManager] PlayerAbilities found on: {playerAbilities.gameObject.name}");
+            if (debugLog) Debug.Log($"[TalentSelectionManager] PlayerAbilities found on: {playerAbilities.gameObject.name}");
         }
         else
         {
@@ -207,7 +211,7 @@ public class TalentSelectionManager : MonoBehaviour
 
     private void OnXPFilled()
     {
-        Debug.Log("[TalentSelectionManager] XP filled - triggering prayer wheel!");
+        if (debugLog) Debug.Log("[TalentSelectionManager] XP filled - triggering prayer wheel!");
         
         if (prayerWheelUI != null)
         {
@@ -223,14 +227,14 @@ public class TalentSelectionManager : MonoBehaviour
     {
         if (talent == null)
         {
-            Debug.LogWarning("[TalentSelectionManager] Null talent selected!");
+            if (debugLog) Debug.LogWarning("[TalentSelectionManager] Null talent selected!");
             return;
         }
 
         // Trim whitespace/tabs from talentId to prevent data entry issues
         string talentId = talent.talentId?.Trim() ?? "";
         
-        Debug.Log($"[TalentSelectionManager] Applying talent: {talent.talentName} (ID: '{talentId}')");
+        if (debugLog) Debug.Log($"[TalentSelectionManager] Applying talent: {talent.talentName} (ID: '{talentId}')");
 
         if (playerAbilities == null)
         {
@@ -242,7 +246,7 @@ public class TalentSelectionManager : MonoBehaviour
         if (talentActions.TryGetValue(talentId, out System.Action action))
         {
             action.Invoke();
-            Debug.Log($"[TalentSelectionManager] Talent '{talent.talentName}' applied successfully!");
+            if (debugLog) Debug.Log($"[TalentSelectionManager] Talent '{talent.talentName}' applied successfully!");
             
             // Track in run registry for UI display
             runTalentRegistry?.AddTalent(talent);
@@ -267,16 +271,16 @@ public class TalentSelectionManager : MonoBehaviour
         // Check if GameSessionManager exists and has a starting talent
         if (GameSessionManager.Instance == null || GameSessionManager.Instance.StartingTalent == null)
         {
-            Debug.Log("[TalentSelectionManager] No starting talent from main menu (normal mode)");
+            if (debugLog) Debug.Log("[TalentSelectionManager] No starting talent from main menu (normal mode)");
             return;
         }
 
         TalentData startingTalent = GameSessionManager.Instance.StartingTalent;
-        Debug.Log($"[TalentSelectionManager] Found starting talent from main menu: {startingTalent.talentName}");
+        if (debugLog) Debug.Log($"[TalentSelectionManager] Found starting talent from main menu: {startingTalent.talentName}");
 
         // Apply the talent using existing system
         OnTalentSelected(startingTalent);
-        Debug.Log($"[TalentSelectionManager] Applied starting talent: {startingTalent.talentName}");
+        if (debugLog) Debug.Log($"[TalentSelectionManager] Applied starting talent: {startingTalent.talentName}");
 
         // Clear the starting talent so it doesn't apply again on scene reload
         GameSessionManager.Instance.StartingTalent = null;

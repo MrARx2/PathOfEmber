@@ -491,14 +491,14 @@ namespace EnemyAI
         
         private void StartFireballAttack()
         {
-            Debug.Log("[MinibossAI] ==> StartFireballAttack() called!");
+            if (debugLog) Debug.Log("[MinibossAI] ==> StartFireballAttack() called!");
             SwitchState(MinibossState.Aiming);
             StartCoroutine(FireballAttackRoutine());
         }
         
         private IEnumerator FireballAttackRoutine()
         {
-            Debug.Log("[MinibossAI] ==> FireballAttackRoutine() STARTED");
+            if (debugLog) Debug.Log("[MinibossAI] ==> FireballAttackRoutine() STARTED");
             
             // Stop and face player
             StopMovement();
@@ -537,11 +537,11 @@ namespace EnemyAI
             // Show aim line (triggered by event or timeout)
             if (pendingAimStart)
             {
-                Debug.Log("[MinibossAI] ==> Aiming started from animation event");
+                if (debugLog) Debug.Log("[MinibossAI] ==> Aiming started from animation event");
             }
             else
             {
-                Debug.LogWarning("[MinibossAI] ==> Aiming started via timeout - add OnStartAiming animation event!");
+                if (debugLog) Debug.LogWarning("[MinibossAI] ==> Aiming started via timeout - add OnStartAiming animation event!");
             }
             ShowAimLine();
             
@@ -567,11 +567,11 @@ namespace EnemyAI
             
             if (pendingFireballSpawn)
             {
-                Debug.Log("[MinibossAI] ==> Fireball spawned from animation event!");
+                if (debugLog) Debug.Log("[MinibossAI] ==> Fireball spawned from animation event!");
             }
             else
             {
-                Debug.LogWarning("[MinibossAI] ==> Fireball spawned via timeout - add OnFireFireball animation event!");
+                if (debugLog) Debug.LogWarning("[MinibossAI] ==> Fireball spawned via timeout - add OnFireFireball animation event!");
             }
             SpawnFireball();
             
@@ -609,7 +609,7 @@ namespace EnemyAI
         
         private void SpawnFireball()
         {
-            Debug.Log($"[MinibossAI] SpawnFireball() called - fireballPrefab={fireballPrefab}, target={target}, projectileSpawnPoint={projectileSpawnPoint}");
+            if (debugLog) Debug.Log($"[MinibossAI] SpawnFireball() called - fireballPrefab={fireballPrefab}, target={target}, projectileSpawnPoint={projectileSpawnPoint}");
             
             if (fireballPrefab == null)
             {
@@ -767,7 +767,7 @@ namespace EnemyAI
                 animator.SetBool(walkBool, true);
             }
             
-            Debug.Log("[MinibossAI] ResetAttackState: All attack bools reset, Walk=true");
+            if (debugLog) Debug.Log("[MinibossAI] ResetAttackState: All attack bools reset, Walk=true");
         }
         
         #endregion
@@ -780,7 +780,7 @@ namespace EnemyAI
         /// </summary>
         public void StartAimingFromEvent()
         {
-            Debug.Log("[MinibossAI] Animation event: StartAimingFromEvent()");
+            if (debugLog) Debug.Log("[MinibossAI] Animation event: StartAimingFromEvent()");
             pendingAimStart = true;
         }
         
@@ -790,7 +790,7 @@ namespace EnemyAI
         /// </summary>
         public void FireFireballFromEvent()
         {
-            Debug.Log("[MinibossAI] Animation event: FireFireballFromEvent()");
+            if (debugLog) Debug.Log("[MinibossAI] Animation event: FireFireballFromEvent()");
             pendingFireballSpawn = true;
         }
         
@@ -1014,7 +1014,7 @@ namespace EnemyAI
             if (!ragePhase1Triggered && hpPercent <= rageThreshold1 && hpPercent < 1.0f)
             {
                 ragePhase1Triggered = true;
-                Debug.Log($"[MinibossAI] RAGE MODE THRESHOLD 1 HIT! HP={hpPercent:P0}, threshold={rageThreshold1:P0}");
+                if (debugLog) Debug.Log($"[MinibossAI] RAGE MODE THRESHOLD 1 HIT! HP={hpPercent:P0}, threshold={rageThreshold1:P0}");
                 return true;
             }
             
@@ -1022,7 +1022,7 @@ namespace EnemyAI
             if (ragePhase1Triggered && !ragePhase2Triggered && hpPercent <= rageThreshold2)
             {
                 ragePhase2Triggered = true;
-                Debug.Log($"[MinibossAI] RAGE MODE THRESHOLD 2 HIT! HP={hpPercent:P0}, threshold={rageThreshold2:P0}");
+                if (debugLog) Debug.Log($"[MinibossAI] RAGE MODE THRESHOLD 2 HIT! HP={hpPercent:P0}, threshold={rageThreshold2:P0}");
                 return true;
             }
             
@@ -1038,7 +1038,7 @@ namespace EnemyAI
                 return;
             }
             
-            Debug.Log($"[MinibossAI] STARTING RAGE MODE! Phase1={ragePhase1Triggered}, Phase2={ragePhase2Triggered}");
+            if (debugLog) Debug.Log($"[MinibossAI] STARTING RAGE MODE! Phase1={ragePhase1Triggered}, Phase2={ragePhase2Triggered}");
             
             // Play rage charge sound
             if (rageChargeSound != null && AudioManager.Instance != null)
@@ -1274,7 +1274,7 @@ namespace EnemyAI
         {
             if (!showAimLine || aimLine == null) return;
             aimLine.enabled = true;
-            Debug.Log($"[MinibossAI] ShowAimLine() - aimLine.enabled = {aimLine.enabled}");
+            if (debugLog) Debug.Log($"[MinibossAI] ShowAimLine() - aimLine.enabled = {aimLine.enabled}");
             // Start coroutine to update aim line (like Sniper does)
             StartCoroutine(UpdateAimLineRoutine());
         }
@@ -1330,7 +1330,7 @@ namespace EnemyAI
                 // Debug first call
                 if (t < 0.05f)
                 {
-                    Debug.Log($"[MinibossAI] UpdateAimLineRoutine: start={startPos}, end={endPos}, direction={direction}");
+                    if (debugLog) Debug.Log($"[MinibossAI] UpdateAimLineRoutine: start={startPos}, end={endPos}, direction={direction}");
                 }
                 
                 yield return null;

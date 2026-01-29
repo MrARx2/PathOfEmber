@@ -83,6 +83,10 @@ namespace Boss
         [SerializeField, Tooltip("Duration of smooth fade in/out")]
         private float tintFadeDuration = 0.5f;
 
+        [Header("Debug")]
+        [SerializeField, Tooltip("Enable debug logging")]
+        private bool debugLog = false;
+
         private bool isDestroyed = false;
         private Coroutine hitFlashCoroutine;
         private Coroutine healthBarHideCoroutine;
@@ -223,7 +227,7 @@ namespace Boss
             if (isDestroyed) return;
             isDestroyed = true;
             
-            Debug.Log($"[TitanHealth] {bodyPart} OnPartDestroyed called!");
+            if (debugLog) Debug.Log($"[TitanHealth] {bodyPart} OnPartDestroyed called!");
             
             // Stop any hit flash coroutine so it doesn't clear our destruction tint
             if (hitFlashCoroutine != null)
@@ -239,15 +243,15 @@ namespace Boss
             // Apply destruction tint (stays until animation event clears it)
             destructionTintCoroutine = StartCoroutine(DestructionTintRoutine());
             
-            Debug.Log($"[TitanHealth] {bodyPart} invoking OnDeath event");
+            if (debugLog) Debug.Log($"[TitanHealth] {bodyPart} invoking OnDeath event");
             OnDeath?.Invoke();
             
-            Debug.Log($"[TitanHealth] {bodyPart} DESTROYED!");
+            if (debugLog) Debug.Log($"[TitanHealth] {bodyPart} DESTROYED!");
         }
         
         private IEnumerator DestructionTintRoutine()
         {
-            Debug.Log($"[TitanHealth] {bodyPart} starting smooth destruction tint (min→max)");
+            if (debugLog) Debug.Log($"[TitanHealth] {bodyPart} starting smooth destruction tint (min→max)");
             
             // Smooth fade from minEmission to maxEmission
             float elapsed = 0f;
@@ -261,7 +265,7 @@ namespace Boss
                 yield return null;
             }
             SetEmissionColor(maxEmission);
-            Debug.Log($"[TitanHealth] {bodyPart} destruction tint complete (at maxEmission)");
+            if (debugLog) Debug.Log($"[TitanHealth] {bodyPart} destruction tint complete (at maxEmission)");
             
             // Hide health bar when fully tinted
             HideHealthBar();
@@ -271,7 +275,7 @@ namespace Boss
             yield return new WaitForSeconds(30f);
             
             // Failsafe: clear if still tinted after 30 seconds
-            Debug.LogWarning($"[TitanHealth] {bodyPart} destruction tint failsafe triggered - clearing after 30s");
+            if (debugLog) Debug.LogWarning($"[TitanHealth] {bodyPart} destruction tint failsafe triggered - clearing after 30s");
             SetEmissionColor(minEmission);
             destructionTintCoroutine = null;
         }
@@ -304,7 +308,7 @@ namespace Boss
         /// </summary>
         public void FullHeal()
         {
-            Debug.Log($"[TitanHealth] {bodyPart} fully healed! Was destroyed: {isDestroyed}");
+            if (debugLog) Debug.Log($"[TitanHealth] {bodyPart} fully healed! Was destroyed: {isDestroyed}");
             
             currentHealth = maxHealth;
             isDestroyed = false;
@@ -324,7 +328,7 @@ namespace Boss
         /// </summary>
         public void RepairWithFade()
         {
-            Debug.Log($"[TitanHealth] {bodyPart} RepairWithFade called");
+            if (debugLog) Debug.Log($"[TitanHealth] {bodyPart} RepairWithFade called");
             
             // Stop the destruction tint coroutine if still running
             if (destructionTintCoroutine != null)
@@ -351,7 +355,7 @@ namespace Boss
         {
             if (tintMaterials == null || tintMaterials.Length == 0) yield break;
             
-            Debug.Log($"[TitanHealth] {bodyPart} starting smooth tint fade-out (current→min)");
+            if (debugLog) Debug.Log($"[TitanHealth] {bodyPart} starting smooth tint fade-out (current→min)");
             
             // Get actual current emission color
             Color startColor = GetCurrentEmissionColor();
@@ -375,7 +379,7 @@ namespace Boss
             
             // Ensure fully set to minEmission at end
             SetEmissionColor(minEmission);
-            Debug.Log($"[TitanHealth] {bodyPart} tint fade-out complete (at minEmission)");
+            if (debugLog) Debug.Log($"[TitanHealth] {bodyPart} tint fade-out complete (at minEmission)");
         }
 
         /// <summary>
@@ -463,12 +467,12 @@ namespace Boss
         /// </summary>
         public void ShowHealthBar()
         {
-            Debug.Log($"[TitanHealth] {bodyPart} ShowHealthBar called, HealthBarManager exists: {HealthBarManager.Instance != null}");
+            if (debugLog) Debug.Log($"[TitanHealth] {bodyPart} ShowHealthBar called, HealthBarManager exists: {HealthBarManager.Instance != null}");
             
             if (HealthBarManager.Instance != null)
             {
                 HealthBarManager.Instance.ShowBar(this);
-                Debug.Log($"[TitanHealth] {bodyPart} called HealthBarManager.ShowBar");
+                if (debugLog) Debug.Log($"[TitanHealth] {bodyPart} called HealthBarManager.ShowBar");
             }
             
             // Reset hide timer

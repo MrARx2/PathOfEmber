@@ -105,6 +105,10 @@ public class PrayerWheelController : MonoBehaviour
     [SerializeField, Tooltip("Spin noise that plays once at the start of every spin")]
     private SoundEvent spinNoiseSound;
 
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
+
     // Assigned talents for current spin (no repetition)
     private TalentData[,] wheel1Talents = new TalentData[3, 5]; // [rarity, socket]
     private TalentData[,] wheel2Talents = new TalentData[3, 5];
@@ -153,7 +157,7 @@ public class PrayerWheelController : MonoBehaviour
     {
         if (isSpinning)
         {
-            Debug.Log("[PrayerWheelController] OnDisable called while spinning - Resetting state and colors.");
+            if (debugLog) Debug.Log("[PrayerWheelController] OnDisable called while spinning - Resetting state and colors.");
             
             // Stop logic
             isSpinning = false;
@@ -187,7 +191,7 @@ public class PrayerWheelController : MonoBehaviour
             wheel1.commonFloor = new WheelFloor { sockets = wheel1Setup.CommonImages, floorMaterial = wheel1Setup.commonMaterial };
             wheel1.rareFloor = new WheelFloor { sockets = wheel1Setup.RareImages, floorMaterial = wheel1Setup.rareMaterial };
             wheel1.legendaryFloor = new WheelFloor { sockets = wheel1Setup.LegendaryImages, floorMaterial = wheel1Setup.legendaryMaterial };
-            Debug.Log("[PrayerWheelController] Auto-wired wheel1 from setup");
+            if (debugLog) Debug.Log("[PrayerWheelController] Auto-wired wheel1 from setup");
         }
 
         if (wheel2Setup != null)
@@ -196,7 +200,7 @@ public class PrayerWheelController : MonoBehaviour
             wheel2.commonFloor = new WheelFloor { sockets = wheel2Setup.CommonImages, floorMaterial = wheel2Setup.commonMaterial };
             wheel2.rareFloor = new WheelFloor { sockets = wheel2Setup.RareImages, floorMaterial = wheel2Setup.rareMaterial };
             wheel2.legendaryFloor = new WheelFloor { sockets = wheel2Setup.LegendaryImages, floorMaterial = wheel2Setup.legendaryMaterial };
-            Debug.Log("[PrayerWheelController] Auto-wired wheel2 from setup");
+            if (debugLog) Debug.Log("[PrayerWheelController] Auto-wired wheel2 from setup");
         }
     }
 
@@ -207,13 +211,13 @@ public class PrayerWheelController : MonoBehaviour
     {
         if (isSpinning)
         {
-            Debug.LogWarning("[PrayerWheelController] Already spinning!");
+            if (debugLog) Debug.LogWarning("[PrayerWheelController] Already spinning!");
             return;
         }
 
         if (talentDatabase == null)
         {
-            Debug.LogError("[PrayerWheelController] TalentDatabase not assigned!");
+            if (debugLog) Debug.LogError("[PrayerWheelController] TalentDatabase not assigned!");
             return;
         }
 
@@ -231,7 +235,7 @@ public class PrayerWheelController : MonoBehaviour
     {
         useDebugRarity = true;
         debugRarityOverride = rarity;
-        Debug.Log($"[PrayerWheelController] Guaranteed Rarity Set: {rarity} for next spin.");
+        if (debugLog) Debug.Log($"[PrayerWheelController] Guaranteed Rarity Set: {rarity} for next spin.");
     }
 
     /// <summary>
@@ -280,13 +284,13 @@ public class PrayerWheelController : MonoBehaviour
         }
         else
         {
-            Debug.Log("[PrayerWheelController] Using pre-assigned talents.");
+            if (debugLog) Debug.Log("[PrayerWheelController] Using pre-assigned talents.");
         }
         talentsPrepared = false; // Reset for next spin cycle
 
         // Step 3: Pick random socket
         currentSocketIndex = Random.Range(0, 5);
-        Debug.Log($"[PrayerWheelController] Socket chosen: {currentSocketIndex + 1}");
+        if (debugLog) Debug.Log($"[PrayerWheelController] Socket chosen: {currentSocketIndex + 1}");
 
         // Step 4: Calculate target rotation intelligently
         float anglePerSocket = 72f; 
@@ -320,7 +324,7 @@ public class PrayerWheelController : MonoBehaviour
         
         float rotationAmountToAdd = finalTargetRotation - currentY;
         
-        Debug.Log($"[PrayerWheelController] Target: {targetSocketAngle}°, ToAdd: {rotationAmountToAdd:F1}° (Offset: {calibrationOffset})");
+        if (debugLog) Debug.Log($"[PrayerWheelController] Target: {targetSocketAngle}°, ToAdd: {rotationAmountToAdd:F1}° (Offset: {calibrationOffset})");
 
         // Step 5: Store original material colors for reset
         // Use class member so we can restore if disabled mid-spin in OnDisable
@@ -350,7 +354,7 @@ public class PrayerWheelController : MonoBehaviour
         if (spinEndSound != null && AudioManager.Instance != null)
         {
             AudioManager.Instance.Play(spinEndSound);
-            Debug.Log("[PrayerWheelController] Spin end sound played");
+            if (debugLog) Debug.Log("[PrayerWheelController] Spin end sound played");
         }
 
         // Determine winners
@@ -371,13 +375,16 @@ public class PrayerWheelController : MonoBehaviour
         if (CameraShakeManager.Instance != null)
             CameraShakeManager.MuteShakes(false);
 
-        Debug.Log("======================================");
-        Debug.Log($"[PrayerWheelController] SPIN COMPLETE!");
-        Debug.Log($"[PrayerWheelController] Rarity: {currentRarity}");
-        Debug.Log($"[PrayerWheelController] Selected Socket Index: {currentSocketIndex}");
-        Debug.Log($"[PrayerWheelController] <b>Wheel 1 Reward:</b> {(chosenTalent1 != null ? chosenTalent1.talentName : "NULL")}");
-        Debug.Log($"[PrayerWheelController] <b>Wheel 2 Reward:</b> {(chosenTalent2 != null ? chosenTalent2.talentName : "NULL")}");
-        Debug.Log("======================================");
+        if (debugLog)
+        {
+            Debug.Log("======================================");
+            Debug.Log($"[PrayerWheelController] SPIN COMPLETE!");
+            Debug.Log($"[PrayerWheelController] Rarity: {currentRarity}");
+            Debug.Log($"[PrayerWheelController] Selected Socket Index: {currentSocketIndex}");
+            Debug.Log($"[PrayerWheelController] <b>Wheel 1 Reward:</b> {(chosenTalent1 != null ? chosenTalent1.talentName : "NULL")}");
+            Debug.Log($"[PrayerWheelController] <b>Wheel 2 Reward:</b> {(chosenTalent2 != null ? chosenTalent2.talentName : "NULL")}");
+            Debug.Log("======================================");
+        }
 
         OnSpinComplete?.Invoke(chosenTalent1, chosenTalent2);
         
@@ -414,11 +421,11 @@ public class PrayerWheelController : MonoBehaviour
     {
         if (talentDatabase == null)
         {
-            Debug.LogError("[PrayerWheelController] TalentDatabase not assigned!");
+            if (debugLog) Debug.LogError("[PrayerWheelController] TalentDatabase not assigned!");
             return;
         }
         
-        Debug.Log("[PrayerWheelController] PrepareTalents() called - assigning icons to slots...");
+        if (debugLog) Debug.Log("[PrayerWheelController] PrepareTalents() called - assigning icons to slots...");
         AssignTalentsToWheels();
         talentsPrepared = true; // Mark as prepared so spin won't re-assign
         
@@ -432,12 +439,12 @@ public class PrayerWheelController : MonoBehaviour
                 if (wheel2Talents[r, s]?.icon != null) iconsAssigned++;
             }
         }
-        Debug.Log($"[PrayerWheelController] Talents prepared. Total icons assigned: {iconsAssigned}");
+        if (debugLog) Debug.Log($"[PrayerWheelController] Talents prepared. Total icons assigned: {iconsAssigned}");
     }
 
     private void AssignTalentsToWheels()
     {
-        Debug.Log($"[PrayerWheelController] AssignTalentsToWheels() CALLED! Stack: {System.Environment.StackTrace}");
+        if (debugLog) Debug.Log($"[PrayerWheelController] AssignTalentsToWheels() CALLED! Stack: {System.Environment.StackTrace}");
         
         // For each rarity, get talents and distribute without repetition
         AssignRarityTalents(TalentData.TalentRarity.Common, 0);
@@ -451,7 +458,7 @@ public class PrayerWheelController : MonoBehaviour
         
         if (pool == null || pool.Length == 0)
         {
-            Debug.LogWarning($"[PrayerWheelController] No {rarity} talents in database!");
+            if (debugLog) Debug.LogWarning($"[PrayerWheelController] No {rarity} talents in database!");
             return;
         }
 
@@ -471,7 +478,7 @@ public class PrayerWheelController : MonoBehaviour
         else
         {
             // Limited talents - ensure same socket position doesn't get same talent
-            Debug.Log($"[PrayerWheelController] Limited {rarity} talents ({shuffled.Count}). Using smart assignment.");
+            if (debugLog) Debug.Log($"[PrayerWheelController] Limited {rarity} talents ({shuffled.Count}). Using smart assignment.");
             
             for (int i = 0; i < 5; i++)
             {
@@ -497,7 +504,7 @@ public class PrayerWheelController : MonoBehaviour
                 {
                     // Only 1 talent - can't avoid duplicate (edge case)
                     wheel2Talents[rarityIndex, i] = shuffled[0];
-                    Debug.LogWarning($"[PrayerWheelController] Only 1 {rarity} talent - duplicate unavoidable at socket {i+1}");
+                    if (debugLog) Debug.LogWarning($"[PrayerWheelController] Only 1 {rarity} talent - duplicate unavoidable at socket {i+1}");
                 }
             }
         }
@@ -567,7 +574,7 @@ public class PrayerWheelController : MonoBehaviour
                     if (rareSpinSource != null) rareSpinSource.Pause();
                     if (legendarySpinSource != null) legendarySpinSource.Pause();
                     audioPaused = true;
-                    Debug.Log("[PrayerWheelController] Audio Paused due to Game Pause");
+                    if (debugLog) Debug.Log("[PrayerWheelController] Audio Paused due to Game Pause");
                 }
             }
             else
@@ -578,7 +585,7 @@ public class PrayerWheelController : MonoBehaviour
                     if (rareSpinSource != null) rareSpinSource.UnPause();
                     if (legendarySpinSource != null) legendarySpinSource.UnPause();
                     audioPaused = false;
-                    Debug.Log("[PrayerWheelController] Audio Resumed");
+                    if (debugLog) Debug.Log("[PrayerWheelController] Audio Resumed");
                 }
             }
 
@@ -619,7 +626,7 @@ public class PrayerWheelController : MonoBehaviour
                 if (rareSpinSource != null && spinSoundRare != null)
                 {
                     rareSpinSource.volume = spinSoundRare.GetVolume();
-                    Debug.Log("[PrayerWheelController] Rare sound unmuted");
+                    if (debugLog) Debug.Log("[PrayerWheelController] Rare sound unmuted");
                 }
             }
 
@@ -639,7 +646,7 @@ public class PrayerWheelController : MonoBehaviour
                 if (legendarySpinSource != null && spinSoundLegendary != null)
                 {
                     legendarySpinSource.volume = spinSoundLegendary.GetVolume();
-                    Debug.Log("[PrayerWheelController] Legendary sound unmuted");
+                    if (debugLog) Debug.Log("[PrayerWheelController] Legendary sound unmuted");
                 }
             }
 
@@ -789,21 +796,21 @@ public class PrayerWheelController : MonoBehaviour
         if (spinSoundCommon != null)
         {
             commonSpinSource = AudioManager.Instance.PlayAndGetSource(spinSoundCommon, 1f);
-            Debug.Log("[PrayerWheelController] Common spin sound started at full volume");
+            if (debugLog) Debug.Log("[PrayerWheelController] Common spin sound started at full volume");
         }
         
         // Rare starts MUTED (volume 0) - will unmute when rare tint is applied
         if (spinSoundRare != null && currentRarity >= TalentData.TalentRarity.Rare)
         {
             rareSpinSource = AudioManager.Instance.PlayAndGetSource(spinSoundRare, 0f);
-            Debug.Log("[PrayerWheelController] Rare spin sound started MUTED (will unmute at 50%)");
+            if (debugLog) Debug.Log("[PrayerWheelController] Rare spin sound started MUTED (will unmute at 50%)");
         }
         
         // Legendary starts MUTED (volume 0) - will unmute when legendary tint is applied
         if (spinSoundLegendary != null && currentRarity == TalentData.TalentRarity.Legendary)
         {
             legendarySpinSource = AudioManager.Instance.PlayAndGetSource(spinSoundLegendary, 0f);
-            Debug.Log("[PrayerWheelController] Legendary spin sound started MUTED (will unmute at 75%)");
+            if (debugLog) Debug.Log("[PrayerWheelController] Legendary spin sound started MUTED (will unmute at 75%)");
         }
     }
     
@@ -859,7 +866,7 @@ public class PrayerWheelController : MonoBehaviour
     {
         if (wheel1.wheelRoot != null) wheel1.wheelRoot.localEulerAngles = new Vector3(0, calibrationOffset, 0);
         if (wheel2.wheelRoot != null) wheel2.wheelRoot.localEulerAngles = new Vector3(0, calibrationOffset, 0);
-        Debug.Log($"[PrayerWheelController] Snapped to 0° + Offset {calibrationOffset}");
+        if (debugLog) Debug.Log($"[PrayerWheelController] Snapped to 0° + Offset {calibrationOffset}");
     }
     
     [ContextMenu("Debug: Start Spin")]

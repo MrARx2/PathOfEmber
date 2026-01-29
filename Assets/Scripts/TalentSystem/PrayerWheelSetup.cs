@@ -45,6 +45,10 @@ public class PrayerWheelSetup : MonoBehaviour
     [SerializeField, Tooltip("Material for Legendary floor tinting")]
     public Material legendaryMaterial;
 
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
+
     [Header("Auto-Found References (Read-Only)")]
     [SerializeField] private Transform[] commonSockets = new Transform[5];
     [SerializeField] private Transform[] rareSockets = new Transform[5];
@@ -72,7 +76,7 @@ public class PrayerWheelSetup : MonoBehaviour
     {
         FindSocketBones();
         CreateSocketImages();
-        Debug.Log($"[PrayerWheelSetup] Setup complete for {gameObject.name}!");
+        if (debugLog) Debug.Log($"[PrayerWheelSetup] Setup complete for {gameObject.name}!");
     }
 
     /// <summary>
@@ -84,7 +88,7 @@ public class PrayerWheelSetup : MonoBehaviour
         UpdateTransformsForArray(commonImages, commonSockets);
         UpdateTransformsForArray(rareImages, rareSockets);
         UpdateTransformsForArray(legendaryImages, legendarySockets);
-        Debug.Log($"[PrayerWheelSetup] Updated transforms for icons.");
+        if (debugLog) Debug.Log($"[PrayerWheelSetup] Updated transforms for icons.");
     }
 
     private void FindSocketBones()
@@ -105,7 +109,7 @@ public class PrayerWheelSetup : MonoBehaviour
             socketsArray[i] = FindBoneRecursive(transform, boneName);
             if (socketsArray[i] == null)
             {
-                Debug.LogWarning($"[PrayerWheelSetup] Could not find bone: {boneName}");
+                if (debugLog) Debug.LogWarning($"[PrayerWheelSetup] Could not find bone: {boneName}");
             }
         }
     }
@@ -362,23 +366,26 @@ public class PrayerWheelSetup : MonoBehaviour
         commonImages = new Image[5];
         rareImages = new Image[5];
         legendaryImages = new Image[5];
-        Debug.Log("[PrayerWheelSetup] References cleared.");
+        if (debugLog) Debug.Log("[PrayerWheelSetup] References cleared.");
     }
 
     [ContextMenu("Log Found Bones")]
     public void LogFoundBones()
     {
-        Debug.Log("=== Common Sockets ===");
-        for (int i = 0; i < 5; i++)
-            Debug.Log($"  C{i + 1}: {(commonSockets[i] != null ? commonSockets[i].name : "NOT FOUND")}");
-        
-        Debug.Log("=== Rare Sockets ===");
-        for (int i = 0; i < 5; i++)
-            Debug.Log($"  R{i + 1}: {(rareSockets[i] != null ? rareSockets[i].name : "NOT FOUND")}");
-        
-        Debug.Log("=== Legendary Sockets ===");
-        for (int i = 0; i < 5; i++)
-            Debug.Log($"  L{i + 1}: {(legendarySockets[i] != null ? legendarySockets[i].name : "NOT FOUND")}");
+        if (debugLog)
+        {
+            Debug.Log("=== Common Sockets ===");
+            for (int i = 0; i < 5; i++)
+                Debug.Log($"  C{i + 1}: {(commonSockets[i] != null ? commonSockets[i].name : "NOT FOUND")}");
+            
+            Debug.Log("=== Rare Sockets ===");
+            for (int i = 0; i < 5; i++)
+                Debug.Log($"  R{i + 1}: {(rareSockets[i] != null ? rareSockets[i].name : "NOT FOUND")}");
+            
+            Debug.Log("=== Legendary Sockets ===");
+            for (int i = 0; i < 5; i++)
+                Debug.Log($"  L{i + 1}: {(legendarySockets[i] != null ? legendarySockets[i].name : "NOT FOUND")}");
+        }
     }
     #endregion
 }

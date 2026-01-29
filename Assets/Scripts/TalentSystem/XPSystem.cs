@@ -58,6 +58,10 @@ public class XPSystem : MonoBehaviour
     [Tooltip("Fired when XP changes, passes normalized value 0-1")]
     public UnityEvent<float> OnXPChanged;
 
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
+
     public int CurrentXP => currentXP;
     public int MaxXP => maxXP;
     public int Level => level;
@@ -280,7 +284,7 @@ public class XPSystem : MonoBehaviour
         
         // Queue a level-up (don't fire event immediately - let TalentSelectionManager claim it)
         pendingLevelUps++;
-        Debug.Log($"[XPSystem] Level up queued! Level: {level}, Pending: {pendingLevelUps}");
+        if (debugLog) Debug.Log($"[XPSystem] Level up queued! Level: {level}, Pending: {pendingLevelUps}");
     }
     
     /// <summary>
@@ -300,7 +304,7 @@ public class XPSystem : MonoBehaviour
         if (pendingLevelUps > 0)
         {
             pendingLevelUps--;
-            Debug.Log($"[XPSystem] Level-up claimed! Remaining: {pendingLevelUps}");
+            if (debugLog) Debug.Log($"[XPSystem] Level-up claimed! Remaining: {pendingLevelUps}");
             OnXPFilled?.Invoke();
         }
     }
@@ -328,7 +332,7 @@ public class XPSystem : MonoBehaviour
     public void OnTalentSelectionComplete()
     {
         isProcessingLevelUp = false;
-        Debug.Log($"[XPSystem] Talent selection complete. Pending level-ups: {pendingLevelUps}");
+        if (debugLog) Debug.Log($"[XPSystem] Talent selection complete. Pending level-ups: {pendingLevelUps}");
         // Next Update() will trigger the next level-up if any pending
     }
 
@@ -394,7 +398,7 @@ public class XPSystem : MonoBehaviour
     {
         // Adds enough XP to level up twice (tests the queue system)
         int xpForTwoLevels = maxXP + Mathf.RoundToInt(maxXP * (1f + xpScalingPercent / 100f));
-        Debug.Log($"[XPSystem] Debug: Adding {xpForTwoLevels} XP for double level-up");
+        if (debugLog) Debug.Log($"[XPSystem] Debug: Adding {xpForTwoLevels} XP for double level-up");
         AddXP(xpForTwoLevels);
     }
 

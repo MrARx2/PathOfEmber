@@ -71,6 +71,10 @@ public class PrayerWheelUI : MonoBehaviour
     [Header("Sound Effects")]
     [SerializeField] private SoundEvent selectionSound;
 
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
+
     private TalentData currentTalent1;
     private TalentData currentTalent2;
     private PrayerWheelController wheelController;
@@ -126,7 +130,7 @@ public class PrayerWheelUI : MonoBehaviour
     /// </summary>
     public void Show()
     {
-        Debug.Log("[PrayerWheelUI] Show() called!");
+        if (debugLog) Debug.Log("[PrayerWheelUI] Show() called!");
         
         if (wheelPanel != null) wheelPanel.SetActive(true);
         if (spinningPanel != null) spinningPanel.SetActive(true);
@@ -139,7 +143,7 @@ public class PrayerWheelUI : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[PrayerWheelUI] prayerWheelDisplay is NULL!");
+            if (debugLog) Debug.LogWarning("[PrayerWheelUI] prayerWheelDisplay is NULL!");
         }
 
         // Prepare talents on slots immediately so player sees them
@@ -149,7 +153,7 @@ public class PrayerWheelUI : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[PrayerWheelUI] wheelController is NULL! Cannot prepare talents.");
+            if (debugLog) Debug.LogWarning("[PrayerWheelUI] wheelController is NULL! Cannot prepare talents.");
         }
 
         // Hide systems canvas (enemy health bars, damage numbers, etc.)
@@ -166,7 +170,7 @@ public class PrayerWheelUI : MonoBehaviour
             mainCanvas.sortingOrder = activeSortOrder;
         }
 
-        Debug.Log("[PrayerWheelUI] Wheels shown with talents. Waiting for spin trigger.");
+        if (debugLog) Debug.Log("[PrayerWheelUI] Wheels shown with talents. Waiting for spin trigger.");
     }
 
     /// <summary>
@@ -235,7 +239,7 @@ public class PrayerWheelUI : MonoBehaviour
         // Initial position update
         UpdateButtonPositions();
         
-        Debug.Log("[PrayerWheelUI] UI Updated and Elements Positioned");
+        if (debugLog) Debug.Log("[PrayerWheelUI] UI Updated and Elements Positioned");
     }
 
     /// <summary>
@@ -374,11 +378,14 @@ public class PrayerWheelUI : MonoBehaviour
             return;
         }
 
-        Debug.Log("========================================");
-        Debug.Log($"[PrayerWheelUI] TALENT SELECTED: {talent.talentName}");
-        Debug.Log($"[PrayerWheelUI] Rarity: {talent.rarity}");
-        Debug.Log($"[PrayerWheelUI] Description: {talent.description}");
-        Debug.Log("========================================");
+        if (debugLog)
+        {
+            Debug.Log("========================================");
+            Debug.Log($"[PrayerWheelUI] TALENT SELECTED: {talent.talentName}");
+            Debug.Log($"[PrayerWheelUI] Rarity: {talent.rarity}");
+            Debug.Log($"[PrayerWheelUI] Description: {talent.description}");
+            Debug.Log("========================================");
+        }
 
         // Play selection sound
         if (selectionSound != null && AudioManager.Instance != null)

@@ -247,7 +247,7 @@ namespace EnemyAI
                 if (partialXP > 0)
                 {
                     XPSystem.Instance.AddXP(partialXP);
-                    Debug.Log($"[BomberAI] Self-destruct: Awarded {partialXP} XP (50% of {health.XpReward})");
+                    if (debugLog) Debug.Log($"[BomberAI] Self-destruct: Awarded {partialXP} XP (50% of {health.XpReward})");
                 }
             }
 

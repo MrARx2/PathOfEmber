@@ -14,6 +14,10 @@ public class MainMenuMusic : MonoBehaviour
     [SerializeField, Tooltip("Delay before starting music (in seconds)")]
     private float startDelay = 0f;
 
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
+
     private void Start()
     {
         if (startDelay > 0f)
@@ -30,7 +34,7 @@ public class MainMenuMusic : MonoBehaviour
     {
         if (menuMusicEvent == null)
         {
-            Debug.LogWarning("[MainMenuMusic] No music SoundEvent assigned!");
+            if (debugLog) Debug.LogWarning("[MainMenuMusic] No music SoundEvent assigned!");
             return;
         }
 
@@ -47,17 +51,12 @@ public class MainMenuMusic : MonoBehaviour
         }
 
         AudioManager.Instance.PlayBGM(menuMusicEvent);
-        Debug.Log($"[MainMenuMusic] Started playing: {menuMusicEvent.name}");
+        if (debugLog) Debug.Log($"[MainMenuMusic] Started playing: {menuMusicEvent.name}");
     }
 
     private void OnDestroy()
     {
         // Optionally stop music when leaving the menu
-        // Uncomment if you want music to stop when transitioning to game scene:
-        // if (AudioManager.Instance != null && AudioManager.Instance.IsBGMPlaying)
-        // {
-        //     AudioManager.Instance.StopBGM();
-        // }
     }
 
     #region Debug

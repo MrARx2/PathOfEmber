@@ -158,13 +158,15 @@ namespace Boss
         private int damage;
         private LayerMask targetLayer;
         private bool hasDealtDamage = false;
+        private bool debugLog = false;
         
-        public void Initialize(int damageAmount, LayerMask layer)
+        public void Initialize(int damageAmount, LayerMask layer, bool enableDebug = false)
         {
             damage = damageAmount;
             targetLayer = layer;
             hasDealtDamage = false;
-            Debug.Log($"[TitanCrackDamage] Initialized with damage={damage}, layer={layer.value}");
+            debugLog = enableDebug;
+            if (debugLog) Debug.Log($"[TitanCrackDamage] Initialized with damage={damage}, layer={layer.value}");
             
             // Verify we have a trigger collider
             Collider col = GetComponent<Collider>();
@@ -177,7 +179,7 @@ namespace Boss
         
         private void OnTriggerEnter(Collider other)
         {
-            Debug.Log($"[TitanCrackDamage] OnTriggerEnter: {other.name} (layer {other.gameObject.layer})");
+            if (debugLog) Debug.Log($"[TitanCrackDamage] OnTriggerEnter: {other.name} (layer {other.gameObject.layer})");
             
             if (hasDealtDamage) return;
             
@@ -185,7 +187,7 @@ namespace Boss
             int otherLayerMask = 1 << other.gameObject.layer;
             if ((otherLayerMask & targetLayer) == 0)
             {
-                Debug.Log($"[TitanCrackDamage] Layer mismatch: object layer mask {otherLayerMask}, target layer mask {targetLayer.value}");
+                if (debugLog) Debug.Log($"[TitanCrackDamage] Layer mismatch: object layer mask {otherLayerMask}, target layer mask {targetLayer.value}");
                 return;
             }
             
@@ -197,7 +199,7 @@ namespace Boss
             {
                 damageable.TakeDamage(damage);
                 hasDealtDamage = true;
-                Debug.Log($"[TitanCrackDamage] SUCCESS! Dealt {damage} damage to {other.name}");
+                if (debugLog) Debug.Log($"[TitanCrackDamage] SUCCESS! Dealt {damage} damage to {other.name}");
             }
             else
             {

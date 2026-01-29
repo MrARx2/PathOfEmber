@@ -92,7 +92,7 @@ namespace Boss
         private float boundaryActivationDelay = 1.0f;
         
         [Header("=== DEBUG ===")]
-        [SerializeField] private bool debugLog = true;
+        [SerializeField] private bool debugLog = false;
         [SerializeField] private TitanState currentState = TitanState.Idle;
 
         private void Start()
@@ -231,7 +231,7 @@ namespace Boss
             leftWellHash = Animator.StringToHash(leftWellParam);
             deathHash = Animator.StringToHash(deathParam);
             
-            Debug.Log($"[TitanBossController] Awake - rightHandHealth: {rightHandHealth != null}, leftHandHealth: {leftHandHealth != null}, coreHealth: {coreHealth != null}, animator: {animator != null}");
+            if (debugLog) Debug.Log($"[TitanBossController] Awake - rightHandHealth: {rightHandHealth != null}, leftHandHealth: {leftHandHealth != null}, coreHealth: {coreHealth != null}, animator: {animator != null}");
             
             // Subscribe to health events
             if (coreHealth != null)
@@ -242,7 +242,7 @@ namespace Boss
             {
                 rightHandHealth.OnDeath.AddListener(OnRightHandDestroyed);
                 rightHandHealth.OnDamage.AddListener(ApplySharedDamageToCore);
-                Debug.Log("[TitanBossController] Subscribed to rightHandHealth events");
+                if (debugLog) Debug.Log("[TitanBossController] Subscribed to rightHandHealth events");
             }
             else
             {
@@ -253,7 +253,7 @@ namespace Boss
             {
                 leftHandHealth.OnDeath.AddListener(OnLeftHandDestroyed);
                 leftHandHealth.OnDamage.AddListener(ApplySharedDamageToCore);
-                Debug.Log("[TitanBossController] Subscribed to leftHandHealth events");
+                if (debugLog) Debug.Log("[TitanBossController] Subscribed to leftHandHealth events");
             }
             else
             {
@@ -479,12 +479,12 @@ namespace Boss
         {
             if (currentState == TitanState.Death) return;
             
-            Debug.Log($"[TitanBossController] OnRightHandDestroyed called! Animator: {animator != null}, rightWellHash: {rightWellHash}");
+            if (debugLog) Debug.Log($"[TitanBossController] OnRightHandDestroyed called! Animator: {animator != null}, rightWellHash: {rightWellHash}");
             
             if (animator != null)
             {
                 animator.SetBool(rightWellHash, false);
-                Debug.Log($"[TitanBossController] Set RightWell = false (hash: {rightWellHash})");
+                if (debugLog) Debug.Log($"[TitanBossController] Set RightWell = false (hash: {rightWellHash})");
             }
             else
             {
@@ -502,12 +502,12 @@ namespace Boss
         {
             if (currentState == TitanState.Death) return;
             
-            Debug.Log($"[TitanBossController] OnLeftHandDestroyed called! Animator: {animator != null}, leftWellHash: {leftWellHash}");
+            if (debugLog) Debug.Log($"[TitanBossController] OnLeftHandDestroyed called! Animator: {animator != null}, leftWellHash: {leftWellHash}");
             
             if (animator != null)
             {
                 animator.SetBool(leftWellHash, false);
-                Debug.Log($"[TitanBossController] Set LeftWell = false (hash: {leftWellHash})");
+                if (debugLog) Debug.Log($"[TitanBossController] Set LeftWell = false (hash: {leftWellHash})");
             }
             else
             {
@@ -526,7 +526,7 @@ namespace Boss
         {
             if (currentState == TitanState.Death) return;
             
-            Debug.Log("[TitanBossController] RepairHands called");
+            if (debugLog) Debug.Log("[TitanBossController] RepairHands called");
             
             // Heal both hands
             if (rightHandHealth != null)
@@ -547,7 +547,7 @@ namespace Boss
             if (rightHandSocket != null) rightHandSocket.SetTargetable(true);
             if (leftHandSocket != null) leftHandSocket.SetTargetable(true);
             
-            Debug.Log("[TitanBossController] Both hands repaired, Well bools set to true");
+            if (debugLog) Debug.Log("[TitanBossController] Both hands repaired, Well bools set to true");
         }
         
         // PerformRage is now handled within PerformAttack based on Well status

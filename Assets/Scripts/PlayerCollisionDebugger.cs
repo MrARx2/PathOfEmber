@@ -7,8 +7,9 @@ using UnityEngine;
 public class PlayerCollisionDebugger : MonoBehaviour
 {
     [Header("Debug Options")]
-    [SerializeField] private bool logCollisions = true;
-    [SerializeField] private bool logTriggers = true;
+    [SerializeField] private bool debugLog = false;
+    [SerializeField] private bool logCollisions = false;
+    [SerializeField] private bool logTriggers = false;
     [SerializeField] private bool logStay = false; // Usually too spammy
     [SerializeField] private bool showColliderInfo = true;
     [SerializeField] private bool showLayerInfo = true;
@@ -18,19 +19,19 @@ public class PlayerCollisionDebugger : MonoBehaviour
     
     private void OnCollisionEnter(Collision collision)
     {
-        if (!logCollisions) return;
+        if (!debugLog || !logCollisions) return;
         Debug.Log($"[COLLISION ENTER] {FormatInfo(collision.gameObject)}", collision.gameObject);
     }
 
     private void OnCollisionStay(Collision collision)
     {
-        if (!logCollisions || !logStay) return;
+        if (!debugLog || !logCollisions || !logStay) return;
         Debug.Log($"[COLLISION STAY] {FormatInfo(collision.gameObject)}", collision.gameObject);
     }
 
     private void OnCollisionExit(Collision collision)
     {
-        if (!logCollisions) return;
+        if (!debugLog || !logCollisions) return;
         Debug.Log($"[COLLISION EXIT] {FormatInfo(collision.gameObject)}", collision.gameObject);
     }
 
@@ -38,19 +39,19 @@ public class PlayerCollisionDebugger : MonoBehaviour
     
     private void OnTriggerEnter(Collider other)
     {
-        if (!logTriggers) return;
+        if (!debugLog || !logTriggers) return;
         Debug.Log($"[TRIGGER ENTER] {FormatInfo(other.gameObject)}", other.gameObject);
     }
 
     private void OnTriggerStay(Collider other)
     {
-        if (!logTriggers || !logStay) return;
+        if (!debugLog || !logTriggers || !logStay) return;
         Debug.Log($"[TRIGGER STAY] {FormatInfo(other.gameObject)}", other.gameObject);
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (!logTriggers) return;
+        if (!debugLog || !logTriggers) return;
         Debug.Log($"[TRIGGER EXIT] {FormatInfo(other.gameObject)}", other.gameObject);
     }
 

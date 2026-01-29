@@ -104,6 +104,10 @@ public class PlayerAbilities : MonoBehaviour
     
     [SerializeField, Tooltip("Global scale for venom particles on enemies")]
     private float venomParticleScale = 1f;
+
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
     #endregion
 
     #region Calculated Values (Read-only in Inspector)
@@ -265,7 +269,7 @@ public class PlayerAbilities : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[PlayerAbilities] Health Heal - PlayerHealth is null!");
+            if (debugLog) Debug.LogWarning("[PlayerAbilities] Health Heal - PlayerHealth is null!");
         }
     }
 
@@ -282,7 +286,7 @@ public class PlayerAbilities : MonoBehaviour
     {
         if (piercingStacks < MAX_PIERCING_STACKS)
             piercingStacks++;
-        Debug.Log($"[PlayerAbilities] GrantPiercing: stacks now {piercingStacks}");
+        if (debugLog) Debug.Log($"[PlayerAbilities] GrantPiercing: stacks now {piercingStacks}");
     }
 
     public void GrantBouncingArrows()
@@ -294,14 +298,14 @@ public class PlayerAbilities : MonoBehaviour
     {
         if (freezeShotStacks < MAX_SHOT_STACKS)
             freezeShotStacks++;
-        Debug.Log($"[PlayerAbilities] GrantFreezeShot: stacks now {freezeShotStacks}");
+        if (debugLog) Debug.Log($"[PlayerAbilities] GrantFreezeShot: stacks now {freezeShotStacks}");
     }
 
     public void GrantVenomShot()
     {
         if (venomShotStacks < MAX_SHOT_STACKS)
             venomShotStacks++;
-        Debug.Log($"[PlayerAbilities] GrantVenomShot: stacks now {venomShotStacks}");
+        if (debugLog) Debug.Log($"[PlayerAbilities] GrantVenomShot: stacks now {venomShotStacks}");
     }
 
     public void GrantMaximumFreeze()
@@ -321,7 +325,7 @@ public class PlayerAbilities : MonoBehaviour
         int oldStacks = freezePotionStacks;
         if (freezePotionStacks < MAX_POTION_STACKS)
             freezePotionStacks++;
-        Debug.Log($"[PlayerAbilities] GrantFreezePotionTalent: {oldStacks} → {freezePotionStacks}, PotionSpawner: {(potionSpawner != null ? "OK" : "NULL")}");
+        if (debugLog) Debug.Log($"[PlayerAbilities] GrantFreezePotionTalent: {oldStacks} → {freezePotionStacks}, PotionSpawner: {(potionSpawner != null ? "OK" : "NULL")}");
         if (potionSpawner != null)
             potionSpawner.SetFreezePotionStacks(freezePotionStacks);
     }
@@ -331,7 +335,7 @@ public class PlayerAbilities : MonoBehaviour
         int oldStacks = venomPotionStacks;
         if (venomPotionStacks < MAX_POTION_STACKS)
             venomPotionStacks++;
-        Debug.Log($"[PlayerAbilities] GrantVenomPotionTalent: {oldStacks} → {venomPotionStacks}, PotionSpawner: {(potionSpawner != null ? "OK" : "NULL")}");
+        if (debugLog) Debug.Log($"[PlayerAbilities] GrantVenomPotionTalent: {oldStacks} → {venomPotionStacks}, PotionSpawner: {(potionSpawner != null ? "OK" : "NULL")}");
         if (potionSpawner != null)
             potionSpawner.SetVenomPotionStacks(venomPotionStacks);
     }
@@ -341,7 +345,7 @@ public class PlayerAbilities : MonoBehaviour
         int oldStacks = invulnerabilityPotionStacks;
         if (invulnerabilityPotionStacks < MAX_POTION_STACKS)
             invulnerabilityPotionStacks++;
-        Debug.Log($"[PlayerAbilities] GrantInvulnerabilityPotionTalent: {oldStacks} → {invulnerabilityPotionStacks}, PotionSpawner: {(potionSpawner != null ? "OK" : "NULL")}");
+        if (debugLog) Debug.Log($"[PlayerAbilities] GrantInvulnerabilityPotionTalent: {oldStacks} → {invulnerabilityPotionStacks}, PotionSpawner: {(potionSpawner != null ? "OK" : "NULL")}");
         if (potionSpawner != null)
             potionSpawner.SetInvulnerabilityPotionStacks(invulnerabilityPotionStacks);
     }

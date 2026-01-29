@@ -5,22 +5,24 @@ using UnityEngine;
 /// </summary>
 public class CollisionDebugger : MonoBehaviour
 {
+    [SerializeField] private bool debugLog = false;
+
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log($"[{gameObject.name}] TRIGGER with {other.name} (Tag: {other.tag})");
+        if (debugLog) Debug.Log($"[{gameObject.name}] TRIGGER with {other.name} (Tag: {other.tag})");
         
         var damageable = other.GetComponent<IDamageable>();
         if (damageable == null)
             damageable = other.GetComponentInParent<IDamageable>();
         
         if (damageable != null)
-            Debug.Log($"  → Found IDamageable: {damageable.GetType().Name}");
+            if (debugLog) Debug.Log($"  → Found IDamageable: {damageable.GetType().Name}");
         else
-            Debug.Log($"  → NO IDamageable found!");
+            if (debugLog) Debug.Log($"  → NO IDamageable found!");
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        Debug.Log(collision.collider);
+        if (debugLog) Debug.Log(collision.collider);
     }
 }

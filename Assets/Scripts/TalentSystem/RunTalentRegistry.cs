@@ -23,6 +23,10 @@ public class RunTalentRegistry : ScriptableObject
     [Header("Debug View (Read-Only)")]
     [SerializeField] private List<TalentEntry> debugTalentList = new List<TalentEntry>();
 
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
+
     // Cached array for fast menu access
     private TalentEntry[] cachedEntries;
     private bool cacheValid = false;
@@ -67,7 +71,7 @@ public class RunTalentRegistry : ScriptableObject
         cacheValid = false;
         SyncDebugList();
         
-        Debug.Log($"[RunTalentRegistry] Added {talent.talentName} (now {talentStacks[talent]} stacks)");
+        if (debugLog) Debug.Log($"[RunTalentRegistry] Added {talent.talentName} (now {talentStacks[talent]} stacks)");
     }
 
     /// <summary>
@@ -97,7 +101,7 @@ public class RunTalentRegistry : ScriptableObject
         cachedEntries = Array.Empty<TalentEntry>();
         cacheValid = true;
         
-        Debug.Log("[RunTalentRegistry] Cleared all talents");
+        if (debugLog) Debug.Log("[RunTalentRegistry] Cleared all talents");
     }
 
     private void RebuildCache()

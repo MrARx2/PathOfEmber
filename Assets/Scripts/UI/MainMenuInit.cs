@@ -6,6 +6,10 @@ using UnityEngine;
 /// </summary>
 public class MainMenuInit : MonoBehaviour
 {
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
+
     private void Awake()
     {
         // Ensure game is not paused
@@ -15,6 +19,6 @@ public class MainMenuInit : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         
-        Debug.Log("[MainMenuInit] Main menu initialized. TimeScale reset to 1.");
+        if (debugLog) Debug.Log("[MainMenuInit] Main menu initialized. TimeScale reset to 1.");
     }
 }

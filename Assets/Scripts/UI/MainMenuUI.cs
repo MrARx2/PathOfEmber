@@ -50,6 +50,10 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField, Tooltip("Reference to the TalentDatabase for random talent selection")]
     private TalentDatabase talentDatabase;
 
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
+
     // The currently selected talent (null until first roll)
     private TalentData selectedTalent;
 
@@ -60,15 +64,15 @@ public class MainMenuUI : MonoBehaviour
     private void Awake()
     {
         // Debug: Log button assignments to help diagnose issues
-        Debug.Log($"[MainMenuUI] Awake - playButton assigned: {playButton != null}");
-        Debug.Log($"[MainMenuUI] Awake - rollTalentButton assigned: {rollTalentButton != null}");
-        Debug.Log($"[MainMenuUI] Awake - talentDatabase assigned: {talentDatabase != null}");
-        Debug.Log($"[MainMenuUI] Awake - Script Enabled: {enabled}, GameObject Active: {gameObject.activeInHierarchy}");
+        if (debugLog) Debug.Log($"[MainMenuUI] Awake - playButton assigned: {playButton != null}");
+        if (debugLog) Debug.Log($"[MainMenuUI] Awake - rollTalentButton assigned: {rollTalentButton != null}");
+        if (debugLog) Debug.Log($"[MainMenuUI] Awake - talentDatabase assigned: {talentDatabase != null}");
+        if (debugLog) Debug.Log($"[MainMenuUI] Awake - Script Enabled: {enabled}, GameObject Active: {gameObject.activeInHierarchy}");
     }
 
     private void OnEnable()
     {
-        Debug.Log("[MainMenuUI] OnEnable called");
+        if (debugLog) Debug.Log("[MainMenuUI] OnEnable called");
         // Start delayed reset to handle scene load race conditions
         StartCoroutine(ForceResetRoutine());
     }
@@ -78,21 +82,21 @@ public class MainMenuUI : MonoBehaviour
         // Wait for end of frame to ensure UI layout and references are stable
         yield return new WaitForEndOfFrame();
         
-        Debug.Log("[MainMenuUI] ForceResetRoutine executing after delay");
+        if (debugLog) Debug.Log("[MainMenuUI] ForceResetRoutine executing after delay");
         ResetTalentDisplay();
     }
 
     private void Start()
     {
-        Debug.Log("[MainMenuUI] Start called");
+        if (debugLog) Debug.Log("[MainMenuUI] Start called");
         
         SetupButtons();
         // Currency is now handled to CurrencyUIController (Persistent UI)
         
         // Debug reference status
-        Debug.Log($"[MainMenuUI] defaultCubeSprite is null? {defaultCubeSprite == null}");
-        Debug.Log($"[MainMenuUI] talentIcon is null? {talentIcon == null}");
-        Debug.Log($"[MainMenuUI] talentDatabase is null? {talentDatabase == null}");
+        if (debugLog) Debug.Log($"[MainMenuUI] defaultCubeSprite is null? {defaultCubeSprite == null}");
+        if (debugLog) Debug.Log($"[MainMenuUI] talentIcon is null? {talentIcon == null}");
+        if (debugLog) Debug.Log($"[MainMenuUI] talentDatabase is null? {talentDatabase == null}");
         
         ResetTalentDisplay(); // Show cube initially, no talent selected
     }
@@ -116,11 +120,11 @@ public class MainMenuUI : MonoBehaviour
         if (rollTalentButton != null)
         {
             rollTalentButton.onClick.AddListener(OnRollTalentClicked);
-            Debug.Log("[MainMenuUI] Roll button listener added successfully");
+            if (debugLog) Debug.Log("[MainMenuUI] Roll button listener added successfully");
         }
         else
         {
-            Debug.LogError("[MainMenuUI] rollTalentButton is NOT assigned in Inspector!");
+            if (debugLog) Debug.LogError("[MainMenuUI] rollTalentButton is NOT assigned in Inspector!");
         }
         
         // Settings Button
@@ -138,7 +142,7 @@ public class MainMenuUI : MonoBehaviour
         }
         else
         {
-            Debug.LogError("[MainMenuUI] Sound Settings Panel not assigned!");
+            if (debugLog) Debug.LogError("[MainMenuUI] Sound Settings Panel not assigned!");
         }
     }
 
@@ -150,7 +154,7 @@ public class MainMenuUI : MonoBehaviour
     private void ResetTalentDisplay()
     {
         selectedTalent = null;
-        Debug.Log("[MainMenuUI] ResetTalentDisplay called");
+        if (debugLog) Debug.Log("[MainMenuUI] ResetTalentDisplay called");
 
         if (talentIcon != null)
         {
@@ -158,17 +162,17 @@ public class MainMenuUI : MonoBehaviour
             {
                 talentIcon.sprite = defaultCubeSprite;
                 talentIcon.enabled = true;
-                Debug.Log($"[MainMenuUI] Set talentIcon sprite to {defaultCubeSprite.name}");
+                if (debugLog) Debug.Log($"[MainMenuUI] Set talentIcon sprite to {defaultCubeSprite.name}");
             }
             else
             {
                 talentIcon.enabled = false;
-                Debug.LogWarning("[MainMenuUI] defaultCubeSprite is NULL! Disabling icon.");
+                if (debugLog) Debug.LogWarning("[MainMenuUI] defaultCubeSprite is NULL! Disabling icon.");
             }
         }
         else
         {
-            Debug.LogError("[MainMenuUI] talentIcon Image is NULL!");
+            if (debugLog) Debug.LogError("[MainMenuUI] talentIcon Image is NULL!");
         }
 
         if (talentNameText != null)
@@ -185,7 +189,7 @@ public class MainMenuUI : MonoBehaviour
     {
         if (talentDatabase == null)
         {
-            Debug.LogWarning("[MainMenuUI] TalentDatabase not assigned! Cannot roll talent.");
+            if (debugLog) Debug.LogWarning("[MainMenuUI] TalentDatabase not assigned! Cannot roll talent.");
             return;
         }
 
@@ -193,7 +197,7 @@ public class MainMenuUI : MonoBehaviour
         TalentData[] allTalents = talentDatabase.GetAllTalents();
         if (allTalents == null || allTalents.Length == 0)
         {
-            Debug.LogWarning("[MainMenuUI] No talents in database!");
+            if (debugLog) Debug.LogWarning("[MainMenuUI] No talents in database!");
             return;
         }
 
@@ -211,7 +215,7 @@ public class MainMenuUI : MonoBehaviour
             talentNameText.text = selectedTalent.talentName;
         }
 
-        Debug.Log($"[MainMenuUI] Rolled talent: {selectedTalent.talentName}");
+        if (debugLog) Debug.Log($"[MainMenuUI] Rolled talent: {selectedTalent.talentName}");
     }
 
     /// <summary>
@@ -221,7 +225,7 @@ public class MainMenuUI : MonoBehaviour
     private void OnRollTalentClicked()
     {
         RollRandomTalent();
-        Debug.Log("[MainMenuUI] Roll button clicked - talent rolled, waiting for Play");
+        if (debugLog) Debug.Log("[MainMenuUI] Roll button clicked - talent rolled, waiting for Play");
     }
 
     /// <summary>
@@ -237,14 +241,14 @@ public class MainMenuUI : MonoBehaviour
         {
             // Store talent in GameSessionManager (persists across scene load)
             GameSessionManager.Instance.StartingTalent = selectedTalent;
-            Debug.Log($"[MainMenuUI] Play clicked with talent: {selectedTalent.talentName}");
+            if (debugLog) Debug.Log($"[MainMenuUI] Play clicked with talent: {selectedTalent.talentName}");
         }
         else
         {
             // No talent selected - clear any previous selection
             if (GameSessionManager.Instance != null)
                 GameSessionManager.Instance.StartingTalent = null;
-            Debug.Log("[MainMenuUI] Play clicked without talent - starting normal mode");
+            if (debugLog) Debug.Log("[MainMenuUI] Play clicked without talent - starting normal mode");
         }
         
         if (LoadingScreenManager.Instance != null)
@@ -253,7 +257,7 @@ public class MainMenuUI : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[MainMenuUI] LoadingScreenManager not found! Doing standard LoadScene.");
+            if (debugLog) Debug.LogWarning("[MainMenuUI] LoadingScreenManager not found! Doing standard LoadScene.");
             SceneManager.LoadScene(gameSceneName);
         }
     }

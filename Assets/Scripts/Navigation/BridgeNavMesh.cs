@@ -10,7 +10,7 @@ using Unity.AI.Navigation;
 public class BridgeNavMesh : MonoBehaviour
 {
     [Header("Debug")]
-    public bool showDebugLogs = true;
+    public bool showDebugLogs = false;
     
     private NavMeshSurface surface;
     
@@ -23,7 +23,7 @@ public class BridgeNavMesh : MonoBehaviour
         
         if (bounds.size.magnitude < 0.1f)
         {
-            Debug.LogError($"[BridgeNavMesh] No colliders found or bounds too small!");
+            if (showDebugLogs) Debug.LogError($"[BridgeNavMesh] No colliders found or bounds too small!");
             return;
         }
         
@@ -70,7 +70,7 @@ public class BridgeNavMesh : MonoBehaviour
         
         if (colliders.Length == 0)
         {
-            Debug.LogError($"[BridgeNavMesh] No colliders found in {gameObject.name}!");
+            if (showDebugLogs) Debug.LogError($"[BridgeNavMesh] No colliders found in {gameObject.name}!");
             return new Bounds(transform.position, Vector3.zero);
         }
         

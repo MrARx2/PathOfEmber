@@ -77,6 +77,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private SoundEvent deathSound;
     [SerializeField] private SoundEvent invulnerabilitySound;
 
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
+
     [Header("Events")]
     public UnityEvent<int> OnDamage;
     public UnityEvent<int> OnHeal;
@@ -519,7 +523,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         if (invulnerabilityEffect == null)
         {
-            Debug.LogWarning("[PlayerHealth] invulnerabilityEffect is null!");
+            if (debugLog) Debug.LogWarning("[PlayerHealth] invulnerabilityEffect is null!");
             return;
         }
 
@@ -545,7 +549,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (isDead) return; // Prevent multiple calls
         isDead = true;
 
-        Debug.Log("[PlayerHealth] Die() called!");
+        if (debugLog) Debug.Log("[PlayerHealth] Die() called!");
 
         // Disable player controls
         DisablePlayerControls();
@@ -557,12 +561,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         // Trigger death animation
         if (animator != null && !string.IsNullOrEmpty(deathTrigger))
         {
-            Debug.Log($"[PlayerHealth] Setting trigger '{deathTrigger}' on animator: {animator.name}");
+            if (debugLog) Debug.Log($"[PlayerHealth] Setting trigger '{deathTrigger}' on animator: {animator.name}");
             animator.SetTrigger(deathTrigger);
         }
         else
         {
-            Debug.LogWarning($"[PlayerHealth] Cannot trigger animation! Animator: {(animator != null ? animator.name : "NULL")}, deathTrigger: '{deathTrigger}'");
+            if (debugLog) Debug.LogWarning($"[PlayerHealth] Cannot trigger animation! Animator: {(animator != null ? animator.name : "NULL")}, deathTrigger: '{deathTrigger}'");
         }
 
         OnDeath?.Invoke();
@@ -583,7 +587,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
         else
         {
-            Debug.LogWarning("[PlayerHealth] Death popup not assigned! Assign DeathPopupPanel to PlayerHealth.");
+            if (debugLog) Debug.LogWarning("[PlayerHealth] Death popup not assigned! Assign DeathPopupPanel to PlayerHealth.");
         }
     }
     

@@ -30,6 +30,10 @@ public class SpawnAreaRegistry : MonoBehaviour
         }
     }
 
+    [Header("Debug")]
+    [SerializeField, Tooltip("Enable debug logging")]
+    private bool debugLog = false;
+
     // Tracks SpawnArea unique IDs that have already spawned
     private HashSet<string> spawnedAreaIds = new HashSet<string>();
 
@@ -81,7 +85,7 @@ public class SpawnAreaRegistry : MonoBehaviour
         if (!spawnedAreaIds.Contains(areaId))
         {
             spawnedAreaIds.Add(areaId);
-            Debug.Log($"[SpawnAreaRegistry] Marked '{areaId}' as spawned. Total tracked: {spawnedAreaIds.Count}");
+            if (debugLog) Debug.Log($"[SpawnAreaRegistry] Marked '{areaId}' as spawned. Total tracked: {spawnedAreaIds.Count}");
         }
     }
 
@@ -92,7 +96,7 @@ public class SpawnAreaRegistry : MonoBehaviour
     {
         if (spawnedAreaIds.Remove(areaId))
         {
-            Debug.Log($"[SpawnAreaRegistry] Cleared spawned status for '{areaId}'");
+            if (debugLog) Debug.Log($"[SpawnAreaRegistry] Cleared spawned status for '{areaId}'");
         }
     }
 
@@ -102,7 +106,7 @@ public class SpawnAreaRegistry : MonoBehaviour
     public void ClearAll()
     {
         spawnedAreaIds.Clear();
-        Debug.Log("[SpawnAreaRegistry] Cleared all spawned tracking");
+        if (debugLog) Debug.Log("[SpawnAreaRegistry] Cleared all spawned tracking");
     }
 
     /// <summary>

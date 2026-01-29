@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8350848889217348199}
   - component: {fileID: 4113175100772730543}
+  - component: {fileID: 2666399700341692041}
   m_Layer: 0
   m_Name: LavaDamageZone
   m_TagString: Untagged
@@ -53,3 +54,16 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &2666399700341692041
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 363174498983861343}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dcf07bca6c9b0624691163ebfc1eee5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LavaZoneFireTrigger
+  debugMode: 0
