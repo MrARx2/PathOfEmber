@@ -11,9 +11,9 @@ GameObject:
   - component: {fileID: 7390990326060910046}
   - component: {fileID: 9017057139771291482}
   - component: {fileID: 4685966261101499383}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Box Volume
-  m_TagString: Untagged
+  m_TagString: Collider
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -68,7 +68,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
   m_IsGlobal: 0
   priority: 0
-  blendDistance: 1
+  blendDistance: 0
   weight: 1
   sharedProfile: {fileID: 0}
 --- !u!1001 &8076791547083184532
@@ -93,15 +93,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b85adfca94a246f418f968dd509716cf, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.369
+      value: -13.962169
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b85adfca94a246f418f968dd509716cf, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.19084644
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b85adfca94a246f418f968dd509716cf, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 19.41
+      value: 16.834494
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: b85adfca94a246f418f968dd509716cf, type: 3}
       propertyPath: m_LocalRotation.w
