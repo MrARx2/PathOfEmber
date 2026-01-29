@@ -344,6 +344,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0e4f318094843154aa9f6d1809d94fbb, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4841606154664462819}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0e4f318094843154aa9f6d1809d94fbb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1942607095297535391}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0e4f318094843154aa9f6d1809d94fbb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5279902873373300661}
   m_SourcePrefab: {fileID: 100100000, guid: 0e4f318094843154aa9f6d1809d94fbb, type: 3}
 --- !u!1 &2593951791758551747 stripped
 GameObject:
@@ -371,6 +377,48 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.76, y: 3.46, z: 3.42}
   m_Center: {x: 0, y: 2.03, z: 0}
+--- !u!114 &1942607095297535391
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2593951791758551747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a71c6665aa0845843bb3bd2623fd93b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::YataiShopInteraction
+  shopUI: {fileID: 0}
+  interactionIndicator: {fileID: 5363763539632376469}
+  cooldownDuration: 0.5
+--- !u!54 &5279902873373300661
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2593951791758551747}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!4 &2933041575228469369 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 0e4f318094843154aa9f6d1809d94fbb, type: 3}
@@ -740,6 +788,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CartInteraction
       objectReference: {fileID: 0}
+    - target: {fileID: 5676689739170060299, guid: 5ace2e95f2be4e9478e1db358484cd34, type: 3}
+      propertyPath: m_Material
+      value: 
+      objectReference: {fileID: 2100000, guid: 52cea7cea466bcf448789dafc4a9b281, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

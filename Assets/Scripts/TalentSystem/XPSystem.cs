@@ -135,6 +135,19 @@ public class XPSystem : MonoBehaviour
         PulseGlow();
     }
 
+    /// <summary>
+    /// Consumes XP for purchases (e.g., Yatai Shop).
+    /// Returns true if successful, false if not enough XP.
+    /// </summary>
+    public bool ConsumeXP(int amount)
+    {
+        if (currentXP < amount) return false;
+
+        currentXP -= amount;
+        UpdateUI();
+        return true;
+    }
+
     private void ShowGain(int amount)
     {
         if (xpGainText == null) return;

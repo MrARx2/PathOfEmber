@@ -80,6 +80,12 @@ public class LoadingScreenManager : MonoBehaviour
 
     private IEnumerator LoadSceneRoutine(string sceneName)
     {
+        // Reset state BEFORE showing the screen
+        if (progressBar != null) progressBar.fillAmount = 0f;
+        if (loadingText != null) loadingText.text = "Loading Scene...";
+        isSceneReady = false;
+        externalProgress = 0f;
+
         // 1. Show Loading Screen
         if (loadingCanvas != null) loadingCanvas.SetActive(true);
         if (canvasGroup != null)
@@ -91,12 +97,6 @@ public class LoadingScreenManager : MonoBehaviour
                 yield return null;
             }
         }
-
-        // Reset state
-        if (progressBar != null) progressBar.fillAmount = 0f;
-        if (loadingText != null) loadingText.text = "Loading Scene...";
-        isSceneReady = false;
-        externalProgress = 0f;
 
         float startTime = Time.time;
 
@@ -157,6 +157,13 @@ public class LoadingScreenManager : MonoBehaviour
 
         // Ensure we hit 100% visually
         if (progressBar != null) progressBar.fillAmount = 1f;
+
+        // Force wait for minimum load time to prevent flickering
+        float elapsedTime = Time.time - startTime;
+        if (elapsedTime < minLoadTime)
+        {
+            yield return new WaitForSeconds(minLoadTime - elapsedTime);
+        }
 
         // 4. Hide Loading Screen
         if (canvasGroup != null)

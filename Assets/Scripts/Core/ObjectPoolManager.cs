@@ -197,6 +197,7 @@ public class ObjectPoolManager : MonoBehaviour
             for (int i = 0; i < batchSize; i++)
             {
                 GameObject obj = pool.Get();
+                obj.SetActive(false); // Ensure inactive IMMEDIATELY
                 _instanceToPrefab[obj] = prefab;
                 tempList.Add(obj);
             }
@@ -214,10 +215,20 @@ public class ObjectPoolManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Clears all pools. Call when changing scenes.
+    /// Clears all pools and destroys all pooled objects. Call when changing scenes.
     /// </summary>
     public void ClearAllPools()
     {
+        // Destroy all tracked instances first (prevents memory leak on scene reload)
+        foreach (var instance in _instanceToPrefab.Keys)
+        {
+            if (instance != null)
+            {
+                Destroy(instance);
+            }
+        }
+        
+        // Now clear the data structures
         foreach (var pool in _pools.Values)
         {
             pool.Clear();

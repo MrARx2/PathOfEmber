@@ -17,7 +17,7 @@ public class AssetPreloader : MonoBehaviour
     [SerializeField] private List<PreloadItem> vfxToPreload;
     
     [Header("Settings")]
-    [SerializeField] private int chunkPrewarmCount = 3; // How many instances of EACH chunk prefab to prewarm
+    // [SerializeField] private int chunkPrewarmCount = 3; // Removed: Chunks use Direct Instantiate now
     [SerializeField] private int itemsPerFrame = 5; // Low number to keep loading screen smooth
 
     [System.Serializable]
@@ -40,13 +40,13 @@ public class AssetPreloader : MonoBehaviour
             yield return null;
         }
 
+        // 1b. Clear existing pools to prevent duplicates on scene reload
+        ObjectPoolManager.Instance.ClearAllPools();
+        yield return null; // Wait a frame for Destroy() to complete
+
         // Calculate total items to preload for progress bar
         int totalItems = 0;
         int processedItems = 0;
-
-        // Chunks (Prefabs * Count)
-        var allChunks = (chunkManager != null) ? chunkManager.GetAllBiomePrefabs() : new HashSet<GameObject>();
-        totalItems += allChunks.Count * chunkPrewarmCount;
 
         // Projectiles
         if (projectilesToPreload != null)
@@ -63,25 +63,11 @@ public class AssetPreloader : MonoBehaviour
         // Avoid divide by zero
         if (totalItems == 0) totalItems = 1;
 
-        // 2. Prewarm Map Chunks
+        // 2. Chunks no longer use pool - ChunkManager uses direct Instantiate
+        // Just ensure ChunkManager is ready for initialization
         if (chunkManager != null)
         {
             chunkManager.autoInitialize = false;
-            foreach (var chunkPrefab in allChunks)
-            {
-                // We preload 'chunkPrewarmCount' instances of this prefab
-                // The PrewarmAsync spreads this over frames, but we want to track it
-                // Since PrewarmAsync handles the loop internally, we can't get per-item callback easily without modifying it.
-                // Simplified approach: Wait for the batch, then increment processed count by batch size.
-                yield return ObjectPoolManager.Instance.PrewarmAsync(chunkPrefab, chunkPrewarmCount, itemsPerFrame);
-                
-                processedItems += chunkPrewarmCount;
-                ReportProgress(processedItems, totalItems);
-            }
-        }
-        else
-        {
-            Debug.LogWarning("[AssetPreloader] ChunkManager reference missing!");
         }
 
         // 3. Prewarm Projectiles

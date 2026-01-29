@@ -224,6 +224,24 @@ public class PrayerWheelController : MonoBehaviour
     [SerializeField] private bool useDebugRarity = false;
     [SerializeField] private TalentData.TalentRarity debugRarityOverride = TalentData.TalentRarity.Legendary;
 
+    /// <summary>
+    /// Forces the next spin to use a specific rarity (used by Yatai Shop).
+    /// </summary>
+    public void SetGuaranteedRarity(TalentData.TalentRarity rarity)
+    {
+        useDebugRarity = true;
+        debugRarityOverride = rarity;
+        Debug.Log($"[PrayerWheelController] Guaranteed Rarity Set: {rarity} for next spin.");
+    }
+
+    /// <summary>
+    /// Clears the guaranteed rarity (call after spin).
+    /// </summary>
+    public void ClearGuaranteedRarity()
+    {
+        useDebugRarity = false;
+    }
+
     // ... (existing code)
 
     [Header("Alignment Calibration")]
@@ -363,6 +381,9 @@ public class PrayerWheelController : MonoBehaviour
 
         OnSpinComplete?.Invoke(chosenTalent1, chosenTalent2);
         
+        // Reset guaranteed rarity so next spin is random
+        ClearGuaranteedRarity();
+
         // Optional: Reset tint after a delay? For now we keep it glowing.
         // ResetMaterialColors(originalColors);
     }

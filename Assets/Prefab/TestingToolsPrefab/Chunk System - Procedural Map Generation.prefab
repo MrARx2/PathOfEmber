@@ -25,7 +25,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7313182976643741273}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -46,7 +46,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ChunkManager
   player: {fileID: 0}
   firstChunkPrefab: {fileID: 3536092818659910809, guid: f8d94528758d5924cba3a62840e0e605, type: 3}
-  lastChunkPrefab: {fileID: 1326567443434101612, guid: b4a00a99239c12840ab85d62277efe58, type: 3}
+  lastChunkPrefab: {fileID: 0}
   lavaBiomePrefabs:
   - {fileID: 1910626726864035821, guid: 51a83ec5cdff049419d467c827e5a222, type: 3}
   - {fileID: 2115992667875279889, guid: 33ed3a6866f01354dbcbf9fb6aa4a1a0, type: 3}
@@ -64,7 +64,9 @@ MonoBehaviour:
   - {fileID: 4745977077237630763, guid: 21c7f98d3dd2df34687b2ce7d22f5650, type: 3}
   - {fileID: 8792458687313320518, guid: bcc1acec88a5c8e4085543be5f0814a5, type: 3}
   - {fileID: 8566588854205774582, guid: 4174f83ac639e3740a171ffb95f10e78, type: 3}
+  - {fileID: 890650678995266250, guid: 15df1ad9b4d92d14780555dfca2da51e, type: 3}
   chunkLength: 20
   chunkGap: 0.5
   chunksAhead: 1
   chunksBehind: 1
+  autoInitialize: 0

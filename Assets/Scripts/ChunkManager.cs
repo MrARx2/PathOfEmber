@@ -184,50 +184,53 @@ public class ChunkManager : MonoBehaviour
             return;
         }
 
-        // Use first chunk prefab for chunk 0, otherwise use regular prefab
         GameObject prefabToUse = chunkSequence[chunkIndex];
 
-        // Calculate position along Z-axis, starting from first chunk position
-        // Each chunk is placed at: firstChunkPosition + (chunkIndex * (chunkLength + chunkGap))
+        // Calculate position along Z-axis
         float zOffset = chunkIndex * (chunkLength + chunkGap);
         Vector3 position = firstChunkPosition + new Vector3(0, 0, zOffset);
 
-        // Use Instantiate via ObjectPoolManager if available, otherwise fallback
-        GameObject chunk;
-        if (ObjectPoolManager.Instance != null)
+        // --- PARANOID INSTANTIATION ---
+        
+        // 1. Instantiate
+        GameObject chunk = Instantiate(prefabToUse, position, prefabToUse.transform.rotation);
+        
+        // 2. Validate Instance
+        if (chunk != null)
         {
-            chunk = ObjectPoolManager.Instance.Get(prefabToUse, position, prefabToUse.transform.rotation);
-            // Ensure parenting (PoolManager puts it under itself by default usually, but we want it organized?)
-            // Actually ObjectPoolManager keeps them under itself when inactive. When active, we can reparent.
-            // But for Chunks, let's keep them clean in hierarchy? 
-            // NOTE: ObjectPoolManager.Get sets position/rotation but parent handling is up to us if we want specific hierarchy.
-            // But ObjectPoolManager.Get does NOT allow setting parent in arguments.
-            // Let's re-parent.
-            chunk.transform.SetParent(transform);
+            // Debug check (requested/suggested to verify state)
+            if (!chunk.scene.IsValid())
+            {
+                Debug.LogError($"[ChunkManager] CRITICAL: Instantiate returned a Prefab Asset for {chunk.name}! (Scene: {chunk.scene.name}). Force-Fixing...");
+                // Force create a new instance from this 'bad' reference
+                chunk = Instantiate(chunk, position, prefabToUse.transform.rotation);
+            }
+
+            // 3. Safe Parenting
+            try 
+            {
+                chunk.transform.SetParent(transform);
+            }
+            catch (System.Exception e)
+            {
+                 Debug.LogError($"[ChunkManager] Failed to parent chunk {chunk.name}: {e.Message}. Is ChunkManager in a Prefab?");
+            }
+
+            chunk.name = $"Chunk_{chunkIndex}";
+            activeChunks[chunkIndex] = chunk;
         }
         else
         {
-            chunk = Instantiate(prefabToUse, position, prefabToUse.transform.rotation, transform);
+            Debug.LogError($"[ChunkManager] Failed to load chunk {chunkIndex}!");
         }
-        
-        chunk.name = $"Chunk_{chunkIndex}";
-
-        // Keep original materials; no debug coloring
-
-        activeChunks[chunkIndex] = chunk;
     }
-
-    
 
     private void UnloadChunk(int chunkIndex)
     {
         if (activeChunks.TryGetValue(chunkIndex, out GameObject chunk))
         {
-            if (ObjectPoolManager.Instance != null)
-            {
-                ObjectPoolManager.Instance.Return(chunk);
-            }
-            else
+            // Direct Destroy for chunk system (bypassing pool)
+            if (chunk != null)
             {
                 Destroy(chunk);
             }
