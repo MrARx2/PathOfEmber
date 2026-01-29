@@ -1076,6 +1076,10 @@ PrefabInstance:
       value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 8748610372414034244, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
+      propertyPath: multishotStacks
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8748610372414034244, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
       propertyPath: tripleShotAngle
       value: 15
       objectReference: {fileID: 0}
@@ -1089,6 +1093,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8748610372414034244, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
       propertyPath: tripleshotStacks
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8748610372414034244, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
+      propertyPath: attackSpeedStacks
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8748610372414034244, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
+      propertyPath: venomPotionStacks
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8748610372414034244, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
@@ -1113,6 +1125,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8748610372414034244, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
       propertyPath: freezeDurationPerStack
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8748610372414034244, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
+      propertyPath: currentAttackSpeedMultiplier
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -1152,6 +1168,10 @@ PrefabInstance:
       propertyPath: player
       value: 
       objectReference: {fileID: 57923298}
+    - target: {fileID: 3789153983700288973, guid: a16986d5b83ccbb4eb682754759c668b, type: 3}
+      propertyPath: chunksAhead
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7313182976643741273, guid: a16986d5b83ccbb4eb682754759c668b, type: 3}
       propertyPath: m_Name
       value: Chunk System - Procedural Map Generation

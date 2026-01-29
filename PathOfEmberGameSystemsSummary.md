@@ -1,138 +1,133 @@
-# 🔥 Path of Ember: System Architecture & Tuning Summary
+# 🔥 Path of Ember: System Architecture & Game Systems Summary
 
-> **Overview**: This document provides a deep dive into the technical and gameplay systems of *Path of Ember*. It categorizes systems from high-level gameplay loops down to specific tuning values, designed for quick reference during presentations.
-
----
-
-## ⚔️ Core Gameplay & Combat
-The heart of the experience. Fast-paced, responsive, and satisfying.
-
-### 🏃 Player Controller
-*File: `PlayerMovement.cs`*
-*   **Movement**: Physics-based logic using `Rigidbody.linearVelocity` for smooth collisions without jitter.
-*   **Controls**: Supports both **Joystick** (Mobile) and **WASD** (Desktop).
-*   **Tuning**:
-    *   **Base Speed**: `5.0` units/sec (Snappy but controllable).
-    *   **Acceleration**: `0.08s` (Almost instant, feels responsive like Archero).
-    *   **Deceleration**: `0.06s` (Stops on a dime for precision dodging).
-    *   **Boundary**: Clamped at X `±4.87` to keep player on the bridge.
-
-### 🏹 Combat System
-*File: `PlayerShooting.cs`*
-*   **Auto-Targeting**: Automatically detects the nearest enemy within range and rotates the character visual (upper body) to face them.
-*   **Attack Speed**: Base fire rate is `1.5 shots/sec`.
-*   **Tuning**:
-    *   **Range**: `12.0` units (Covers most of the visible screen).
-    *   **Projectile Speed**: `18.0` units/sec (Fast enough to hit moving targets cleanly).
-    *   **Tempo**: Global `shootingTempo` multiplier scales animation speed and fire rate in sync.
+> **Executive Summary**: This document outlines the technical architecture, gameplay loops, and systems tuning for *Path of Ember*. It is designed as a high-level reference for the development team and stakeholders, detailing how discrete systems interact to create the cohesive rogue-lite experience.
 
 ---
 
-## 🤖 Enemy Intelligence (AI)
-Enemies are built on a shared hierarchy (`EnemyAIBase`) for consistent behavior (movement, line-of-sight, contact damage) but feature unique specializations.
+## ⚔️ Core Player Systems
+*Responsive, physics-based controls designed for high-precision combat.*
+
+### 🏃 Player Controller (`PlayerMovement.cs`)
+*   **Physics-Based Movement**: Utilizing `Rigidbody.linearVelocity` guarantees smooth collision resolution against environmental hazards and enemies, preventing jitter common in transform-based movement.
+*   **Input Handling**: Hybrid input system supporting both **Virtual Joystick** (Mobile) and **WASD** (Desktop) with normalized vectors to prevent diagonal speed boosting.
+*   **Bridge Boundary Logic**: A clamped X-position (`±4.87`) constraint keeps the player firmly on the bridge without requiring invisible walls, saving physics processing overhead.
+
+### 🏹 Combat & Abilities (`PlayerShooting.cs`, `PlayerAbilities.cs`)
+*   **Auto-Targeting Architecture**: Raycast-verified target selection prioritizes the nearest visible enemy. The upper-body skeletal rig procedurally rotates to aim (`OnAnimatorIK`) while legs maintain movement direction.
+*   **Projectile System**: Uses `ObjectPoolManager` for zero-allocation instancing. Projectiles align to velocity vector for realistic flight arcs.
+*   **Ability Framework**:
+    *   **Active**: Shields, Speed Boosts, Multi-shot.
+    *   **Passive**: Stat modifiers handled by flexible `TalentData` ScriptableObjects.
+
+### ❤️ Health & Resiliency (`PlayerHealth.cs`)
+*   **Damage Pipeline**: `TakeDamage()` -> `CameraShake` + `HitFlash` -> `InvulnerabilityFrame`.
+*   **Visual Feedback**:
+    *   **Hit Flash**: Direct material emission manipulation using `_EmissionColor` for visibility even in dark environments.
+    *   **Camera Shake**: Perlin-noise based shake (`CameraShakeManager`) provides visceral impact feedback without disorienting the player.
+
+---
+
+## 🤖 Enemy Ecosystem (AI)
+*A hierarchical AI system built on `EnemyAIBase` sharing core logic (Pathfinding, LoS) with distinct behavioral specializations.*
 
 ### 🧟 Chaser (The Grunt)
-*File: `ChaserAI.cs`*
-*   **Behavior**: Relentlessly pursues the player to deal melee damage.
-*   **Specialty**: Uses upper-body animation blending to punch while moving.
-*   **Tuning**:
-    *   **Speed**: `3.5` (Slower than player, allowing kiting).
-    *   **Damage**: `20` per hit.
-    *   **Tactics**: Stops at `0.4` units to attack.
+*   **Role**: Pressure & Crowd Control.
+*   **AI Logic**: Uses NavMesh to relentlessly pathfind to the player.
+*   **Tech Detail**: Animation blending allows attacking while moving, preventing the "stop-and-pop" behavior often seen in simple AI.
 
-### 💣 Bomber (The Kamikaze)
-*File: `BomberAI.cs`*
-*   **Behavior**: High-speed rusher that self-destructs upon reaching the player.
-*   **Visuals**: Swells up and glows orange (`_EmissionColor`) before exploding.
-*   **Tuning**:
-    *   **Speed**: `5.25` (1.5x base speed - Dangerous!).
-    *   **Detonation**: Triggers at `2.5` units.
-    *   **Effect**: After `1.0s` delay, deals `50` damage in a `3.5` unit radius.
-    *   **Reward**: Grants **50% XP** on self-destruct (fair reward for survival).
+### 💣 Bomber (The Threat)
+*   **Role**: High-Priority Hazard.
+*   **AI Logic**: Sprint-speed pathfinding with a suicide trigger radius.
+*   **Visual Telegraph**: Uses `Material.SetColor("_EmissionColor")` to pulse orange/red before detonation, giving players a fair reaction window.
+*   **Risk/Reward**: Grants **50% Bonus XP** on self-destruct, incentivizing risky proximity play.
 
 ### 🎯 Sniper (The Turret)
-*File: `SniperAI.cs`*
-*   **Behavior**: "Stutter-step" movement. Moves in cardinal directions (Up/Down/Left/Right), then stops to aim and fire.
-*   **Visuals**: Displays a **LASER SIGHT** (LineRenderer) that turns red before firing.
-*   **Tuning**:
-    *   **Move Timeout**: `1.5s` (Forces repositioning).
-    *   **Aim Time**: `0.75s` (Gives player time to dodge).
-    *   **Tactic**: Does not rotate body while moving; only rotates to face player when shooting.
+*   **Role**: Area Denial.
+*   **AI Logic**: "Stutter-step" state machine (`Move` -> `Aim` -> `Fire`).
+*   **Telegraph**: Renders a dedicated `LineRenderer` laser sight 0.75s before firing.
+*   **Tuning**: Projectiles are non-homing, rewarding strafing movement.
+
+### 👹 Miniboss (The Gatekeeper)
+*   **System Integration**:
+    *   **Arena Logic**: Spawns dynamic blockades (`MinibossArenaTrigger`) that trap the player.
+    *   **Hazard Control**: Automatically **pauses** the global Lava Zone (`HazardZoneMeteors`) to ensure a fair fight, resuming it only upon death.
+*   **Attacks**:
+    *   **Meteor Rain**: Indirect fire forcing movement.
+    *   **Fireball Volley**: Direct damage requiring cover or dodging.
+
+### 💀 Titan Boss (The Climax)
+*   **Phases**: Multi-stage encounter controlled by `TitanBossController`.
+*   **Attacks**:
+    *   **Core Blast**: Launches projectiles upward that return as arena-wide strikes.
+    *   **Summon Hand**: Spawns enemies (Chasers) to split player attention.
+    *   **Fist Smash**: Massive AoE physical damage.
 
 ---
 
-## 🌍 World Generation & Hazards
-The world is infinite, dangerous, and procedurally assembled.
+## 🌍 World Generation & Environment
+*Infinite procedural generation tailored for performant mobile play.*
 
-### 🏗️ Infinite Bridge System
-*File: `ChunkManager.cs`*
-*   **Logic**: Spawns predefined "Chunks" (Prefabs) in a linear sequence.
-*   **Biomes**: Randomly selects from **Lava**, **Grass**, and **Mud** biomes.
-*   **Pooling**: Recycles chunks behind the player to front to maintain 0 GC (Garbage Collection) allocation during gameplay.
-*   **Tuning**:
-    *   **Chunk Length**: `10` units.
-    *   **Buffer**: Keeps `3` chunks ahead and `1` behind.
+### 🏗️ Infinite Bridge (`ChunkManager.cs`)
+*   **Procedural Pooling**: A rolling buffer of "Chunks" (Prefabs) recycled front-to-back.
+*   **NavMesh Architecture**: Bridges use `NavMeshSurface` components that bake at runtime (or pre-baked chunks linked via `NavMeshLink`), allowing AI to traverse generated geometry seamlessly.
+*   **Biomes**: Randomly interleaved visual themes (Grass, Lava, Mud) to reduce visual fatigue.
 
-### 🌋 Hazard Zone (The "Storm")
-*File: `HazardZoneMeteors.cs`*
-*   **Concept**: A death zone that follows the player, forcing forward momentum.
-*   **Feature**: Spawns meteors with increasing intensity the deeper you fall behind.
-*   **Tuning**:
-    *   **Advance Speed**: `0.5` units/sec (Slow, creeping pressure).
-    *   **Warning Area**: `10` units from edge (Meteors start falling here).
-    *   **Intensity**:
-        *   **Edge**: `0.5` meteors/sec.
-        *   **Deep**: `5.0` meteors/sec (Survival impossible).
-    *   **Accuracy**: Meteors become more accurate (targeting player directly) as depth increases.
+### 🌋 Dynamic Hazard Zone (`HazardZoneMeteors.cs`)
+*   **The "Storm" Mechanic**: A moving kill-plane that forces forward momentum.
+*   **Dynamic Intensity**: Meteor spawn rate scales with player distance from the safe zone.
+    *   *Warning Phase*: Ground decals indicate impact zones.
+    *   *Impact Phase*: Physical meteor spawning and explosion AoE.
 
 ---
 
-## 🔮 Progression & Talents
-A roguelite layer providing power spikes and replayability.
+## 🔮 Progression & Economy
+*Meta-systems driving replayability and power scaling.*
 
-### ⭐️ XP & Leveling
-*File: `XPSystem.cs`*
-*   **Scaling**: XP requirement increases by **15%** per level.
-*   **Flow**: Coins grant XP -> Level Up -> Triggers **Prayer Wheel**.
+### 🎡 Dual Prayer Wheels (`PrayerWheelController.cs`)
+*   **The Hook**: Primary upgrade mechanic presented as two spinning 3D wheels.
+*   **Architecture**:
+    *   **Data-Driven**: Wheels are populated dynamically from the `TalentDatabase`.
+    *   **Rarity Tiers**: Common (Grey), Rare (Blue), Legendary (Gold) tiers with distinct visual materials and sound cues.
+    *   **Anti-Frustration**: Logic ensures no duplicate talents appear in the same spin.
 
-### 🎡 Prayer Wheel (Talent Selection)
-*File: `TalentSelectionManager.cs`*
-*   **Rarity System**:
-    *   **Common (Grey)**: 50% chance.
-    *   **Rare (Blue)**: 30% chance.
-    *   **Legendary (Gold)**: 20% chance.
-*   **Visuals**: 3D spinning wheel selects 3 random upgrades from `TalentDatabase`.
+### ⛩️ Yatai Shop (`YataiShopInteraction.cs`)
+*   **Economy Sink**: A world-space interactable shop appearing in chunks.
+*   **Risk/Reward**: Allows players to spend generic XP/Coins for a **Guaranteed Rarity** spin on the next Prayer Wheel.
+*   **Integration**: Seamlessly hooks into the `PrayerWheelController` to override probability weights for the next event.
 
----
-
-## ⚙️ Technical Performance Systems
-Optimized for mobile to ensure 60 FPS.
-
-### 💾 Loading Screen (Smart Preloader)
-*File: `LoadingScreenManager.cs` & `AssetPreloader.cs`*
-*   **Logic**: Hides the "lag" of instantiating heavy objects.
-*   **Phases**:
-    1.  **Scene Load (20%)**: Unity loads the scene.
-    2.  **Asset Warming (80%)**: Spawns Chunks, Projectiles, and VFX into the pool off-screen.
-*   **Result**: Game starts with zero frame drops because everything is already in memory.
-
-### ♻️ Object Pooling
-*File: `ObjectPoolManager.cs`*
-*   **Function**: Reuses objects (Arrows, Enemies, Chunks) instead of `Destroy()`/`Instantiate()`.
-*   **Impact**: Eliminates CPU spikes from memory allocation, crucial for endless runners.
+### ⭐️ XP & Leveling (`XPSystem.cs`, `RunTalentRegistry.cs`)
+*   **Persistence**: `RunTalentRegistry` (ScriptableObject) persists player stats across scene loads (Main Menu <-> Game).
+*   **Scaling Curve**: geometric progression (15% increase per level) ensures pacing slows naturally as power increases.
 
 ---
 
-## 📊 Quick Tuning Reference Table
+## 🎧 Audio & Immersion
+*A layered audio system for spatial awareness and feedback.*
 
-| Entity | HP/Damage | Speed | Range/Radius | Notes |
-| :--- | :--- | :--- | :--- | :--- |
-| **Player** | 100 HP | 5.0 | 12.0 (Bow) | Snappy controls |
-| **Chaser** | Default HP | 3.5 | 0.4 (Punch) | Kitable |
-| **Bomber** | Low HP | **5.25** | 3.5 (Explosion) | **PRIORITY TARGET** |
-| **Sniper** | Medium HP | 3.5 | Infinite (Proj) | Telegraphs attacks |
-| **Meteor** | Instant Kill | N/A | 1.5 (Impact) | Visual warning first |
+### � Audio Manager (`AudioManager.cs`)
+*   **Pooling**: Creating/Destroying AudioSources is expensive; the manager pools them for zero-allocation playback.
+*   **Spatial Audio**:
+    *   **3D Settings**: Enemy sounds (footsteps, attacks) use linear rolloff to provide directional cues.
+    *   **2D Settings**: UI and Player impacts are prioritized in the mix.
+*   **Dynamic Music**: `MusicManager` handles cross-fading between Biome tracks and Boss themes (`TitanTheme`).
+
+### 💥 Game Feel Polish
+*   **Damage Numbers**: Screen-space floating text (`PopupManager`) for immediate DPS feedback.
+*   **Hit Stop**: Subtle `TimeScale` freeze (0.05s) on critical impacts to emphasize power.
+*   **Screen Shake**: Variable intensity shake profiles (`Small`, `Medium`, `Large`) trigger on damage, explosions, and heavy landings.
 
 ---
 
-*Generated for Path of Ember Presentation* 🚀
+## ⚙️ Technical Performance Profile
+*Optimized for consistent 60 FPS on target hardware.*
+
+| System | Optimization Technique | Benefit |
+| :--- | :--- | :--- |
+| **Asset Warming** | `AssetPreloader.cs` instantiates heavy prefabs during the Loading Screen (masked by UI). | No frame drops when looking at new enemies/VFX for the first time. |
+| **Object Pooling** | `ObjectPoolManager.cs` recycles everything from projectiles to entire boss minions. | Zero GC allocation during combat loop. |
+| **Shader Stripping** | Explicit `_EMISSION` handling ensures variants are kept only when needed. | Smaller build size, preventing pink shader errors. |
+| **Physics** | Layer Collision Matrix optimized to ignore unnecessary checks (e.g., Enemy vs Enemy collisions disabled). | significantly reduced physics CPU cost. |
+
+---
+
+*System Summary Generated for Shipping Build Presentation* 🚀

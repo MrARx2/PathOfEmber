@@ -402,6 +402,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3f276ae9132cfe48b0e44ca3fa6e7de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCurrency
+  debugLog: 0
 --- !u!4 &98776700 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: ddaef51a8fdeb404c96c8ff74722de2e, type: 3}
@@ -3370,6 +3371,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29d625783551e6846a2623abf69341ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuInit
+  debugLog: 0
 --- !u!4 &919794073
 Transform:
   m_ObjectHideFlags: 0
@@ -3408,6 +3410,7 @@ MonoBehaviour:
   talentNameText: {fileID: 1919894880}
   defaultTalentText: Choose core talent
   talentDatabase: {fileID: 11400000, guid: 5b3413b80e4e3cf46839f9049ec21299, type: 2}
+  debugLog: 0
 --- !u!4 &923720184 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8386695100727601315, guid: a41ce64460838804bbd53438e2dde9d2, type: 3}
@@ -3864,6 +3867,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 5187190855155379797, guid: 34e570e1dea23e345bb565992076aab0, type: 3}
+      propertyPath: gameScenes.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5187190855155379797, guid: 34e570e1dea23e345bb565992076aab0, type: 3}
+      propertyPath: 'gameScenes.Array.data[0]'
+      value: GameScene (Updated)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5187190855155379797, guid: 34e570e1dea23e345bb565992076aab0, type: 3}
+      propertyPath: mainMenuScenes.Array.size
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5187190855155379797, guid: 34e570e1dea23e345bb565992076aab0, type: 3}
       propertyPath: gameMusicTracks.Array.data[1].endZ
       value: 160
