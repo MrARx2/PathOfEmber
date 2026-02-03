@@ -194,18 +194,25 @@ namespace Boss
             {
                 lastHitEffectTime = Time.time;
                 
-                // Spawn hit VFX (Pooled)
-                if (hitVFXPrefab != null && ObjectPoolManager.Instance != null)
+                if (enableHitFlash)
                 {
-                    // Use pool manager instead of Instantiate
-                    GameObject vfx = ObjectPoolManager.Instance.Get(hitVFXPrefab, VisualCenter, Quaternion.identity);
-                    StartCoroutine(ReturnVfxToPool(vfx, 1f));
-                }
-                else if (hitVFXPrefab != null)
-                {
-                    // Fallback if pool manager missing
-                    GameObject vfx = Instantiate(hitVFXPrefab, VisualCenter, Quaternion.identity);
-                    Destroy(vfx, 1f);
+                    // Spawn hit VFX (Pooled)
+                    if (hitVFXPrefab != null && ObjectPoolManager.Instance != null)
+                    {
+                        // Use pool manager instead of Instantiate
+                        GameObject vfx = ObjectPoolManager.Instance.Get(hitVFXPrefab, VisualCenter, Quaternion.identity);
+                        StartCoroutine(ReturnVfxToPool(vfx, 1f));
+                    }
+                    else if (hitVFXPrefab != null)
+                    {
+                        // Fallback if pool manager missing
+                        GameObject vfx = Instantiate(hitVFXPrefab, VisualCenter, Quaternion.identity);
+                        Destroy(vfx, 1f);
+                    }
+
+                    // Flash emission
+                    if (hitFlashCoroutine != null) StopCoroutine(hitFlashCoroutine);
+                    hitFlashCoroutine = StartCoroutine(HitFlashRoutine());
                 }
 
                 // Play hit sound
