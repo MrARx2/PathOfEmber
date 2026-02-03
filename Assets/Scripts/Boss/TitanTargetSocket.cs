@@ -7,7 +7,13 @@ namespace Boss
     /// Has a stretched collider for reliable arrow hits and routes damage to its health part.
     /// </summary>
     [RequireComponent(typeof(Collider))]
-    public class TitanTargetSocket : MonoBehaviour
+    /// <summary>
+    /// Targetable socket on a Titan rig bone.
+    /// Has a stretched collider for reliable arrow hits and routes damage to its health part.
+    /// Implement IDamageable so projectiles hitting this collider find a valid target immediately.
+    /// </summary>
+    [RequireComponent(typeof(Collider))]
+    public class TitanTargetSocket : MonoBehaviour, IDamageable
     {
         [Header("Configuration")]
         [SerializeField, Tooltip("The health component this socket belongs to")]
@@ -98,6 +104,17 @@ namespace Boss
                 Debug.Log($"[TitanTargetSocket] {gameObject.name} targetable: {targetable}");
         }
         
+        // IDamageable Implementation
+        public void TakeDamage(int damage)
+        {
+            RouteDamage(damage);
+        }
+
+        public Transform GetTransform()
+        {
+            return transform;
+        }
+
         /// <summary>
         /// Routes damage to the associated health part.
         /// Called by ArrowProjectile when it hits this collider.

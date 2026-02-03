@@ -9,7 +9,7 @@ using UnityEngine.Rendering.Universal;
 /// </summary>
 public class StylizedSetup : EditorWindow
 {
-    [MenuItem("Tools/Stylized Setup")]
+    [MenuItem("Tools/Path of Ember/Visuals/Setup Stylized Look")]
     public static void ShowWindow()
     {
         var window = GetWindow<StylizedSetup>("Stylized Setup");

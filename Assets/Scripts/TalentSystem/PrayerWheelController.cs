@@ -129,6 +129,10 @@ public class PrayerWheelController : MonoBehaviour
     // Track original colors at class level to restore them if disabled
     private Dictionary<Material, Color> originalColors = new Dictionary<Material, Color>();
 
+    // Optimization: Lookup Table for integrated progress
+    private float[] _progressLUT;
+    private const int LUT_RESOLUTION = 100; // 100 samples is plenty for UI
+
     // Events
     public event System.Action<TalentData, TalentData> OnSpinComplete;
 
@@ -148,6 +152,9 @@ public class PrayerWheelController : MonoBehaviour
                 new Keyframe(1f, 0f)
             );
         }
+
+        // Optimization: Pre-calculate integration curve into LUT
+        PreCalculateProgressLUT();
 
         // Auto-wire from PrayerWheelSetup if assigned
         AutoWireFromSetup();
@@ -659,37 +666,94 @@ public class PrayerWheelController : MonoBehaviour
     }
 
     /// <summary>
-    /// Calculates integrated progress based on speed curve.
-    /// This ensures smooth acceleration/deceleration.
+    /// Calculates integrated progress using pre-calculated Lookup Table (LUT).
+    /// This is O(1) instead of O(N) where N was 40 iterations.
     /// </summary>
     private float GetIntegratedProgress(float normalizedTime)
     {
-        // Simple trapezoidal integration of the speed curve
+        if (_progressLUT == null || _progressLUT.Length == 0)
+            return normalizedTime; // Fallback
+
+        normalizedTime = Mathf.Clamp01(normalizedTime);
+        float indexFloat = normalizedTime * (LUT_RESOLUTION - 1);
+        int indexLower = Mathf.FloorToInt(indexFloat);
+        int indexUpper = Mathf.Min(indexLower + 1, LUT_RESOLUTION - 1);
+        float t = indexFloat - indexLower;
+
+        // Linear interpolate between LUT values
+        return Mathf.Lerp(_progressLUT[indexLower], _progressLUT[indexUpper], t);
+    }
+    
+    private void PreCalculateProgressLUT()
+    {
+        _progressLUT = new float[LUT_RESOLUTION];
+        
+        // Use the expensive integration logic ONCE at startup to fill the table
+        int integrationSteps = 20; // Internal steps for the "truth" calculation
+        
+        for (int i = 0; i < LUT_RESOLUTION; i++)
+        {
+            float checkTime = (float)i / (LUT_RESOLUTION - 1);
+            
+            // Perform the expensive calculation here
+            float sum = 0f;
+            float stepSize = checkTime / integrationSteps;
+            
+            // Handle t=0 case
+            if (checkTime <= 0.0001f)
+            {
+                _progressLUT[i] = 0f;
+                continue;
+            }
+            
+            for (int k = 0; k < integrationSteps; k++)
+            {
+                float t0 = k * stepSize;
+                float t1 = (k + 1) * stepSize;
+                float v0 = speedRamp.Evaluate(t0 / checkTime * checkTime); // Simplified: evaluating at effective time
+                float v1 = speedRamp.Evaluate(t1 / checkTime * checkTime);
+                sum += (v0 + v1) / 2f * stepSize;
+            }
+            
+            // We also need the "Total Area" normalization constant, which is constant for the curve
+            // But since GetIntegratedProgress logic included it dynamically, let's just stick to the original LOGIC
+            // Wait, looking at original code:
+            // "Evaluate(t0 / normalizedTime * normalizedTime)" -> This simplifies to "Evaluate(t0)"
+            // The original code was: t0 / normalizedTime * normalizedTime == t0.
+            // So it was just integrating from 0 to current time.
+            
+            // Let's optimize the logic cleanly:
+            // We want "Area from 0 to t" / "Total Area from 0 to 1".
+            
+            _progressLUT[i] = CalculateAreaUnderCurve(checkTime);
+        }
+        
+        // Normalize the whole table by the max value (Area at 1.0)
+        float totalArea = _progressLUT[LUT_RESOLUTION - 1];
+        if (totalArea > 0)
+        {
+            for (int i = 0; i < LUT_RESOLUTION; i++)
+            {
+                _progressLUT[i] /= totalArea;
+            }
+        }
+    }
+    
+    private float CalculateAreaUnderCurve(float endTime)
+    {
         int steps = 20;
         float sum = 0f;
-        float stepSize = normalizedTime / steps;
+        float stepSize = endTime / steps;
         
         for (int i = 0; i < steps; i++)
         {
-            float t0 = i * stepSize;
-            float t1 = (i + 1) * stepSize;
-            float v0 = speedRamp.Evaluate(t0 / normalizedTime * normalizedTime);
-            float v1 = speedRamp.Evaluate(t1 / normalizedTime * normalizedTime);
-            sum += (v0 + v1) / 2f * stepSize;
-        }
-
-        // Normalize by total area under curve
-        float totalArea = 0f;
-        for (int i = 0; i < steps; i++)
-        {
-            float t0 = (float)i / steps;
-            float t1 = (float)(i + 1) / steps;
+            float t0 = (float)i * stepSize;
+            float t1 = (float)(i + 1) * stepSize;
             float v0 = speedRamp.Evaluate(t0);
             float v1 = speedRamp.Evaluate(t1);
-            totalArea += (v0 + v1) / 2f * (1f / steps);
+            sum += (v0 + v1) / 2f * stepSize;
         }
-
-        return totalArea > 0 ? sum / totalArea : normalizedTime;
+        return sum;
     }
 
     private void StoreMaterialColors(PrayerWheel wheel, Dictionary<Material, Color> storage)

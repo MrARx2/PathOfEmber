@@ -89,7 +89,7 @@ namespace Boss
 
         private bool isDestroyed = false;
         private Coroutine hitFlashCoroutine;
-        private Coroutine healthBarHideCoroutine;
+        // private Coroutine healthBarHideCoroutine; // Removed optimization
         private Coroutine destructionTintCoroutine;
         private Material[] tintMaterials;
         private Color[] originalEmissionColors;
@@ -189,31 +189,38 @@ namespace Boss
             // Show health bar when damaged
             ShowHealthBar();
 
-            // Hit flash effect
-            if (enableHitFlash)
+            // Throttle effects to prevent performance killing on rapid fire
+            if (Time.time > lastHitEffectTime + 0.08f)
             {
-                if (hitFlashCoroutine != null)
-                    StopCoroutine(hitFlashCoroutine);
-                hitFlashCoroutine = StartCoroutine(HitFlashRoutine());
+                lastHitEffectTime = Time.time;
+                
+                // Spawn hit VFX (Pooled)
+                if (hitVFXPrefab != null && ObjectPoolManager.Instance != null)
+                {
+                    // Use pool manager instead of Instantiate
+                    GameObject vfx = ObjectPoolManager.Instance.Get(hitVFXPrefab, VisualCenter, Quaternion.identity);
+                    StartCoroutine(ReturnVfxToPool(vfx, 1f));
+                }
+                else if (hitVFXPrefab != null)
+                {
+                    // Fallback if pool manager missing
+                    GameObject vfx = Instantiate(hitVFXPrefab, VisualCenter, Quaternion.identity);
+                    Destroy(vfx, 1f);
+                }
+
+                // Play hit sound
+                if (hitSound != null && AudioManager.Instance != null)
+                    AudioManager.Instance.PlayAtPosition(hitSound, VisualCenter);
             }
-            
-            // Spawn hit VFX
-            if (hitVFXPrefab != null)
-            {
-                GameObject vfx = Instantiate(hitVFXPrefab, VisualCenter, Quaternion.identity);
-                Destroy(vfx, 2f);
-            }
-            
-            // Damage popup
+
+            // Damage popup (Throttle slightly too)
             if (showDamagePopup && PopupManager.Instance != null)
             {
+                // Only show popup every other frame? Or just rely on PopupManager's own pooling. 
+                // PopupManager usually handles this OK, but let's trust it for now.
                 Vector3 popupPos = VisualCenter + damagePopupOffset;
                 PopupManager.Instance.ShowDamage(damage, popupPos);
             }
-
-            // Play hit sound
-            if (hitSound != null && AudioManager.Instance != null)
-                AudioManager.Instance.PlayAtPosition(hitSound, VisualCenter);
 
             OnDamage?.Invoke(damage);
             OnHealthChanged?.Invoke(HealthPercent);
@@ -467,18 +474,13 @@ namespace Boss
         /// </summary>
         public void ShowHealthBar()
         {
-            if (debugLog) Debug.Log($"[TitanHealth] {bodyPart} ShowHealthBar called, HealthBarManager exists: {HealthBarManager.Instance != null}");
-            
             if (HealthBarManager.Instance != null)
             {
                 HealthBarManager.Instance.ShowBar(this);
-                if (debugLog) Debug.Log($"[TitanHealth] {bodyPart} called HealthBarManager.ShowBar");
             }
             
-            // Reset hide timer
-            if (healthBarHideCoroutine != null)
-                StopCoroutine(healthBarHideCoroutine);
-            healthBarHideCoroutine = StartCoroutine(HideHealthBarAfterDelay());
+            // Reset hide timer (no GC allocation)
+            healthBarHideTimer = healthBarHideDelay;
         }
         
         /// <summary>
@@ -486,28 +488,12 @@ namespace Boss
         /// </summary>
         public void HideHealthBar()
         {
-            if (healthBarHideCoroutine != null)
-            {
-                StopCoroutine(healthBarHideCoroutine);
-                healthBarHideCoroutine = null;
-            }
+            healthBarHideTimer = 0f;
             
             if (HealthBarManager.Instance != null)
             {
                 HealthBarManager.Instance.HideBar(this);
             }
-        }
-        
-        private IEnumerator HideHealthBarAfterDelay()
-        {
-            yield return new WaitForSeconds(healthBarHideDelay);
-            
-            if (HealthBarManager.Instance != null)
-            {
-                HealthBarManager.Instance.HideBar(this);
-            }
-            
-            healthBarHideCoroutine = null;
         }
         #endregion
 
@@ -543,6 +529,35 @@ namespace Boss
         public void SetRegeneration(bool enabled)
         {
             canRegenerate = enabled;
+        }
+
+        private float lastHitEffectTime = 0f;
+        private float healthBarHideTimer = 0f;
+
+        private void Update()
+        {
+            if (healthBarHideTimer > 0f)
+            {
+                healthBarHideTimer -= Time.deltaTime;
+                if (healthBarHideTimer <= 0f)
+                {
+                    if (HealthBarManager.Instance != null)
+                        HealthBarManager.Instance.HideBar(this);
+                }
+            }
+        }
+
+        private IEnumerator ReturnVfxToPool(GameObject vfx, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (vfx != null && ObjectPoolManager.Instance != null)
+            {
+                ObjectPoolManager.Instance.Return(vfx);
+            }
+            else if (vfx != null)
+            {
+                Destroy(vfx);
+            }
         }
 
         #region Debug

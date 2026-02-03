@@ -22,7 +22,7 @@ public class MenuUISetupWizard : EditorWindow
     private Color panelColor = new Color(0.1f, 0.1f, 0.15f, 0.95f);
     private Color buttonColor = new Color(0.2f, 0.25f, 0.35f, 1f);
     
-    [MenuItem("Tools/Path of Ember/Setup In-Game Menu")]
+    [MenuItem("Tools/Path of Ember/UI/Setup In-Game Menu")]
     public static void ShowWindow()
     {
         var window = GetWindow<MenuUISetupWizard>("In-Game Menu Setup");

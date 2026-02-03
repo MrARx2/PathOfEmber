@@ -67,6 +67,9 @@ namespace EnemyAI
         // Cache
         private Coroutine shootCoroutine;
         private LineRenderer aimLine;
+        
+        // Performance: Shared material to prevent allocation per sniper
+        private static Material _sharedAimMaterial;
 
         protected override void Awake()
         {
@@ -118,7 +121,12 @@ namespace EnemyAI
             aimLine.textureMode = LineTextureMode.Stretch;
             
             // Create simple material for the line
-            aimLine.material = new Material(Shader.Find("Sprites/Default"));
+            // Create simple material for the line
+            if (_sharedAimMaterial == null)
+            {
+                _sharedAimMaterial = new Material(Shader.Find("Sprites/Default"));
+            }
+            aimLine.material = _sharedAimMaterial;
             // Initial color (will be updated in routine)
             aimLine.startColor = aimLineStartColor;
             aimLine.endColor = new Color(aimLineStartColor.r, aimLineStartColor.g, aimLineStartColor.b, 0f);

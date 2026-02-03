@@ -13,7 +13,7 @@ public class AudioManagerSetupWizard : EditorWindow
     private AudioMixerGroup sfxGroup;
     private AudioMixerGroup bgmGroup;
     
-    [MenuItem("Tools/Path of Ember/Setup Audio Manager")]
+    [MenuItem("Tools/Path of Ember/Audio/Setup Audio Manager")]
     public static void ShowWindow()
     {
         var window = GetWindow<AudioManagerSetupWizard>("Audio Setup");

@@ -8,7 +8,7 @@ using Cinemachine;
 
 public class CameraShakeSetup : EditorWindow
 {
-    [MenuItem("Tools/Setup Camera Shake")]
+    [MenuItem("Tools/Path of Ember/Visuals/Setup Camera Shake")]
     public static void Setup()
     {
         SetupManager();

@@ -81,11 +81,27 @@ public class PrayerWheelUI : MonoBehaviour
     private bool isInSelectionMode = false; // Track if buttons need continuous positioning
     private int originalCanvasSortOrder = 0; // Store original sort order to restore later
 
+    private RectTransform buttonLeftRect;
+    private RectTransform buttonRightRect;
+    private RectTransform buttonLeftParentRect;
+    private RectTransform buttonRightParentRect;
+
     private void Awake()
     {
-        // Setup button listeners
-        if (buttonLeft) buttonLeft.onClick.AddListener(() => SelectTalent(currentTalent1));
-        if (buttonRight) buttonRight.onClick.AddListener(() => SelectTalent(currentTalent2));
+        // Cache RectTransforms for performance in LateUpdate
+        if (buttonLeft != null)
+        {
+             buttonLeftRect = buttonLeft.GetComponent<RectTransform>();
+             buttonLeftParentRect = buttonLeft.transform.parent as RectTransform;
+             buttonLeft.onClick.AddListener(() => SelectTalent(currentTalent1));
+        }
+
+        if (buttonRight != null)
+        {
+             buttonRightRect = buttonRight.GetComponent<RectTransform>();
+             buttonRightParentRect = buttonRight.transform.parent as RectTransform;
+             buttonRight.onClick.AddListener(() => SelectTalent(currentTalent2));
+        }
 
         // Find wheel controller
         wheelController = FindFirstObjectByType<PrayerWheelController>();
@@ -269,36 +285,30 @@ public class PrayerWheelUI : MonoBehaviour
             screenPosLeft = ViewportToFullScreenPoint(screenPosLeft, viewport);
             screenPosRight = ViewportToFullScreenPoint(screenPosRight, viewport);
             
-            // Position Left Button
+            // Position Left Button using cached RectTransforms
             if (buttonLeft != null && buttonLeft.gameObject.activeSelf)
             {
-                RectTransform btnRect = buttonLeft.GetComponent<RectTransform>();
-                RectTransform parentRect = buttonLeft.transform.parent as RectTransform;
-
-                if (parentRect != null && btnRect != null)
+                if (buttonLeftParentRect != null && buttonLeftRect != null)
                 {
                     Vector2 localPoint;
-                    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPosLeft, uiCam, out localPoint))
+                    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(buttonLeftParentRect, screenPosLeft, uiCam, out localPoint))
                     {
                         localPoint.y += buttonYOffset;
-                        btnRect.localPosition = localPoint;
+                        buttonLeftRect.localPosition = localPoint;
                     }
                 }
             }
 
-            // Position Right Button
+            // Position Right Button using cached RectTransforms
             if (buttonRight != null && buttonRight.gameObject.activeSelf)
             {
-                RectTransform btnRect = buttonRight.GetComponent<RectTransform>();
-                RectTransform parentRect = buttonRight.transform.parent as RectTransform;
-                
-                if (parentRect != null && btnRect != null)
+                if (buttonRightParentRect != null && buttonRightRect != null)
                 {
                     Vector2 localPoint;
-                    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPosRight, uiCam, out localPoint))
+                    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(buttonRightParentRect, screenPosRight, uiCam, out localPoint))
                     {
                         localPoint.y += buttonYOffset;
-                        btnRect.localPosition = localPoint;
+                        buttonRightRect.localPosition = localPoint;
                     }
                 }
             }

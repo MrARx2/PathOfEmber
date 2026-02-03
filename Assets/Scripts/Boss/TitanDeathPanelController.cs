@@ -72,11 +72,10 @@ namespace Boss
         
         private void OnEnable()
         {
-            // When activated (e.g., by TitanBossController.SetActive(true)), make visible
+            // When activated (e.g., by TitanBossController.SetActive(true)), make visible and trigger pause logic
             if (canvasGroup != null)
             {
-                SetVisible(true);
-                if (debugLog) Debug.Log("[TitanDeathPanel] OnEnable - panel made visible");
+                Show();
             }
         }
         
@@ -110,8 +109,12 @@ namespace Boss
             
             SetVisible(true);
             
-            // Optional: Pause the game
-            // Time.timeScale = 0f;
+            // Pause the game
+            Time.timeScale = 0f;
+
+            // Unlock and show cursor so player can interact with the panel
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
         
         /// <summary>

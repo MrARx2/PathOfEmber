@@ -152,6 +152,9 @@ namespace EnemyAI
         private const int DESTINATION_UPDATE_INTERVAL = 10; // Update destination every N frames
         private Vector3 _lastDestination;
         private bool _hasDestination = false;
+        
+        // Performance: Cached IDamageable on target
+        private IDamageable _cachedTargetDamageable;
 
         #endregion
 
@@ -239,12 +242,19 @@ namespace EnemyAI
                 if (contactDamageCooldown > 0)
                     contactDamageCooldown -= Time.deltaTime;
 
-                if (distanceToPlayer <= contactDistance && contactDamageCooldown <= 0)
+                // Optimization: Use sqrMagnitude to avoid square root
+                float sqrDist = (VisualPosition - target.position).sqrMagnitude;
+                float sqrContactDist = contactDistance * contactDistance;
+
+                if (sqrDist <= sqrContactDist && contactDamageCooldown <= 0)
                 {
-                    IDamageable playerHealth = target.GetComponent<IDamageable>();
-                    if (playerHealth != null)
+                    // Optimization: Use cached component if available, or get it
+                    if (_cachedTargetDamageable == null || (_cachedTargetDamageable as Component).gameObject != target.gameObject)
+                        _cachedTargetDamageable = target.GetComponent<IDamageable>();
+                        
+                    if (_cachedTargetDamageable != null)
                     {
-                        playerHealth.TakeDamage(contactDamageAmount);
+                        _cachedTargetDamageable.TakeDamage(contactDamageAmount);
                         contactDamageCooldown = contactDamageRate;
                         if (debugLog) Debug.Log($"[{GetType().Name}] Dealt {contactDamageAmount} contact damage.");
                     }

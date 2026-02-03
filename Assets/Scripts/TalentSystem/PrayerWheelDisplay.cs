@@ -139,7 +139,22 @@ public class PrayerWheelDisplay : MonoBehaviour
         // Ensure time scale is normal on start
         Time.timeScale = 1f;
         
+        // Pre-warm the base object (Spawn it, then hide it) so the first spin doesn't lag
+        if (wheelBasePrefab != null)
+        {
+            SpawnBase();  // Instantiates it
+            DestroyBase(); // Hides it (SetActive false)
+        }
+        
         if (debugLog) Debug.Log($"[PrayerWheelDisplay] Initialized. Wheel1: {(prayerWheel1 != null ? prayerWheel1.name : "NULL")}, Wheel2: {(prayerWheel2 != null ? prayerWheel2.name : "NULL")}");
+    }
+
+    private void OnDestroy()
+    {
+        if (spawnedBase != null)
+        {
+            Destroy(spawnedBase);
+        }
     }
 
     /// <summary>
@@ -498,7 +513,20 @@ public class PrayerWheelDisplay : MonoBehaviour
     private void SpawnBase()
     {
         if (wheelBasePrefab == null) return;
-        if (spawnedBase != null) return; // Already spawned
+        
+        // REUSE: If already exists, just enable it and move it to start position
+        if (spawnedBase != null) 
+        {
+            spawnedBase.SetActive(true);
+            
+            // Re-snap to position (same logic as below)
+            if (cameraTransform != null)
+            {
+                // FORCE SNAP to current camera view so we don't see it fly in from old position
+                MoveBaseToCameraTarget(true);
+            }
+            return; 
+        }
         
         // Spawn at origin first
         spawnedBase = Instantiate(wheelBasePrefab, Vector3.zero, Quaternion.identity);
@@ -507,44 +535,53 @@ public class PrayerWheelDisplay : MonoBehaviour
         // Set to same layer as wheels
         SetLayerRecursive(spawnedBase, wheelLayer);
         
-        // Use exact same logic as UpdateBasePosition to get the initial target
         if (cameraTransform != null)
         {
-            Vector3 targetPos = cameraTransform.position + cameraTransform.forward * forwardOffset;
-            targetPos += Vector3.up * verticalOffset;
-            targetPos += cameraTransform.right * horizontalShift;
-            
-            // Add Base-Specific Offsets
-            targetPos += cameraTransform.right * basePositionOffset.x;
-            targetPos += Vector3.up * basePositionOffset.y;
-            targetPos += cameraTransform.forward * basePositionOffset.z;
-            
-            // HARD SNAP Position
-            spawnedBase.transform.position = targetPos;
-            
-            // HARD SNAP Rotation
-            float cameraYRotation = cameraTransform.eulerAngles.y;
-            spawnedBase.transform.rotation = Quaternion.Euler(
-                baseRotationOffset.x,
-                cameraYRotation + baseRotationOffset.y,
-                baseRotationOffset.z
-            );
-            
-            // RESET Velocities so SmoothDamp doesn't try to continue from a previous state or 0
-            baseVelocity = Vector3.zero;
-            baseRotationVelocity = 0f;
+           MoveBaseToCameraTarget(true);
         }
         
         if (debugLog) Debug.Log($"[PrayerWheelDisplay] Spawned base at {spawnedBase.transform.position}");
     }
 
+    private void MoveBaseToCameraTarget(bool hardSnap)
+    {
+        if (cameraTransform == null || spawnedBase == null) return;
+
+        Vector3 targetPos = cameraTransform.position + cameraTransform.forward * forwardOffset;
+        targetPos += Vector3.up * verticalOffset;
+        targetPos += cameraTransform.right * horizontalShift;
+        
+        // Add Base-Specific Offsets
+        targetPos += cameraTransform.right * basePositionOffset.x;
+        targetPos += Vector3.up * basePositionOffset.y;
+        targetPos += cameraTransform.forward * basePositionOffset.z;
+        
+        // HARD SNAP Position
+        spawnedBase.transform.position = targetPos;
+        
+        // HARD SNAP Rotation
+        float cameraYRotation = cameraTransform.eulerAngles.y;
+        spawnedBase.transform.rotation = Quaternion.Euler(
+            baseRotationOffset.x,
+            cameraYRotation + baseRotationOffset.y,
+            baseRotationOffset.z
+        );
+        
+        if (hardSnap)
+        {
+            // RESET Velocities so SmoothDamp doesn't try to continue from a previous state or 0
+            baseVelocity = Vector3.zero;
+            baseRotationVelocity = 0f;
+        }
+    }
+
     private void DestroyBase()
     {
+        // REUSE: Just disable instead of destroying
         if (spawnedBase != null)
         {
-            Destroy(spawnedBase);
-            spawnedBase = null;
-            if (debugLog) Debug.Log("[PrayerWheelDisplay] Destroyed base.");
+            spawnedBase.SetActive(false);
+            if (debugLog) Debug.Log("[PrayerWheelDisplay] Disabled base.");
         }
     }
 

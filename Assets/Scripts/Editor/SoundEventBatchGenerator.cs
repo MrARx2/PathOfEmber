@@ -28,7 +28,7 @@ public class SoundEventBatchGenerator : EditorWindow
     private Vector2 scrollPos;
     private List<string> generationLog = new List<string>();
     
-    [MenuItem("Tools/Path of Ember/Generate Sound Events")]
+    [MenuItem("Tools/Path of Ember/Audio/Generate Sound Events")]
     public static void ShowWindow()
     {
         var window = GetWindow<SoundEventBatchGenerator>("Sound Event Generator");

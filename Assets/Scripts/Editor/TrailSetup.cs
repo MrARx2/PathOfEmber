@@ -28,7 +28,7 @@ public class TrailSetup : EditorWindow
     private bool createNewTrail = false;
     private GameObject targetObject;
 
-    [MenuItem("Tools/VFX/Trail Setup")]
+    [MenuItem("Tools/Path of Ember/Visuals/Trail Setup")]
     public static void ShowWindow()
     {
         GetWindow<TrailSetup>("Trail Setup");

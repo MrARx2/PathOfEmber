@@ -17,7 +17,7 @@ public class DeathPopupSetupWizard : EditorWindow
     private string titleText = "YOU DIED";
     private Color titleColor = new Color(0.8f, 0.2f, 0.2f, 1f);
     
-    [MenuItem("Tools/Path of Ember/Setup Death Popup")]
+    [MenuItem("Tools/Path of Ember/UI/Setup Death Popup")]
     public static void ShowWindow()
     {
         var window = GetWindow<DeathPopupSetupWizard>("Death Popup Setup");

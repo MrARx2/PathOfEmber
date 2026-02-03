@@ -86,6 +86,12 @@ public class EnemyProjectile : MonoBehaviour
     private Color[] initialColors;
     private float[] initialTrailWidths;
 
+    // Performance: Use PropertyBlock to avoid breaking batching
+    private MaterialPropertyBlock _propBlock;
+    private static readonly int _ColorID = Shader.PropertyToID("_Color");
+    private static readonly int _BaseColorID = Shader.PropertyToID("_BaseColor");
+    private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
+
     public int Damage => damage;
     
     // Cached flag to prevent re-initialization
@@ -99,6 +105,9 @@ public class EnemyProjectile : MonoBehaviour
         
         rb = GetComponent<Rigidbody>();
         
+        // Performance: Initialize PropertyBlock
+        _propBlock = new MaterialPropertyBlock();
+
         // Cache colliders once
         var cols = GetComponentsInChildren<Collider>();
         for (int i = 0; i < cols.Length; i++)
@@ -124,19 +133,32 @@ public class EnemyProjectile : MonoBehaviour
             shrinkTargetInitialScale = shrinkTarget.localScale;
             shrinkTargetRenderer = shrinkTarget.GetComponent<Renderer>();
             
-            if (shrinkTargetRenderer != null && shrinkTargetRenderer.material.HasProperty("_EmissionColor"))
+            if (shrinkTargetRenderer != null && shrinkTargetRenderer.sharedMaterial.HasProperty(_EmissionColorID))
             {
-                shrinkTargetInitialEmission = shrinkTargetRenderer.material.GetColor("_EmissionColor");
+                shrinkTargetInitialEmission = shrinkTargetRenderer.sharedMaterial.GetColor(_EmissionColorID);
             }
         }
         
-        // Cache initial colors
+        // Cache initial colors from SHARED material (do not touch .material)
         initialColors = new Color[renderers.Length];
         for (int i = 0; i < renderers.Length; i++)
         {
-            if (renderers[i] != null && renderers[i].material != null)
+            if (renderers[i] != null && renderers[i].sharedMaterial != null)
             {
-                initialColors[i] = renderers[i].material.color;
+                // Try _Color first, then _BaseColor (URP)
+                if (renderers[i].sharedMaterial.HasProperty(_ColorID))
+                {
+                    initialColors[i] = renderers[i].sharedMaterial.GetColor(_ColorID);
+                }
+                else if (renderers[i].sharedMaterial.HasProperty(_BaseColorID))
+                {
+                    initialColors[i] = renderers[i].sharedMaterial.GetColor(_BaseColorID);
+                }
+                else
+                {
+                    // Fallback if no main color property found
+                    initialColors[i] = Color.white;
+                }
             }
         }
         
@@ -186,18 +208,25 @@ public class EnemyProjectile : MonoBehaviour
         if (shrinkTarget != null)
         {
             shrinkTarget.localScale = shrinkTargetInitialScale;
-            if (shrinkTargetRenderer != null && shrinkTargetRenderer.material.HasProperty("_EmissionColor"))
+            if (shrinkTargetRenderer != null)
             {
-                shrinkTargetRenderer.material.SetColor("_EmissionColor", shrinkTargetInitialEmission);
+                // Reset emission using PropertyBlock
+                shrinkTargetRenderer.GetPropertyBlock(_propBlock);
+                _propBlock.SetColor(_EmissionColorID, shrinkTargetInitialEmission);
+                shrinkTargetRenderer.SetPropertyBlock(_propBlock);
             }
         }
         
-        // Reset renderer colors
+        // Reset renderer colors using PropertyBlock
         for (int i = 0; i < renderers.Length; i++)
         {
-            if (renderers[i] != null && renderers[i].material != null)
+            if (renderers[i] != null)
             {
-                renderers[i].material.color = initialColors[i];
+                renderers[i].GetPropertyBlock(_propBlock);
+                // Reset both _Color and _BaseColor to be safe
+                _propBlock.SetColor(_ColorID, initialColors[i]);
+                _propBlock.SetColor(_BaseColorID, initialColors[i]);
+                renderers[i].SetPropertyBlock(_propBlock);
             }
         }
         
@@ -527,14 +556,20 @@ public class EnemyProjectile : MonoBehaviour
             float easedT = 1f - Mathf.Pow(1f - t, 3f);
             float fadeValue = 1f - easedT;
             
-            // Fade renderer colors/alpha
+            // Fade renderer colors/alpha using PropertyBlock
             for (int i = 0; i < renderers.Length; i++)
             {
-                if (renderers[i] == null || renderers[i].material == null) continue;
+                if (renderers[i] == null) continue;
                 
+                renderers[i].GetPropertyBlock(_propBlock);
                 Color c = initialColors[i];
                 c.a *= fadeValue;
-                renderers[i].material.color = c;
+                
+                // Set both IDs to be safe
+                _propBlock.SetColor(_ColorID, c);
+                _propBlock.SetColor(_BaseColorID, c);
+                
+                renderers[i].SetPropertyBlock(_propBlock);
             }
             
             // Fade trail width (attached trails shrink in place)
@@ -579,10 +614,12 @@ public class EnemyProjectile : MonoBehaviour
                     shrinkTarget.localScale = newScale;
                     
                     // Fade emission to 0 (fireball dying)
-                    if (shrinkTargetRenderer != null && shrinkTargetRenderer.material.HasProperty("_EmissionColor"))
+                    if (shrinkTargetRenderer != null)
                     {
+                        shrinkTargetRenderer.GetPropertyBlock(_propBlock);
                         Color fadedEmission = shrinkTargetInitialEmission * backEase;
-                        shrinkTargetRenderer.material.SetColor("_EmissionColor", fadedEmission);
+                        _propBlock.SetColor(_EmissionColorID, fadedEmission);
+                        shrinkTargetRenderer.SetPropertyBlock(_propBlock);
                     }
                 }
                 else

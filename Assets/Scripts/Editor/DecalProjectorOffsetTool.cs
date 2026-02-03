@@ -27,7 +27,7 @@ public class DecalProjectorOffsetTool : EditorWindow
     
     private Vector2 scrollPosition;
     
-    [MenuItem("Tools/Decal Projector Tool")]
+    [MenuItem("Tools/Path of Ember/Level/Decal Projector")]
     public static void ShowWindow()
     {
         var window = GetWindow<DecalProjectorOffsetTool>("Decal Projector Tool");
