@@ -1,4 +1,5 @@
 using UnityEngine;
+using Audio;
 
 /// <summary>
 /// Manages message panels that appear based on player's Z position.
@@ -14,6 +15,9 @@ public class MessageManager : MonoBehaviour
         
         [Tooltip("The panel to show (should be deactivated initially)")]
         public GameObject messagePanel;
+        
+        [Tooltip("Sound to play when this message is shown (optional)")]
+        public Audio.SoundEvent messageSoundEvent;
         
         [Tooltip("If true, this message has already been shown")]
         [HideInInspector] public bool hasTriggered;
@@ -36,6 +40,15 @@ public class MessageManager : MonoBehaviour
     
     private void Start()
     {
+        // Check if messages are disabled via main menu setting
+        if (PlayerPrefs.GetInt("MessagesEnabled", 1) == 0)
+        {
+            if (debugLog)
+                Debug.Log("[MessageManager] Messages disabled via settings, deactivating");
+            enabled = false;
+            return;
+        }
+        
         // Auto-find player if not assigned
         if (playerTransform == null)
         {
@@ -84,6 +97,10 @@ public class MessageManager : MonoBehaviour
     {
         trigger.hasTriggered = true;
         trigger.messagePanel.SetActive(true);
+        
+        // Play the message sound if assigned
+        if (trigger.messageSoundEvent != null && AudioManager.Instance != null)
+            AudioManager.Instance.Play(trigger.messageSoundEvent);
         
         if (pauseOnMessage)
             Time.timeScale = 0f;

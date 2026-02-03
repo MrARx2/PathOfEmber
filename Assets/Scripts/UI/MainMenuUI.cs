@@ -26,6 +26,15 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField, Tooltip("Sound settings panel object")]
     private GameObject soundSettingsPanel;
 
+    [SerializeField, Tooltip("Button to toggle message manager on/off")]
+    private Button messageToggleButton;
+    
+    [SerializeField, Tooltip("Text shown when messages are ON")]
+    private TextMeshProUGUI messageOnText;
+    
+    [SerializeField, Tooltip("Text shown when messages are OFF")]
+    private TextMeshProUGUI messageOffText;
+
     [Header("Scene Names")]
     [SerializeField, Tooltip("Name of the game scene to load")]
     private string gameSceneName = "GameScene";
@@ -53,6 +62,9 @@ public class MainMenuUI : MonoBehaviour
     [Header("Debug")]
     [SerializeField, Tooltip("Enable debug logging")]
     private bool debugLog = false;
+    
+    // Tracks if the message manager is currently enabled
+    private bool isMessageManagerEnabled = true;
 
     // The currently selected talent (null until first roll)
     private TalentData selectedTalent;
@@ -132,6 +144,15 @@ public class MainMenuUI : MonoBehaviour
         {
             settingsButton.onClick.AddListener(OnSettingsClicked);
         }
+        
+        // Message Toggle Button
+        if (messageToggleButton != null)
+        {
+            // Load saved preference
+            isMessageManagerEnabled = PlayerPrefs.GetInt("MessagesEnabled", 1) == 1;
+            messageToggleButton.onClick.AddListener(OnMessageToggleClicked);
+            UpdateMessageToggleUI();
+        }
     }
     
     private void OnSettingsClicked()
@@ -142,8 +163,30 @@ public class MainMenuUI : MonoBehaviour
         }
         else
         {
-            if (debugLog) Debug.LogError("[MainMenuUI] Sound Settings Panel not assigned!");
+            if (debugLog) Debug.LogWarning("[MainMenuUI] Sound Settings Panel not assigned!");
         }
+    }
+    
+    private void OnMessageToggleClicked()
+    {
+        isMessageManagerEnabled = !isMessageManagerEnabled;
+        
+        // Save preference to persist across scenes and sessions
+        PlayerPrefs.SetInt("MessagesEnabled", isMessageManagerEnabled ? 1 : 0);
+        PlayerPrefs.Save();
+        
+        UpdateMessageToggleUI();
+        
+        if (debugLog) Debug.Log($"[MainMenuUI] MessageManager toggled: {(isMessageManagerEnabled ? "ON" : "OFF")}");
+    }
+    
+    private void UpdateMessageToggleUI()
+    {
+        if (messageOnText != null)
+            messageOnText.gameObject.SetActive(isMessageManagerEnabled);
+        
+        if (messageOffText != null)
+            messageOffText.gameObject.SetActive(!isMessageManagerEnabled);
     }
 
     // Currency logic moved to CurrencyUIController
