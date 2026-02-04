@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.DecalRendererFeature
   m_Active: 1
   m_Settings:
-    technique: 0
-    maxDrawDistance: 1000
+    technique: 1
+    maxDrawDistance: 50
     decalLayers: 0
     dBufferSettings:
       surfaceData: 2
@@ -46,11 +46,11 @@ MonoBehaviour:
     probeSamplingDebugTexture: {fileID: 2800000, guid: 24ec0e140fb444a44ab96ee80844e18e, type: 3}
     probeVolumeBlendStatesCS: {fileID: 7200000, guid: b9a23f869c4fd45f19c5ada54dd82176, type: 3}
   m_RendererFeatures:
-  - {fileID: 7833122117494664109}
   - {fileID: -1622035659505718426}
+  - {fileID: 7833122117494664109}
   - {fileID: 357313939153837485}
   - {fileID: 707424995177610753}
-  m_RendererFeatureMap: ad6b866f10d7b46c662b255e295f7de9ad5d8f70226ff504013ecbf64847d109
+  m_RendererFeatureMap: 662b255e295f7de9ad6b866f10d7b46cad5d8f70226ff504013ecbf64847d109
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
