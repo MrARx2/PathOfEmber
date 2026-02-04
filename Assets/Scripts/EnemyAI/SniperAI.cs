@@ -86,14 +86,21 @@ namespace EnemyAI
             }
         }
 
-        protected override void Start()
+        protected override void OnEnable()
         {
-            base.Start();
+            base.OnEnable();
+            
             if (projectileSpawnPoint == null)
                 projectileSpawnPoint = transform;
             
-            // Setup aim line
+            // Setup aim line (or re-enable it reset)
             SetupAimLine();
+            
+            // Reset state
+            moveDirection = Vector3.zero;
+            waitingForAnimEvent = false;
+            isShooting = false;
+            if (shootCoroutine != null) StopCoroutine(shootCoroutine);
             
             // Start behavior
             SwitchState(SniperState.Idle);
@@ -102,6 +109,7 @@ namespace EnemyAI
         private void SetupAimLine()
         {
             if (!showAimLine) return;
+            if (aimLine != null) return; // Prevent duplicates on respawn
             
             // Create LineRenderer for aim indicator
             GameObject lineObj = new GameObject("AimLine");

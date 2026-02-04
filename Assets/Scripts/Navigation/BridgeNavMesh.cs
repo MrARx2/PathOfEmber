@@ -14,9 +14,9 @@ public class BridgeNavMesh : MonoBehaviour
     
     private NavMeshSurface surface;
     
-    private void Start()
+    private void OnEnable()
     {
-        surface = GetComponent<NavMeshSurface>();
+        if (surface == null) surface = GetComponent<NavMeshSurface>();
         
         // Auto-calculate bounds from all child colliders
         Bounds bounds = CalculateBoundsFromColliders();
@@ -41,7 +41,7 @@ public class BridgeNavMesh : MonoBehaviour
             Debug.Log($"[BridgeNavMesh] Volume set to: center={surface.center}, size={surface.size}");
         }
         
-        // Build NavMesh
+        // Build NavMesh (Force update when retrieved from pool)
         surface.BuildNavMesh();
         
         if (showDebugLogs)
@@ -60,6 +60,15 @@ public class BridgeNavMesh : MonoBehaviour
             {
                 Debug.LogError($"[BridgeNavMesh] FAILED to bake!");
             }
+        }
+    }
+
+    private void OnDisable()
+    {
+        // Clean up NavMesh data when returned to pool
+        if (surface != null && surface.navMeshData != null)
+        {
+            surface.RemoveData();
         }
     }
     
@@ -92,11 +101,5 @@ public class BridgeNavMesh : MonoBehaviour
         return bounds;
     }
     
-    private void OnDestroy()
-    {
-        if (surface != null && surface.navMeshData != null)
-        {
-            surface.RemoveData();
-        }
-    }
+
 }

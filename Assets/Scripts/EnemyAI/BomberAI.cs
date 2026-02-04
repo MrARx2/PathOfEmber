@@ -116,7 +116,12 @@ namespace EnemyAI
             }
             else
             {
-                ChasePlayer();
+                // SMART UPDATE: Check for walls before chasing
+                // If we are about to hit a wall, steer away first
+                if (!AvoidObstacles())
+                {
+                    ChasePlayer();
+                }
             }
 
             UpdateAnimator();
@@ -263,6 +268,71 @@ namespace EnemyAI
             Gizmos.DrawWireSphere(transform.position, detonationRange);
             Gizmos.color = new Color(1f, 0.5f, 0f, 0.5f);
             Gizmos.DrawWireSphere(transform.position, explosionRadius);
+            
+            // Draw whiskers
+            Gizmos.color = Color.yellow;
+            Vector3 origin = transform.position + Vector3.up * 0.5f;
+            Vector3 forward = transform.forward;
+            Vector3 right = transform.right;
+            
+            Gizmos.DrawLine(origin, origin + (forward + right * 0.5f).normalized * 1.5f);
+            Gizmos.DrawLine(origin, origin + (forward - right * 0.5f).normalized * 1.5f);
+        }
+        
+        /// <summary>
+        /// Proactive wall detection. Returns true if an obstacle is detected and avoidance is active.
+        /// </summary>
+        private bool AvoidObstacles()
+        {
+            if (agent == null) return false;
+            
+            // Only check occasionally to save CPU, unless we are already avoiding
+            if ((Time.frameCount + GetInstanceID()) % 5 != 0) return false;
+
+            // Whiskers: Cast rays forward-left and forward-right
+            // Slightly wider than agent radius to catch corners
+            Vector3 origin = transform.position + Vector3.up * 0.5f;
+            float detectionDist = 1.5f; // Look ahead
+            
+            bool hitLeft = Physics.Raycast(origin, (transform.forward - transform.right * 0.5f).normalized, out RaycastHit hitL, detectionDist, obstacleLayerMask);
+            bool hitRight = Physics.Raycast(origin, (transform.forward + transform.right * 0.5f).normalized, out RaycastHit hitR, detectionDist, obstacleLayerMask);
+            
+            // Validate hits (ignore player, ignore ground)
+            if (hitLeft && (hitL.collider.CompareTag("Player") || hitL.collider.CompareTag("Enemy"))) hitLeft = false;
+            if (hitRight && (hitR.collider.CompareTag("Player") || hitR.collider.CompareTag("Enemy"))) hitRight = false;
+            
+            if (hitLeft || hitRight)
+            {
+                // Wall detected!
+                Vector3 avoidanceDir = Vector3.zero;
+                
+                if (hitLeft && hitRight)
+                {
+                    // Hit both sides? Wall likely straight ahead. Turn around or pick random side.
+                    avoidanceDir = -transform.forward; 
+                }
+                else if (hitLeft)
+                {
+                    // Hit left, steer right
+                    avoidanceDir = transform.right;
+                }
+                else if (hitRight)
+                {
+                    // Hit right, steer left
+                    avoidanceDir = -transform.right;
+                }
+                
+                // Project avoidance direction onto a valid NavMesh point
+                Vector3 targetPos = transform.position + avoidanceDir * 2.0f;
+                UnityEngine.AI.NavMeshHit navHit;
+                if (UnityEngine.AI.NavMesh.SamplePosition(targetPos, out navHit, 2.0f, UnityEngine.AI.NavMesh.AllAreas))
+                {
+                    agent.SetDestination(navHit.position);
+                    return true; // We are handling movement, Base logic should skip
+                }
+            }
+            
+            return false;
         }
     }
 }

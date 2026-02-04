@@ -475,7 +475,10 @@ public class SpawnArea : MonoBehaviour
         // Apply configurable rotation offset
         Quaternion indicatorRotation = Quaternion.Euler(indicatorRotationOffset);
         
-        GameObject indicator = Instantiate(indicatorPrefab, indicatorPos, indicatorRotation);
+        GameObject indicator = ObjectPoolManager.Instance != null 
+            ? ObjectPoolManager.Instance.Get(indicatorPrefab, indicatorPos, indicatorRotation)
+            : Instantiate(indicatorPrefab, indicatorPos, indicatorRotation);
+            
         indicator.name = "SpawnIndicator";
         activeIndicators.Add(indicator);
     }
@@ -488,7 +491,12 @@ public class SpawnArea : MonoBehaviour
         foreach (var indicator in activeIndicators)
         {
             if (indicator != null)
-                Destroy(indicator);
+            {
+                if (ObjectPoolManager.Instance != null)
+                    ObjectPoolManager.Instance.Return(indicator);
+                else
+                    Destroy(indicator);
+            }
         }
         activeIndicators.Clear();
     }
@@ -503,17 +511,42 @@ public class SpawnArea : MonoBehaviour
         {
             Vector3 vfxPos = position + spawnVFXPositionOffset;
             Quaternion vfxRotation = Quaternion.Euler(spawnVFXRotationOffset);
-            GameObject vfx = Instantiate(spawnVFXPrefab, vfxPos, vfxRotation);
-            Destroy(vfx, 3f); // Auto-cleanup VFX
+            
+            GameObject vfx = ObjectPoolManager.Instance != null 
+                ? ObjectPoolManager.Instance.Get(spawnVFXPrefab, vfxPos, vfxRotation)
+                : Instantiate(spawnVFXPrefab, vfxPos, vfxRotation);
+                
+            // Auto-cleanup VFX
+            if (ObjectPoolManager.Instance != null)
+            {
+                StartCoroutine(ReturnVFXAfterDelay(vfx, 3f));
+            }
+            else
+            {
+                Destroy(vfx, 3f); 
+            }
         }
         
         // Play spawn sound
         if (spawnSound != null && AudioManager.Instance != null)
             AudioManager.Instance.PlayAtPosition(spawnSound, position);
         
-        GameObject enemy = Instantiate(prefab, position, rotation);
+        GameObject enemy = ObjectPoolManager.Instance != null
+            ? ObjectPoolManager.Instance.Get(prefab, position, rotation)
+            : Instantiate(prefab, position, rotation);
+            
         enemy.name = $"{prefab.name}_{index}";
         spawnedEnemies.Add(enemy);
+    }
+    
+    // Helper for returning VFX to pool
+    private IEnumerator ReturnVFXAfterDelay(GameObject vfx, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (vfx != null && ObjectPoolManager.Instance != null)
+        {
+            ObjectPoolManager.Instance.Return(vfx);
+        }
     }
 
     /// <summary>
@@ -624,7 +657,12 @@ public class SpawnArea : MonoBehaviour
         foreach (var enemy in spawnedEnemies)
         {
             if (enemy != null)
-                Destroy(enemy);
+            {
+                if (ObjectPoolManager.Instance != null)
+                    ObjectPoolManager.Instance.Return(enemy);
+                else
+                    Destroy(enemy);
+            }
         }
         spawnedEnemies.Clear();
         hasSpawned = false;

@@ -145,11 +145,11 @@ namespace EnemyAI
         
         // Performance: Frame throttling for expensive operations
         private int _frameOffset; // Stagger enemies to spread CPU load
-        private const int LOS_CHECK_INTERVAL = 5; // Check line of sight every N frames
+        private const int LOS_CHECK_INTERVAL = 15; // Check line of sight every 15 frames (approx 4 timer per sec at 60fps)
         private bool _lastLineOfSightBlocked = false; // Cache the result between checks
         
         // Performance: Throttle SetDestination calls (expensive NavMesh pathfinding)
-        private const int DESTINATION_UPDATE_INTERVAL = 10; // Update destination every N frames
+        private const int DESTINATION_UPDATE_INTERVAL = 20; // Update destination every 20 frames
         private Vector3 _lastDestination;
         private bool _hasDestination = false;
         
@@ -191,9 +191,9 @@ namespace EnemyAI
             _frameOffset = GetInstanceID() % LOS_CHECK_INTERVAL;
         }
 
-        protected virtual void Start()
+        protected virtual void OnEnable()
         {
-            // Auto-find player
+            // Auto-find player (Retrying every enable ensures we find player if they spawned late or scene reloaded)
             if (target == null)
             {
                 GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
@@ -201,11 +201,18 @@ namespace EnemyAI
                     target = playerObj.transform;
             }
 
-            if (target == null)
+            if (target == null && debugLog)
                 Debug.LogError($"[{GetType().Name}] No player found! Make sure player has 'Player' tag.");
             
             // Initialize ambient sound timer with random offset so all enemies don't sound at once
             ambientSoundTimer = Random.Range(0f, ambientSoundMaxInterval);
+            
+            // Reset common state
+            attackCooldown = 0f;
+            contactDamageCooldown = 0f;
+            isAttacking = false;
+            _hasDestination = false;
+            hasAlternateWaypoint = false;
         }
 
         protected virtual void Update()
@@ -224,8 +231,9 @@ namespace EnemyAI
                 return;
             }
 
-            // Calculate distance to player using visual position
-            float distanceToPlayer = Vector3.Distance(VisualPosition, target.position);
+            // Calculate squared distance to player using visual position (faster than Distance)
+            float sqrDistanceToPlayer = (VisualPosition - target.position).sqrMagnitude;
+            float distanceToPlayer = Mathf.Sqrt(sqrDistanceToPlayer); // Only calculate sqrt if needed for specific logic (like debug logs or linear interpolation)
 
             // Attack cooldown
             if (attackCooldown > 0)
@@ -262,7 +270,8 @@ namespace EnemyAI
             }
 
             // MAIN LOGIC: Simple and clear
-            if (distanceToPlayer <= attackRange)
+            // Use sqrMagnitude to avoid square root
+            if (sqrDistanceToPlayer <= attackRange * attackRange)
             {
                 // Close enough - ATTACK
                 StopMovement();

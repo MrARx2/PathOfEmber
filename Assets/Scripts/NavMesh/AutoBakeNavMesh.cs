@@ -13,7 +13,7 @@ public class AutoBakeNavMesh : MonoBehaviour
     
     private NavMeshSurface navMeshSurface;
 
-    void Start()
+    void OnEnable()
     {
         navMeshSurface = GetComponent<NavMeshSurface>();
         
@@ -25,6 +25,18 @@ public class AutoBakeNavMesh : MonoBehaviour
         {
             Debug.LogWarning($"[AutoBakeNavMesh] No NavMeshSurface component found on {gameObject.name}");
         }
+    }
+
+    void OnDisable()
+    {
+        // Cancel any pending bake if disabled early
+        StopAllCoroutines();
+        
+        // Optional: clear data to save memory when pooled?
+        // navMeshSurface.RemoveData(); 
+        // Keeping data might be better if we return to the exact same spot? 
+        // But for random chunks, we always move. Safer to clean or just overwrite.
+        // BuildNavMesh overwrites, so it's fine.
     }
     
     private IEnumerator DelayedBake()

@@ -192,20 +192,20 @@ public class ChunkManager : MonoBehaviour
 
         // --- PARANOID INSTANTIATION ---
         
-        // 1. Instantiate
-        GameObject chunk = Instantiate(prefabToUse, position, prefabToUse.transform.rotation);
+        // 1. Get from Pool or Instantiate
+        GameObject chunk;
+        if (ObjectPoolManager.Instance != null)
+        {
+            chunk = ObjectPoolManager.Instance.Get(prefabToUse, position, prefabToUse.transform.rotation);
+        }
+        else
+        {
+            chunk = Instantiate(prefabToUse, position, prefabToUse.transform.rotation);
+        }
         
         // 2. Validate Instance
         if (chunk != null)
         {
-            // Debug check (requested/suggested to verify state)
-            if (!chunk.scene.IsValid())
-            {
-                Debug.LogError($"[ChunkManager] CRITICAL: Instantiate returned a Prefab Asset for {chunk.name}! (Scene: {chunk.scene.name}). Force-Fixing...");
-                // Force create a new instance from this 'bad' reference
-                chunk = Instantiate(chunk, position, prefabToUse.transform.rotation);
-            }
-
             // 3. Safe Parenting
             try 
             {
@@ -213,7 +213,7 @@ public class ChunkManager : MonoBehaviour
             }
             catch (System.Exception e)
             {
-                 Debug.LogError($"[ChunkManager] Failed to parent chunk {chunk.name}: {e.Message}. Is ChunkManager in a Prefab?");
+                 Debug.LogError($"[ChunkManager] Failed to parent chunk {chunk.name}: {e.Message}");
             }
 
             chunk.name = $"Chunk_{chunkIndex}";
@@ -229,10 +229,17 @@ public class ChunkManager : MonoBehaviour
     {
         if (activeChunks.TryGetValue(chunkIndex, out GameObject chunk))
         {
-            // Direct Destroy for chunk system (bypassing pool)
+            // Direct Return to pool (or Destroy)
             if (chunk != null)
             {
-                Destroy(chunk);
+                if (ObjectPoolManager.Instance != null)
+                {
+                    ObjectPoolManager.Instance.Return(chunk);
+                }
+                else
+                {
+                    Destroy(chunk);
+                }
             }
             activeChunks.Remove(chunkIndex);
         }

@@ -322,7 +322,13 @@ public class AOEEffectZone : MonoBehaviour
         // === CLEANUP ===
         if (isSpawnedInstance)
         {
-            Destroy(gameObject);
+        if (isSpawnedInstance)
+        {
+            if (ObjectPoolManager.Instance != null)
+                ObjectPoolManager.Instance.Return(gameObject);
+            else
+                Destroy(gameObject);
+        }
         }
         else
         {

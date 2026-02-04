@@ -420,7 +420,10 @@ public class ArrowProjectile : MonoBehaviour
     {
         if (aoeEffectPrefab == null) return;
         
-        GameObject aoe = Instantiate(aoeEffectPrefab, position, Quaternion.identity);
+        GameObject aoe = ObjectPoolManager.Instance != null 
+            ? ObjectPoolManager.Instance.Get(aoeEffectPrefab, position, Quaternion.identity)
+            : Instantiate(aoeEffectPrefab, position, Quaternion.identity);
+            
         AOEEffectZone zone = aoe.GetComponent<AOEEffectZone>();
         if (zone != null)
         {
@@ -485,8 +488,23 @@ public class ArrowProjectile : MonoBehaviour
     {
         if (wallHitVFXPrefab != null)
         {
-            GameObject vfx = Instantiate(wallHitVFXPrefab, hitPoint, Quaternion.identity);
-            Destroy(vfx, wallHitVFXDuration);
+            GameObject vfx = ObjectPoolManager.Instance != null 
+                ? ObjectPoolManager.Instance.Get(wallHitVFXPrefab, hitPoint, Quaternion.identity)
+                : Instantiate(wallHitVFXPrefab, hitPoint, Quaternion.identity);
+
+            if (ObjectPoolManager.Instance != null)
+                StartCoroutine(ReturnVFXAfterDelay(vfx, wallHitVFXDuration));
+            else
+                Destroy(vfx, wallHitVFXDuration);
+        }
+    }
+    
+    private IEnumerator ReturnVFXAfterDelay(GameObject vfx, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (vfx != null && ObjectPoolManager.Instance != null)
+        {
+            ObjectPoolManager.Instance.Return(vfx);
         }
     }
 

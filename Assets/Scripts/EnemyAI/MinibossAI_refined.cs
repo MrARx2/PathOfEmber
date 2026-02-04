@@ -121,8 +121,8 @@ namespace EnemyAI
         
         // === PERFORMANCE CACHES ===
         private int _frameOffset;
-        private const int LOS_CHECK_INTERVAL = 5;
-        private const int WALL_CHECK_INTERVAL = 15;
+        private const int LOS_CHECK_INTERVAL = 10;
+        private const int WALL_CHECK_INTERVAL = 30;
         private bool _cachedHasLOS = false;
         
         // Wall distance cache (4 cardinal directions)
@@ -446,7 +446,11 @@ namespace EnemyAI
             if (rageShieldVFX != null)
             {
                 Vector3 shieldPos = VisualPosition + Vector3.up * 1f;
-                activeShieldVFX = Instantiate(rageShieldVFX, shieldPos, Quaternion.identity, transform);
+                activeShieldVFX = ObjectPoolManager.Instance != null
+                    ? ObjectPoolManager.Instance.Get(rageShieldVFX, shieldPos, Quaternion.identity)
+                    : Instantiate(rageShieldVFX, shieldPos, Quaternion.identity);
+                    
+                activeShieldVFX.transform.SetParent(transform);
             }
             
             // Play charge sound
@@ -471,7 +475,15 @@ namespace EnemyAI
             // Destroy shield VFX
             if (activeShieldVFX != null)
             {
-                Destroy(activeShieldVFX);
+                if (ObjectPoolManager.Instance != null)
+                {
+                    activeShieldVFX.transform.SetParent(null); // Detach before returning
+                    ObjectPoolManager.Instance.Return(activeShieldVFX);
+                }
+                else
+                {
+                    Destroy(activeShieldVFX);
+                }
                 activeShieldVFX = null;
             }
             

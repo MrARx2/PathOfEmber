@@ -48,6 +48,12 @@ public class DeathPopupController : MonoBehaviour
         // Restore time before reload
         Time.timeScale = 1f;
         
+        // Clear spawn registry so enemies can spawn again
+        if (SpawnAreaRegistry.Instance != null)
+        {
+            SpawnAreaRegistry.Instance.ClearAll();
+        }
+
         // Reload current scene
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }

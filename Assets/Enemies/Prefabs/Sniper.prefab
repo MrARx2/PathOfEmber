@@ -43,7 +43,7 @@ NavMeshAgent:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 436750832329653349}
-  m_Enabled: 1
+  m_Enabled: 0
   m_AgentTypeID: 0
   m_Radius: 0.15
   m_Speed: 0.4
@@ -170,8 +170,6 @@ MonoBehaviour:
   knockbackCollisionRadius: 0.1
   hitSound: {fileID: 11400000, guid: 9685d8c6e08a5c54b98bc307e2f8e3a4, type: 2}
   deathSound: {fileID: 11400000, guid: c9d292d5535db9e4a88acc15b69a2900, type: 2}
-  freezeSound: {fileID: 11400000, guid: 44a2a3315908cd04099eb9c96d4c8ee5, type: 2}
-  venomSound: {fileID: 11400000, guid: 7a73f281474fc25498036f1fef085549, type: 2}
 --- !u!114 &6833760622923798152
 MonoBehaviour:
   m_ObjectHideFlags: 0

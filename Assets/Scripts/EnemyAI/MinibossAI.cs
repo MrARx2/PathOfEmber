@@ -184,9 +184,9 @@ namespace EnemyAI
             _losFrameOffset = Random.Range(0, LOS_CHECK_INTERVAL);
         }
         
-        protected override void Start()
+        protected override void OnEnable()
         {
-            base.Start();
+            base.OnEnable();
             
             if (projectileSpawnPoint == null)
                 projectileSpawnPoint = transform;
@@ -197,7 +197,7 @@ namespace EnemyAI
             fireballCooldownTimer = fireballCooldown * 0.5f;
             meteorCooldownTimer = meteorCooldown * 0.5f;
             
-            // Cache player's IDamageable to avoid GetComponent every frame
+            // Cache player's IDamageable to avoidGetComponent every frame
             if (target != null && !_playerDamageableCached)
             {
                 _cachedPlayerDamageable = target.GetComponent<IDamageable>();

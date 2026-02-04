@@ -55,6 +55,14 @@ namespace Boss
             {
                 healthPart = GetComponentInParent<TitanHealth>();
             }
+
+            // FORCE KINEMATIC: essential for colliders attached to animated bones!
+            Rigidbody rb = GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.isKinematic = true;
+                rb.useGravity = false;
+            }
         }
         
         private void LateUpdate()

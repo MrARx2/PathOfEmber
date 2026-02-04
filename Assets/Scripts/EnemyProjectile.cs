@@ -407,8 +407,14 @@ public class EnemyProjectile : MonoBehaviour
                 // No more bounces - spawn explosion VFX and destroy
                 if (wallHitVFXPrefab != null)
                 {
-                    GameObject vfx = Instantiate(wallHitVFXPrefab, hit.point, Quaternion.identity);
-                    Destroy(vfx, wallHitVFXDuration);
+                    GameObject vfx = ObjectPoolManager.Instance != null 
+                        ? ObjectPoolManager.Instance.Get(wallHitVFXPrefab, hit.point, Quaternion.identity)
+                        : Instantiate(wallHitVFXPrefab, hit.point, Quaternion.identity);
+                        
+                    if (ObjectPoolManager.Instance != null)
+                        StartCoroutine(ReturnVFXAfterDelay(vfx, wallHitVFXDuration));
+                    else
+                        Destroy(vfx, wallHitVFXDuration);
                 }
                 
                 // Apply Splash Damage if enabled
@@ -438,8 +444,14 @@ public class EnemyProjectile : MonoBehaviour
         // visual feedback
         if (splashVFXPrefab != null)
         {
-            GameObject vfx = Instantiate(splashVFXPrefab, center, Quaternion.identity);
-            Destroy(vfx, 2f);
+            GameObject vfx = ObjectPoolManager.Instance != null 
+                ? ObjectPoolManager.Instance.Get(splashVFXPrefab, center, Quaternion.identity)
+                : Instantiate(splashVFXPrefab, center, Quaternion.identity);
+
+            if (ObjectPoolManager.Instance != null)
+                StartCoroutine(ReturnVFXAfterDelay(vfx, 2f));
+            else
+                Destroy(vfx, 2f);
         }
         
         // logic
@@ -522,8 +534,14 @@ public class EnemyProjectile : MonoBehaviour
         {
             if (hitVFXPrefab != null)
             {
-                GameObject vfx = Instantiate(hitVFXPrefab, transform.position, Quaternion.identity);
-                Destroy(vfx, hitVFXDuration);
+                GameObject vfx = ObjectPoolManager.Instance != null 
+                    ? ObjectPoolManager.Instance.Get(hitVFXPrefab, transform.position, Quaternion.identity)
+                    : Instantiate(hitVFXPrefab, transform.position, Quaternion.identity);
+
+                if (ObjectPoolManager.Instance != null)
+                    StartCoroutine(ReturnVFXAfterDelay(vfx, hitVFXDuration));
+                else
+                    Destroy(vfx, hitVFXDuration);
             }
             StartFadeOut();
         }
@@ -651,6 +669,15 @@ public class EnemyProjectile : MonoBehaviour
         else
         {
             Destroy(gameObject);
+        }
+    }
+    
+    private IEnumerator ReturnVFXAfterDelay(GameObject vfx, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (vfx != null && ObjectPoolManager.Instance != null)
+        {
+            ObjectPoolManager.Instance.Return(vfx);
         }
     }
 }
