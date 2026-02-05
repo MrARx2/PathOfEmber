@@ -15,6 +15,7 @@ public class SplineWallGeneratorEditor : Editor
     private SerializedProperty isTriggerProp;
     private SerializedProperty generateMeshProp;
     private SerializedProperty wallMaterialProp;
+    private SerializedProperty generateOnStartProp;
     private SerializedProperty autoRegenerateProp;
     
     private void OnEnable()
@@ -27,6 +28,7 @@ public class SplineWallGeneratorEditor : Editor
         isTriggerProp = serializedObject.FindProperty("isTrigger");
         generateMeshProp = serializedObject.FindProperty("generateMesh");
         wallMaterialProp = serializedObject.FindProperty("wallMaterial");
+        generateOnStartProp = serializedObject.FindProperty("generateOnStart");
         autoRegenerateProp = serializedObject.FindProperty("autoRegenerate");
     }
     
@@ -99,7 +101,8 @@ public class SplineWallGeneratorEditor : Editor
         
         // Generation Settings
         EditorGUILayout.LabelField("Generation", EditorStyles.boldLabel);
-        EditorGUILayout.PropertyField(autoRegenerateProp, new GUIContent("Auto Regenerate", "Automatically regenerate when spline changes"));
+        EditorGUILayout.PropertyField(generateOnStartProp, new GUIContent("Generate On Start", "Auto-generate wall at runtime (for prefabs/chunks)"));
+        EditorGUILayout.PropertyField(autoRegenerateProp, new GUIContent("Auto Regenerate", "Automatically regenerate when spline changes (Editor only)"));
         
         EditorGUILayout.Space();
         
@@ -123,6 +126,21 @@ public class SplineWallGeneratorEditor : Editor
         GUI.backgroundColor = Color.white;
         EditorGUILayout.EndHorizontal();
         
+        EditorGUILayout.Space(5);
+        
+        // Debug: Copy current values as defaults
+        GUI.backgroundColor = new Color(0.6f, 0.6f, 0.9f);
+        if (GUILayout.Button("📋 Copy Current Values As Defaults", GUILayout.Height(25)))
+        {
+            string defaultCode = GenerateDefaultsCode();
+            GUIUtility.systemCopyBuffer = defaultCode;
+            Debug.Log($"[SplineWallGenerator] Current values copied to clipboard:\n{defaultCode}");
+            EditorUtility.DisplayDialog("Defaults Copied", 
+                "Current values have been copied to clipboard.\n\nPaste them into SplineWallGenerator.cs to replace the default field values.", 
+                "OK");
+        }
+        GUI.backgroundColor = Color.white;
+        
         EditorGUILayout.Space();
         
         // Validate tag exists
@@ -143,5 +161,24 @@ public class SplineWallGeneratorEditor : Editor
     {
         string[] tags = UnityEditorInternal.InternalEditorUtility.tags;
         return System.Array.Exists(tags, t => t == tag);
+    }
+    
+    private string GenerateDefaultsCode()
+    {
+        string materialName = wallMaterialProp.objectReferenceValue != null 
+            ? wallMaterialProp.objectReferenceValue.name 
+            : "null";
+        
+        return $@"// Copy these values into SplineWallGenerator.cs field declarations:
+private float wallHeight = {wallHeightProp.floatValue}f;
+private float wallThickness = {wallThicknessProp.floatValue}f;
+private int segments = {segmentsProp.intValue};
+private string colliderTag = ""{colliderTagProp.stringValue}"";
+private int colliderLayer = {colliderLayerProp.intValue};
+private bool isTrigger = {isTriggerProp.boolValue.ToString().ToLower()};
+private bool generateMesh = {generateMeshProp.boolValue.ToString().ToLower()};
+// Material: {materialName} (assign manually in inspector)
+private bool generateOnStart = {generateOnStartProp.boolValue.ToString().ToLower()};
+private bool autoRegenerate = {autoRegenerateProp.boolValue.ToString().ToLower()};";
     }
 }
