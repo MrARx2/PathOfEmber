@@ -31,8 +31,8 @@ public class GameSessionManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
         
-        // Unlock high frame rate for mobile (120 FPS for high refresh rate displays)
-        Application.targetFrameRate = 120;
+        // Unlock frame rate for mobile (60 FPS - balanced for heat/battery)
+        Application.targetFrameRate = 60;
         QualitySettings.vSyncCount = 0;
         
         // Subscribe to scene events

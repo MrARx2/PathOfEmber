@@ -240,11 +240,26 @@ public class PlayerShooting : MonoBehaviour
 
         if (currentTarget != null)
         {
-            float distSqr = (currentTarget.position - transform.position).sqrMagnitude;
+            // Get the closest point on the target's collider for accurate distance checking
+            // This allows targeting large colliders even if their center is far away
+            Vector3 targetPoint = currentTarget.position;
+            Collider targetCollider = currentTarget.GetComponent<Collider>();
+            if (targetCollider != null)
+            {
+                targetPoint = targetCollider.ClosestPoint(transform.position);
+            }
+            
+            // Use XZ distance only (ignore Y) - consistent with EnemyRegistry.GetNearestEnemy
+            // This ensures targeting works even when enemies move vertically (e.g., Titan animations)
+            Vector3 diff = targetPoint - transform.position;
+            diff.y = 0f;
+            float distSqr = diff.sqrMagnitude;
             hasTargetInRange = distSqr <= attackRange * attackRange;
+            
             if (canShoot && hasTargetInRange && fireCooldown <= 0f && !awaitingRelease)
             {
-                preparedTargetPos = currentTarget.position;
+                // Use the closest point as the target position for aiming
+                preparedTargetPos = targetPoint;
                 StartSynchronizedShot();
             }
         }

@@ -113,42 +113,36 @@ namespace Boss
         
         private void FindDeathPanel()
         {
-            // If already assigned, verify it's valid
+            // If already assigned via Inspector, verify it's valid
             if (deathPanel != null)
             {
-                Debug.Log($"[TitanBossController] Death panel already assigned: {deathPanel.name}, active: {deathPanel.activeSelf}");
+                if (debugLog) Debug.Log($"[TitanBossController] Death panel already assigned: {deathPanel.name}");
                 return;
             }
             
-            Debug.Log("[TitanBossController] Searching for death panel...");
-            
-            // Method 1: Find by TitanDeathPanelController component (includes inactive)
-            var allPanels = Resources.FindObjectsOfTypeAll<TitanDeathPanelController>();
-            Debug.Log($"[TitanBossController] Found {allPanels.Length} TitanDeathPanelController(s)");
-            
-            foreach (var panel in allPanels)
+            // Try to find by component (much cheaper than FindObjectsOfTypeAll)
+            // Note: This only finds ACTIVE objects, but that's acceptable for initial setup
+            var panelController = FindFirstObjectByType<TitanDeathPanelController>(FindObjectsInactive.Include);
+            if (panelController != null)
             {
-                if (panel != null && panel.gameObject.scene.isLoaded)
+                deathPanel = panelController.gameObject;
+                if (debugLog) Debug.Log($"[TitanBossController] Auto-found death panel: {deathPanel.name}");
+                return;
+            }
+            
+            // Fallback: search by name in scene roots (still cheaper than FindObjectsOfTypeAll<GameObject>)
+            foreach (var rootObj in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
+            {
+                var found = rootObj.GetComponentInChildren<TitanDeathPanelController>(includeInactive: true);
+                if (found != null)
                 {
-                    deathPanel = panel.gameObject;
-                    Debug.Log($"[TitanBossController] Auto-found death panel by component: {deathPanel.name}");
+                    deathPanel = found.gameObject;
+                    if (debugLog) Debug.Log($"[TitanBossController] Found death panel in scene roots: {deathPanel.name}");
                     return;
                 }
             }
             
-            // Method 2: Search by name
-            var allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
-            foreach (var obj in allObjects)
-            {
-                if (obj.name.Contains("TitanDeathPanel") && obj.scene.isLoaded)
-                {
-                    deathPanel = obj;
-                    Debug.Log($"[TitanBossController] Auto-found death panel by name: {deathPanel.name}");
-                    return;
-                }
-            }
-            
-            Debug.LogError("[TitanBossController] Could NOT find TitanDeathPanel in scene!");
+            Debug.LogWarning("[TitanBossController] Death panel not found. Please assign via Inspector.");
         }
 
         // State
@@ -647,16 +641,27 @@ namespace Boss
         {
             if (isRaging)
             {
-                // Disable hands during rage - core remains as-is (player can target it if in range)
+                // Disable hands during rage - player cannot target them
                 if (rightHandSocket != null) rightHandSocket.SetTargetable(false);
                 if (leftHandSocket != null) leftHandSocket.SetTargetable(false);
-                // Core stays targetable (don't change it)
+                
+                // EXPLICITLY enable core - ensure player can attack it during rage
+                if (coreSocket != null) coreSocket.SetTargetable(true);
+                
+                if (debugLog) Debug.Log("[TitanBossController] Rage targeting: Hands OFF, Core ON");
             }
             else
             {
-                // Restore hand targeting after rage
-                if (rightHandSocket != null) rightHandSocket.SetTargetable(true);
-                if (leftHandSocket != null) leftHandSocket.SetTargetable(true);
+                // Restore hand targeting after rage (if hands are not destroyed)
+                if (rightHandSocket != null && rightHandHealth != null && !rightHandHealth.IsDestroyed)
+                    rightHandSocket.SetTargetable(true);
+                if (leftHandSocket != null && leftHandHealth != null && !leftHandHealth.IsDestroyed)
+                    leftHandSocket.SetTargetable(true);
+                    
+                // Core remains targetable
+                if (coreSocket != null) coreSocket.SetTargetable(true);
+                
+                if (debugLog) Debug.Log("[TitanBossController] Rage targeting ended: Restored targeting");
             }
         }
         

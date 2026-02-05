@@ -151,8 +151,9 @@ namespace Boss
 
         private void Start()
         {
-            // Register with EnemyRegistry for player targeting
-            EnemyRegistry.Register(transform);
+            // NOTE: Do NOT register with EnemyRegistry here!
+            // Only TitanTargetSocket should register for targeting.
+            // TitanHealth provides health/damage, TitanTargetSocket provides targeting.
             
             // Register with HealthBarManager for UI health bar
             if (HealthBarManager.Instance != null)
@@ -166,7 +167,7 @@ namespace Boss
 
         private void OnDisable()
         {
-            EnemyRegistry.Unregister(transform);
+            // NOTE: EnemyRegistry is managed by TitanTargetSocket, not here
             
             // Clean up health bar
             if (HealthBarManager.Instance != null)
@@ -511,8 +512,8 @@ namespace Boss
         {
             canRegenerate = false;
             
-            // Unregister from targeting
-            EnemyRegistry.Unregister(transform);
+            // NOTE: EnemyRegistry is managed by TitanTargetSocket, not here
+            
             if (HealthBarManager.Instance != null)
             {
                 HealthBarManager.Instance.Unregister(this);

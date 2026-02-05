@@ -70,6 +70,7 @@ public class ObjectPoolManager : MonoBehaviour
 
     /// <summary>
     /// Returns an object to its pool. The object is deactivated automatically.
+    /// Safe to call multiple times - will silently ignore already-released objects.
     /// </summary>
     public void Return(GameObject instance)
     {
@@ -78,17 +79,20 @@ public class ObjectPoolManager : MonoBehaviour
         // Find the original prefab
         if (!_instanceToPrefab.TryGetValue(instance, out var prefab))
         {
-            // Not from our pool - just destroy it normally
-            Destroy(instance);
+            // Not from our pool (or already returned) - just destroy it if still active
+            if (instance.activeInHierarchy)
+                Destroy(instance);
             return;
         }
+
+        // Remove from tracking FIRST to prevent double-release attempts
+        _instanceToPrefab.Remove(instance);
 
         // Get the pool
         if (!_pools.TryGetValue(prefab, out var pool))
         {
             // Pool was somehow removed - destroy
             Destroy(instance);
-            _instanceToPrefab.Remove(instance);
             return;
         }
 

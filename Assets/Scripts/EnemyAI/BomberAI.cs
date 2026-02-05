@@ -83,7 +83,17 @@ namespace EnemyAI
         
         private void OnDestroy()
         {
-            // Clean up warning indicator if bomber dies before explosion
+            CleanupWarningDecal();
+        }
+        
+        private void OnDisable()
+        {
+            // Clean up when returned to pool (pooled objects disable, not destroy)
+            CleanupWarningDecal();
+        }
+        
+        private void CleanupWarningDecal()
+        {
             if (warningInstance != null)
             {
                 Destroy(warningInstance);
@@ -98,6 +108,7 @@ namespace EnemyAI
             if (health != null && (health.IsDead || health.IsFrozen))
             {
                 StopMovement();
+                CleanupWarningDecal(); // Clean up decal if we die before exploding
                 return;
             }
 
@@ -189,6 +200,9 @@ namespace EnemyAI
             // Rotated to lie flat on ground
             Quaternion groundRot = Quaternion.Euler(90f, 0f, 0f);
             warningInstance = Instantiate(warningPrefab, groundPos, groundRot);
+            
+            // Safety timer: auto-destroy decal after detonation + buffer in case bomber dies
+            Destroy(warningInstance, detonationDelay + 0.5f);
         }
 
         private void SetEmissionIntensity(float intensity)

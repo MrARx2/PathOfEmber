@@ -119,7 +119,12 @@ namespace Boss
                 {
                     Vector3 indPos = pos + indicatorPositionOffset;
                     Quaternion indRot = Quaternion.Euler(indicatorRotationOffset);
-                    GameObject indicator = Instantiate(indicatorPrefab, indPos, indRot);
+                    
+                    // Use ObjectPool for indicators
+                    GameObject indicator = ObjectPoolManager.Instance != null
+                        ? ObjectPoolManager.Instance.Get(indicatorPrefab, indPos, indRot)
+                        : Instantiate(indicatorPrefab, indPos, indRot);
+                    
                     activeIndicators.Add(indicator);
                 }
                 
@@ -132,13 +137,18 @@ namespace Boss
             {
                 Vector3 pos = spawnData[i];
                 
-                // Spawn VFX
+                // Spawn VFX (pooled)
                 if (spawnVFXPrefab != null)
                 {
                     Vector3 vfxPos = pos + spawnVFXPositionOffset;
                     Quaternion vfxRot = Quaternion.Euler(spawnVFXRotationOffset);
-                    GameObject vfx = Instantiate(spawnVFXPrefab, vfxPos, vfxRot);
-                    Destroy(vfx, 3f);
+                    
+                    GameObject vfx = ObjectPoolManager.Instance != null
+                        ? ObjectPoolManager.Instance.Get(spawnVFXPrefab, vfxPos, vfxRot)
+                        : Instantiate(spawnVFXPrefab, vfxPos, vfxRot);
+                    
+                    // Return pooled VFX after delay, or destroy if not pooled
+                    StartCoroutine(ReturnPooledAfterDelay(vfx, 3f));
                 }
                 
                 // Play Sound
@@ -147,16 +157,22 @@ namespace Boss
                     AudioManager.Instance.PlayAtPosition(spawnSound, pos);
                 }
                 
-                // Spawn Enemy
-                GameObject chaser = Instantiate(chaserPrefab, pos, Quaternion.identity);
+                // Spawn Enemy (pooled for GC reduction)
+                GameObject chaser = ObjectPoolManager.Instance != null
+                    ? ObjectPoolManager.Instance.Get(chaserPrefab, pos, Quaternion.identity)
+                    : Instantiate(chaserPrefab, pos, Quaternion.identity);
                 
                 if (debugLog)
                     Debug.Log($"[TitanSummonAttack] Spawned chaser {i+1}/{spawnCount} at {pos}");
                 
-                // Remove specific indicator if list corresponds (fairly safe assumption)
+                // Return pooled indicator and mark as null to prevent double-release
                 if (i < activeIndicators.Count && activeIndicators[i] != null)
                 {
-                    Destroy(activeIndicators[i]);
+                    if (ObjectPoolManager.Instance != null)
+                        ObjectPoolManager.Instance.Return(activeIndicators[i]);
+                    else
+                        Destroy(activeIndicators[i]);
+                    activeIndicators[i] = null; // Prevent double-release in cleanup
                 }
                 
                 // Stagger delay
@@ -164,14 +180,34 @@ namespace Boss
                     yield return new WaitForSeconds(spawnDelay);
             }
             
-            // Cleanup any remaining indicators (just in case)
-            foreach (var ind in activeIndicators)
+            // Cleanup any remaining indicators that weren't returned (safety cleanup)
+            for (int i = 0; i < activeIndicators.Count; i++)
             {
-                if (ind != null) Destroy(ind);
+                if (activeIndicators[i] != null)
+                {
+                    if (ObjectPoolManager.Instance != null)
+                        ObjectPoolManager.Instance.Return(activeIndicators[i]);
+                    else
+                        Destroy(activeIndicators[i]);
+                    activeIndicators[i] = null;
+                }
             }
+            activeIndicators.Clear();
             
             if (debugLog)
                 Debug.Log("[TitanSummonAttack] Summon complete");
+        }
+        
+        private IEnumerator ReturnPooledAfterDelay(GameObject obj, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (obj != null)
+            {
+                if (ObjectPoolManager.Instance != null)
+                    ObjectPoolManager.Instance.Return(obj);
+                else
+                    Destroy(obj);
+            }
         }
         
         private System.Collections.Generic.List<Vector3> CalculateSpawnPositions()
