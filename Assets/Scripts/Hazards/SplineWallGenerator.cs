@@ -15,12 +15,12 @@ public class SplineWallGenerator : MonoBehaviour
     private float wallHeight = 3f;
     
     [SerializeField, Tooltip("Thickness of the wall")]
-    private float wallThickness = 0.5f;
+    private float wallThickness = 1f;
     
     [Header("Resolution")]
     [SerializeField, Tooltip("Number of segments along the spline (higher = smoother curves)")]
     [Range(4, 200)]
-    private int segments = 32;
+    private int segments = 5;
     
     [Header("Collider Settings")]
     [SerializeField, Tooltip("Tag to assign to the generated collider object")]
@@ -34,16 +34,20 @@ public class SplineWallGenerator : MonoBehaviour
     
     [Header("Mesh Settings")]
     [SerializeField, Tooltip("Generate a visual mesh (disable for invisible walls)")]
-    private bool generateMesh = true;
+    private bool generateMesh = false;
     
     [SerializeField, Tooltip("Material for the wall mesh")]
     private Material wallMaterial;
     
     [Header("Generation")]
+    [SerializeField, Tooltip("Automatically generate wall on Start (for prefabs/chunks)")]
+    private bool generateOnStart = true;
+    
     [SerializeField, Tooltip("Auto-regenerate when spline changes (Editor only)")]
     private bool autoRegenerate = true;
     
     private SplineContainer splineContainer;
+    private bool hasGeneratedAtRuntime = false;
     private GameObject wallMeshObject;
     private GameObject wallColliderObject;
     private MeshFilter meshFilter;
@@ -57,6 +61,16 @@ public class SplineWallGenerator : MonoBehaviour
         if (splineContainer != null && splineContainer.Spline != null)
         {
             Spline.Changed += OnSplineChanged;
+        }
+    }
+    
+    private void Start()
+    {
+        // Auto-generate at runtime when prefab spawns
+        if (Application.isPlaying && generateOnStart && !hasGeneratedAtRuntime)
+        {
+            hasGeneratedAtRuntime = true;
+            GenerateWall();
         }
     }
     
