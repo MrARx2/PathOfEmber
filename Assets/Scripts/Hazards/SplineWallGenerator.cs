@@ -3,10 +3,17 @@ using UnityEngine.Splines;
 using System.Collections.Generic;
 
 /// <summary>
-/// Generates a curved wall mesh and collider along a Unity Spline.
-/// Attach to a GameObject with a SplineContainer component.
+/// EDITOR-ONLY tool for generating curved wall mesh and collider along a Unity Spline.
+/// The generated colliders are baked into the scene/prefab with zero runtime overhead.
+/// 
+/// Usage:
+/// 1. Attach to a GameObject with a SplineContainer component
+/// 2. Configure wall dimensions in Inspector
+/// 3. Click "Generate Wall" button in Inspector
+/// 4. The wall mesh/collider is saved as a child object
+/// 
+/// NOTE: This script does NOTHING at runtime. All generation happens in the editor.
 /// </summary>
-[ExecuteInEditMode]
 [RequireComponent(typeof(SplineContainer))]
 public class SplineWallGenerator : MonoBehaviour
 {
@@ -38,63 +45,16 @@ public class SplineWallGenerator : MonoBehaviour
     
     [SerializeField, Tooltip("Material for the wall mesh")]
     private Material wallMaterial;
-    
-    [Header("Generation")]
-    [SerializeField, Tooltip("Automatically generate wall on Start (for prefabs/chunks)")]
-    private bool generateOnStart = true;
-    
-    [SerializeField, Tooltip("Auto-regenerate when spline changes (Editor only)")]
-    private bool autoRegenerate = true;
-    
-    private SplineContainer splineContainer;
-    private bool hasGeneratedAtRuntime = false;
-    private GameObject wallMeshObject;
-    private GameObject wallColliderObject;
-    private MeshFilter meshFilter;
-    private MeshRenderer meshRenderer;
-    private MeshCollider meshCollider;
-    
-    private void OnEnable()
-    {
-        splineContainer = GetComponent<SplineContainer>();
-        
-        if (splineContainer != null && splineContainer.Spline != null)
-        {
-            Spline.Changed += OnSplineChanged;
-        }
-    }
-    
-    private void Start()
-    {
-        // Auto-generate at runtime when prefab spawns
-        if (Application.isPlaying && generateOnStart && !hasGeneratedAtRuntime)
-        {
-            hasGeneratedAtRuntime = true;
-            GenerateWall();
-        }
-    }
-    
-    private void OnDisable()
-    {
-        Spline.Changed -= OnSplineChanged;
-    }
-    
-    private void OnSplineChanged(Spline spline, int knotIndex, SplineModification modification)
-    {
-        if (autoRegenerate && splineContainer != null && splineContainer.Spline == spline)
-        {
-            GenerateWall();
-        }
-    }
-    
+
+#if UNITY_EDITOR
     /// <summary>
     /// Generates the wall mesh and collider based on current settings.
+    /// EDITOR ONLY - called from custom inspector button.
     /// </summary>
     [ContextMenu("Generate Wall")]
     public void GenerateWall()
     {
-        if (splineContainer == null)
-            splineContainer = GetComponent<SplineContainer>();
+        SplineContainer splineContainer = GetComponent<SplineContainer>();
         
         if (splineContainer == null || splineContainer.Spline == null || splineContainer.Spline.Count < 2)
         {
@@ -104,15 +64,15 @@ public class SplineWallGenerator : MonoBehaviour
         
         ClearWall();
         
-        // Create or get the wall mesh object
-        wallMeshObject = new GameObject("WallMesh");
+        // Create the wall mesh object
+        GameObject wallMeshObject = new GameObject("WallMesh");
         wallMeshObject.transform.SetParent(transform);
         wallMeshObject.transform.localPosition = Vector3.zero;
         wallMeshObject.transform.localRotation = Quaternion.identity;
         wallMeshObject.transform.localScale = Vector3.one;
         
-        // Create or get the wall collider object
-        wallColliderObject = new GameObject("WallCollider");
+        // Create the wall collider object
+        GameObject wallColliderObject = new GameObject("WallCollider");
         wallColliderObject.transform.SetParent(transform);
         wallColliderObject.transform.localPosition = Vector3.zero;
         wallColliderObject.transform.localRotation = Quaternion.identity;
@@ -133,22 +93,25 @@ public class SplineWallGenerator : MonoBehaviour
         wallColliderObject.layer = colliderLayer;
         
         // Generate the mesh
-        Mesh mesh = GenerateWallMesh();
+        Mesh mesh = GenerateWallMesh(splineContainer);
         
         if (generateMesh)
         {
-            meshFilter = wallMeshObject.AddComponent<MeshFilter>();
+            MeshFilter meshFilter = wallMeshObject.AddComponent<MeshFilter>();
             meshFilter.sharedMesh = mesh;
             
-            meshRenderer = wallMeshObject.AddComponent<MeshRenderer>();
+            MeshRenderer meshRenderer = wallMeshObject.AddComponent<MeshRenderer>();
             meshRenderer.sharedMaterial = wallMaterial != null ? wallMaterial : GetDefaultMaterial();
         }
         
         // Add collider
-        meshCollider = wallColliderObject.AddComponent<MeshCollider>();
+        MeshCollider meshCollider = wallColliderObject.AddComponent<MeshCollider>();
         meshCollider.sharedMesh = mesh;
         meshCollider.isTrigger = isTrigger;
         meshCollider.convex = isTrigger; // Triggers require convex colliders
+        
+        // Mark scene as dirty so changes are saved
+        UnityEditor.EditorUtility.SetDirty(gameObject);
         
         Debug.Log($"[SplineWallGenerator] Wall generated with {segments} segments. Collider tag: '{colliderTag}'");
     }
@@ -165,21 +128,12 @@ public class SplineWallGenerator : MonoBehaviour
             Transform child = transform.GetChild(i);
             if (child.name == "WallMesh" || child.name == "WallCollider")
             {
-                if (Application.isPlaying)
-                    Destroy(child.gameObject);
-                else
-                    DestroyImmediate(child.gameObject);
+                DestroyImmediate(child.gameObject);
             }
         }
-        
-        wallMeshObject = null;
-        wallColliderObject = null;
-        meshFilter = null;
-        meshRenderer = null;
-        meshCollider = null;
     }
     
-    private Mesh GenerateWallMesh()
+    private Mesh GenerateWallMesh(SplineContainer splineContainer)
     {
         Mesh mesh = new Mesh();
         mesh.name = "SplineWallMesh";
@@ -342,8 +296,7 @@ public class SplineWallGenerator : MonoBehaviour
     
     private void OnDrawGizmos()
     {
-        if (splineContainer == null)
-            splineContainer = GetComponent<SplineContainer>();
+        SplineContainer splineContainer = GetComponent<SplineContainer>();
         
         if (splineContainer == null || splineContainer.Spline == null || splineContainer.Spline.Count < 2)
             return;
@@ -352,7 +305,6 @@ public class SplineWallGenerator : MonoBehaviour
         
         // Draw wall outline
         Spline spline = splineContainer.Spline;
-        float halfThickness = wallThickness / 2f;
         
         for (int i = 0; i < segments; i++)
         {
@@ -366,4 +318,5 @@ public class SplineWallGenerator : MonoBehaviour
             Gizmos.DrawLine(pos1 + Vector3.up * wallHeight, pos2 + Vector3.up * wallHeight);
         }
     }
+#endif
 }
