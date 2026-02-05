@@ -78,17 +78,22 @@ public class ShockwaveVFX : MonoBehaviour
             _damageCollider = gameObject.AddComponent<SphereCollider>();
             _damageCollider.isTrigger = true;
             _damageCollider.radius = startScale.x * colliderRadiusMultiplier;
-            Debug.Log($"[ShockwaveVFX] Created damage collider, targetLayer={targetLayer.value}, damage={damageAmount}");
+            // Debug.Log($"[ShockwaveVFX] Created damage collider, targetLayer={targetLayer.value}, damage={damageAmount}");
             
             if (targetLayer.value == 0)
                 Debug.LogWarning("[ShockwaveVFX] Target Layer is NOTHING! Set Player layer on prefab.");
         }
     }
     
-    private void Start()
+    private void OnEnable()
     {
         if (playOnStart)
             Play();
+    }
+
+    private void Start()
+    {
+        // Handled in OnEnable now
     }
     
     /// <summary>
@@ -97,10 +102,7 @@ public class ShockwaveVFX : MonoBehaviour
     public void Play()
     {
         if (spriteRenderer == null)
-        {
-            Debug.LogError("[ShockwaveVFX] No SpriteRenderer found!");
             return;
-        }
         
         _elapsed = 0f;
         _isPlaying = true;
@@ -166,7 +168,12 @@ public class ShockwaveVFX : MonoBehaviour
             _isPlaying = false;
             
             if (destroyOnComplete)
-                Destroy(gameObject);
+            {
+                if (ObjectPoolManager.Instance != null)
+                    ObjectPoolManager.Instance.Return(gameObject);
+                else
+                    Destroy(gameObject);
+            }
         }
     }
     
@@ -199,7 +206,7 @@ public class ShockwaveVFX : MonoBehaviour
         {
             damageable.TakeDamage(damageAmount);
             _alreadyHit.Add(other);
-            Debug.Log($"[ShockwaveVFX] Dealt {damageAmount} damage to {other.name}");
+            // Debug.Log($"[ShockwaveVFX] Dealt {damageAmount} damage to {other.name}");
         }
     }
     

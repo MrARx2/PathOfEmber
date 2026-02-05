@@ -74,6 +74,7 @@ public class GameSessionManager : MonoBehaviour
     /// </summary>
     public void ClearSession()
     {
+        Debug.Log("[GameSessionManager] Clearing session data (StartingTalent = null)");
         StartingTalent = null;
     }
 

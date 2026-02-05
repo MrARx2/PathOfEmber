@@ -346,7 +346,11 @@ namespace Boss
                 transform.position;
             
             Quaternion rotation = Quaternion.Euler(90f, 0f, 0f);
-            Instantiate(shockwavePrefab, spawnPos, rotation);
+
+            if (ObjectPoolManager.Instance != null)
+                ObjectPoolManager.Instance.Get(shockwavePrefab, spawnPos, rotation);
+            else
+                Instantiate(shockwavePrefab, spawnPos, rotation);
             
             if (debugLog) Debug.Log($"[TitanAnimationRelay] Shockwave spawned at {spawnPos}");
         }

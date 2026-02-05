@@ -37,6 +37,7 @@ namespace Boss
         public Vector3 VisualCenter => visualCenter != null ? visualCenter.position : transform.position;
         
         private Quaternion lockedRotation;
+        private bool isColliderDisabled = false; // Track if collider is disabled (e.g., hand destroyed)
         
         private void Awake()
         {
@@ -92,25 +93,61 @@ namespace Boss
         
         /// <summary>
         /// Enable/disable targeting for this socket.
+        /// Does NOT affect collider state - use SetColliderEnabled for that.
         /// </summary>
         public void SetTargetable(bool targetable)
         {
-            if (isTargetable == targetable) return;
+            // Safety: if collider is disabled, don't allow targeting
+            if (isColliderDisabled && targetable)
+            {
+                if (debugLog) Debug.Log($"[TitanTargetSocket] {gameObject.name} cannot be targetable - collider is disabled");
+                return;
+            }
             
             isTargetable = targetable;
             
             if (targetable)
             {
                 EnemyRegistry.Register(transform);
+                if (debugLog) Debug.Log($"[TitanTargetSocket] {gameObject.name} SET TARGETABLE");
             }
             else
             {
                 EnemyRegistry.Unregister(transform);
+                if (debugLog) Debug.Log($"[TitanTargetSocket] {gameObject.name} SET NOT TARGETABLE");
+            }
+        }
+        
+        /// <summary>
+        /// Enable/disable the collider completely.
+        /// When disabled, arrows will pass through and targeting is also disabled.
+        /// </summary>
+        public void SetColliderEnabled(bool enabled)
+        {
+            isColliderDisabled = !enabled;
+            
+            Collider col = GetComponent<Collider>();
+            if (col != null)
+            {
+                col.enabled = enabled;
             }
             
-            if (debugLog)
-                Debug.Log($"[TitanTargetSocket] {gameObject.name} targetable: {targetable}");
+            // If disabling collider, also disable targeting
+            if (!enabled)
+            {
+                SetTargetable(false);
+                if (debugLog) Debug.Log($"[TitanTargetSocket] {gameObject.name} COLLIDER DISABLED");
+            }
+            else
+            {
+                if (debugLog) Debug.Log($"[TitanTargetSocket] {gameObject.name} COLLIDER ENABLED");
+            }
         }
+        
+        /// <summary>
+        /// Returns true if the collider is currently disabled.
+        /// </summary>
+        public bool IsColliderDisabled => isColliderDisabled;
         
         // IDamageable Implementation
         public void TakeDamage(int damage)

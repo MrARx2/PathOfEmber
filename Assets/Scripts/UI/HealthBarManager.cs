@@ -225,12 +225,12 @@ public class HealthBarManager : MonoBehaviour
                 if (activeBars[i].GameObject != null)
                 {
                     activeBars[i].GameObject.SetActive(true);
-                    Debug.Log($"[HealthBarManager] ShowBar: Found and activated bar for {owner.gameObject.name}");
+                    // Debug.Log($"[HealthBarManager] ShowBar: Found and activated bar for {owner.gameObject.name}");
                 }
                 return;
             }
         }
-        Debug.LogWarning($"[HealthBarManager] ShowBar: No bar found for {owner.gameObject.name}");
+        // Debug.LogWarning($"[HealthBarManager] ShowBar: No bar found for {owner.gameObject.name}");
     }
     
     /// <summary>

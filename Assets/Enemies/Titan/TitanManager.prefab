@@ -252,7 +252,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Boss.TitanBossTrigger
   bossController: {fileID: 3411917199153215666}
   destroyAfterTrigger: 0
-  attackRangeBonus: 3
+  attackRangeBonus: 5
   debugLog: 0
 --- !u!1 &5862579643746103447
 GameObject:
@@ -406,15 +406,23 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 119626818809905668, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_Height
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 119626818809905668, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_ExcludeLayers.m_Bits
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 846016297213253173, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
+      propertyPath: maxHealth
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 876607368816666917, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
+      propertyPath: debugLog
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1041226806084855192, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_Height
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 1041226806084855192, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_ExcludeLayers.m_Bits
@@ -422,15 +430,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2249076594618955992, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.00222
+      value: 0.00023
       objectReference: {fileID: 0}
     - target: {fileID: 2249076594618955992, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.00074
+      value: 0.00007
       objectReference: {fileID: 0}
     - target: {fileID: 2249076594618955992, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.00086
+      value: -0.000088
+      objectReference: {fileID: 0}
+    - target: {fileID: 2666940503868231762, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
+      propertyPath: m_Constraints
+      value: 36
+      objectReference: {fileID: 0}
+    - target: {fileID: 3899796096372861254, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
+      propertyPath: m_Constraints
+      value: 36
       objectReference: {fileID: 0}
     - target: {fileID: 3976575039763147118, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_LocalPosition.x
@@ -472,6 +488,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4259810952285378401, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
+      propertyPath: maxHealth
+      value: 5000
+      objectReference: {fileID: 0}
     - target: {fileID: 4351727670668833748, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_Name
       value: Titan2
@@ -482,35 +502,43 @@ PrefabInstance:
       objectReference: {fileID: 7943610353766955731}
     - target: {fileID: 6865066375876937493, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.00234
+      value: -0.00023
       objectReference: {fileID: 0}
     - target: {fileID: 6865066375876937493, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.00074
+      value: -0.000079
       objectReference: {fileID: 0}
     - target: {fileID: 6865066375876937493, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.00039
+      value: -0.000043
       objectReference: {fileID: 0}
     - target: {fileID: 7796214712354509046, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.00003
+      value: 0.000057
       objectReference: {fileID: 0}
     - target: {fileID: 7796214712354509046, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.00238
+      value: -0.00011
       objectReference: {fileID: 0}
     - target: {fileID: 7796214712354509046, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.00072
+      value: 0.000903
+      objectReference: {fileID: 0}
+    - target: {fileID: 7987134557459700073, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
+      propertyPath: m_Constraints
+      value: 36
       objectReference: {fileID: 0}
     - target: {fileID: 8298840659730348947, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_Height
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 8298840659730348947, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
       propertyPath: m_ExcludeLayers.m_Bits
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8337052067196772011, guid: b8ffbba09d327a04e8e88d1ab527f489, type: 3}
+      propertyPath: maxHealth
+      value: 1000
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

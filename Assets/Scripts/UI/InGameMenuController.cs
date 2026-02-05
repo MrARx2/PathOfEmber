@@ -537,8 +537,13 @@ public class InGameMenuController : MonoBehaviour
             if (resetTalentsOnLoad)
             {
                 runTalentRegistry.Clear();
+                
+                // Clear persistent session data too
+                if (GameSessionManager.Instance != null)
+                   GameSessionManager.Instance.ClearSession();
+                   
                 if (debugLog)
-                    Debug.Log("[InGameMenuController] Cleared RunTalentRegistry on Exit");
+                    Debug.Log("[InGameMenuController] Cleared RunTalentRegistry and GameSession on Exit");
             }
             else
             {

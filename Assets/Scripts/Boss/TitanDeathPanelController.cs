@@ -135,8 +135,21 @@ namespace Boss
             // Restore time in case it was paused
             Time.timeScale = 1f;
             
+            // Clear session data
+            if (GameSessionManager.Instance != null)
+            {
+                GameSessionManager.Instance.ClearSession();
+            }
+            
             // Load main menu scene
-            SceneManager.LoadScene(mainMenuSceneName);
+            if (LoadingScreenManager.Instance != null)
+            {
+                LoadingScreenManager.Instance.LoadScene(mainMenuSceneName);
+            }
+            else
+            {
+                SceneManager.LoadScene(mainMenuSceneName);
+            }
         }
         
         #region Debug

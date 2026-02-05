@@ -29,6 +29,8 @@ namespace Boss
         [SerializeField, Tooltip("Optional: Assign the model child transform for accurate effect positioning")]
         private Transform modelTransform;
         
+
+
         [Header("State")]
         [SerializeField] private int currentHealth;
 
@@ -83,11 +85,16 @@ namespace Boss
         [SerializeField, Tooltip("Duration of smooth fade in/out")]
         private float tintFadeDuration = 0.5f;
 
+        [Header("Invulnerability")]
+        [SerializeField, Tooltip("Boss starts invulnerable until fight begins")]
+        private bool startInvulnerable = true;
+        
         [Header("Debug")]
         [SerializeField, Tooltip("Enable debug logging")]
         private bool debugLog = false;
 
         private bool isDestroyed = false;
+        private bool isInvulnerable = false;
         private Coroutine hitFlashCoroutine;
         // private Coroutine healthBarHideCoroutine; // Removed optimization
         private Coroutine destructionTintCoroutine;
@@ -110,6 +117,7 @@ namespace Boss
         private void Awake()
         {
             currentHealth = maxHealth;
+            isInvulnerable = startInvulnerable;
             
             // Use assigned material OR auto-find from child renderers
             if (tintMaterial != null)
@@ -182,6 +190,7 @@ namespace Boss
         public void TakeDamage(int damage)
         {
             if (isDestroyed) return;
+            if (isInvulnerable) return; // Boss is invulnerable until fight starts
             if (damage <= 0) return;
 
             currentHealth -= damage;
@@ -537,6 +546,15 @@ namespace Boss
         public void SetRegeneration(bool enabled)
         {
             canRegenerate = enabled;
+        }
+        
+        /// <summary>
+        /// Enables damage on this body part. Called when boss fight starts.
+        /// </summary>
+        public void EnableVulnerability()
+        {
+            isInvulnerable = false;
+            if (debugLog) Debug.Log($"[TitanHealth] {bodyPart} is now vulnerable!");
         }
 
         private float lastHitEffectTime = 0f;

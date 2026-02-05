@@ -54,8 +54,16 @@ public class DeathPopupController : MonoBehaviour
             SpawnAreaRegistry.Instance.ClearAll();
         }
 
-        // Reload current scene
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        // Use LoadingScreenManager if available for smoother transition
+        if (LoadingScreenManager.Instance != null)
+        {
+            LoadingScreenManager.Instance.LoadScene(SceneManager.GetActiveScene().name);
+        }
+        else
+        {
+            // Fallback
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
     }
     
     private void OnMainMenuClicked()
@@ -63,7 +71,20 @@ public class DeathPopupController : MonoBehaviour
         // Restore time before loading
         Time.timeScale = 1f;
         
+        // Clear session data (so next run starts fresh)
+        if (GameSessionManager.Instance != null)
+        {
+            GameSessionManager.Instance.ClearSession();
+        }
+        
         // Load main menu
-        SceneManager.LoadScene(mainMenuSceneName);
+        if (LoadingScreenManager.Instance != null)
+        {
+            LoadingScreenManager.Instance.LoadScene(mainMenuSceneName);
+        }
+        else
+        {
+            SceneManager.LoadScene(mainMenuSceneName);
+        }
     }
 }

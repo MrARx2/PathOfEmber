@@ -282,8 +282,9 @@ public class TalentSelectionManager : MonoBehaviour
         OnTalentSelected(startingTalent);
         if (debugLog) Debug.Log($"[TalentSelectionManager] Applied starting talent: {startingTalent.talentName}");
 
-        // Clear the starting talent so it doesn't apply again on scene reload
-        GameSessionManager.Instance.StartingTalent = null;
+        // DO NOT clear StartingTalent here! 
+        // We want it to persist so if the player Restarts (Reloads Scene), it applies again.
+        // It will be cleared explicitly when returning to Main Menu.
     }
 
     /// <summary>

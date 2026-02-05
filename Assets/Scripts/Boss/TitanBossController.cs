@@ -91,7 +91,7 @@ namespace Boss
         [SerializeField, Tooltip("Delay before activating boundary to ensure player is inside")]
         private float boundaryActivationDelay = 1.0f;
         
-        [Header("=== DEBUG ===")]
+        [Header("Debug")]
         [SerializeField] private bool debugLog = false;
         [SerializeField] private TitanState currentState = TitanState.Idle;
         
@@ -160,6 +160,16 @@ namespace Boss
             isBossFightActive = true;
             currentState = TitanState.Idle;
             attackTimer = initialDelay;
+            
+            // Enable vulnerability on all parts (boss was invulnerable before fight)
+            if (rightHandHealth != null) rightHandHealth.EnableVulnerability();
+            if (leftHandHealth != null) leftHandHealth.EnableVulnerability();
+            if (coreHealth != null) coreHealth.EnableVulnerability();
+            
+            // Enable targeting on all sockets (so player can actually attack)
+            if (rightHandSocket != null) rightHandSocket.SetTargetable(true);
+            if (leftHandSocket != null) leftHandSocket.SetTargetable(true);
+            if (coreSocket != null) coreSocket.SetTargetable(true);
             
             // Activate Boundary with delay
             if (bossArenaBoundary != null)
@@ -254,24 +264,24 @@ namespace Boss
         
         private IEnumerator ShowDeathPanelDelayed()
         {
-            Debug.Log($"[TitanBossController] ShowDeathPanelDelayed started, waiting {deathPanelDelay}s...");
+            // Debug.Log($"[TitanBossController] ShowDeathPanelDelayed started, waiting {deathPanelDelay}s...");
             
             yield return new WaitForSeconds(deathPanelDelay);
             
-            Debug.Log($"[TitanBossController] Delay complete, deathPanel is: {(deathPanel != null ? deathPanel.name : "NULL")}");
+            // Debug.Log($"[TitanBossController] Delay complete, deathPanel is: {(deathPanel != null ? deathPanel.name : "NULL")}");
             
             // Re-find if null (reference might have been lost)
             if (deathPanel == null)
             {
-                Debug.Log("[TitanBossController] Death panel is null after delay, trying to find again...");
+                // Debug.Log("[TitanBossController] Death panel is null after delay, trying to find again...");
                 FindDeathPanel();
             }
             
             if (deathPanel != null)
             {
-                Debug.Log($"[TitanBossController] Activating death panel: {deathPanel.name}");
+                // Debug.Log($"[TitanBossController] Activating death panel: {deathPanel.name}");
                 deathPanel.SetActive(true);
-                Debug.Log($"[TitanBossController] Death panel SetActive(true) called, now active: {deathPanel.activeSelf}");
+                // Debug.Log($"[TitanBossController] Death panel SetActive(true) called, now active: {deathPanel.activeSelf}");
             }
             else
             {
@@ -340,6 +350,11 @@ namespace Boss
             {
                 Debug.LogError("[TitanBossController] leftHandHealth is NOT ASSIGNED!");
             }
+            
+            // Disable targeting until fight starts (prevents player from auto-targeting before entering arena)
+            if (rightHandSocket != null) rightHandSocket.SetTargetable(false);
+            if (leftHandSocket != null) leftHandSocket.SetTargetable(false);
+            if (coreSocket != null) coreSocket.SetTargetable(false);
         }
         
         private void OnDestroy()
@@ -572,8 +587,12 @@ namespace Boss
                 Debug.LogError("[TitanBossController] Animator is NULL! Cannot set RightWell");
             }
             
-            // Disable targeting for this hand
-            if (rightHandSocket != null) rightHandSocket.SetTargetable(false);
+            // DISABLE COLLIDER completely on destroyed hand (arrows will pass through)
+            if (rightHandSocket != null) rightHandSocket.SetColliderEnabled(false);
+            
+            // Left hand remains targetable - player can hit it or the core depending on positioning
+            // Core is also targetable now
+            if (coreSocket != null) coreSocket.SetTargetable(true);
         }
         
         /// <summary>
@@ -595,8 +614,12 @@ namespace Boss
                 Debug.LogError("[TitanBossController] Animator is NULL! Cannot set LeftWell");
             }
             
-            // Disable targeting for this hand
-            if (leftHandSocket != null) leftHandSocket.SetTargetable(false);
+            // DISABLE COLLIDER completely on destroyed hand (arrows will pass through)
+            if (leftHandSocket != null) leftHandSocket.SetColliderEnabled(false);
+            
+            // Right hand remains targetable - player can hit it or the core depending on positioning
+            // Core is also targetable now
+            if (coreSocket != null) coreSocket.SetTargetable(true);
         }
         
         /// <summary>
@@ -624,11 +647,19 @@ namespace Boss
                     animator.SetBool(leftWellHash, true);
             }
             
-            // Re-enable hand targeting
-            if (rightHandSocket != null) rightHandSocket.SetTargetable(true);
-            if (leftHandSocket != null) leftHandSocket.SetTargetable(true);
+            // Re-enable colliders on both hands (so arrows can hit them again)
+            if (rightHandSocket != null)
+            {
+                rightHandSocket.SetColliderEnabled(true);
+                rightHandSocket.SetTargetable(true);
+            }
+            if (leftHandSocket != null)
+            {
+                leftHandSocket.SetColliderEnabled(true);
+                leftHandSocket.SetTargetable(true);
+            }
             
-            if (debugLog) Debug.Log("[TitanBossController] Both hands repaired, Well bools set to true");
+            if (debugLog) Debug.Log("[TitanBossController] Both hands repaired, colliders and targeting re-enabled");
         }
         
         // PerformRage is now handled within PerformAttack based on Well status
@@ -652,10 +683,10 @@ namespace Boss
             }
             else
             {
-                // Restore hand targeting after rage (if hands are not destroyed)
-                if (rightHandSocket != null && rightHandHealth != null && !rightHandHealth.IsDestroyed)
+                // Restore hand targeting after rage (if hands are not destroyed AND collider is enabled)
+                if (rightHandSocket != null && !rightHandSocket.IsColliderDisabled && rightHandHealth != null && !rightHandHealth.IsDestroyed)
                     rightHandSocket.SetTargetable(true);
-                if (leftHandSocket != null && leftHandHealth != null && !leftHandHealth.IsDestroyed)
+                if (leftHandSocket != null && !leftHandSocket.IsColliderDisabled && leftHandHealth != null && !leftHandHealth.IsDestroyed)
                     leftHandSocket.SetTargetable(true);
                     
                 // Core remains targetable
