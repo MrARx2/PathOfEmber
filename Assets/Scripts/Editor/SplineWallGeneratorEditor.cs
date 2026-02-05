@@ -5,6 +5,7 @@ using UnityEditor;
 /// Custom editor for SplineWallGenerator with generation buttons and validation.
 /// </summary>
 [CustomEditor(typeof(SplineWallGenerator))]
+[CanEditMultipleObjects]
 public class SplineWallGeneratorEditor : Editor
 {
     private SerializedProperty wallHeightProp;
@@ -31,8 +32,6 @@ public class SplineWallGeneratorEditor : Editor
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
-        
-        SplineWallGenerator generator = (SplineWallGenerator)target;
         
         // Title
         EditorGUILayout.Space();
@@ -103,15 +102,23 @@ public class SplineWallGeneratorEditor : Editor
         GUI.backgroundColor = new Color(0.4f, 0.8f, 0.4f);
         if (GUILayout.Button("Generate Wall", GUILayout.Height(30)))
         {
-            generator.GenerateWall();
-            EditorUtility.SetDirty(generator);
+            foreach (var targetObj in targets)
+            {
+                SplineWallGenerator generator = (SplineWallGenerator)targetObj;
+                generator.GenerateWall();
+                EditorUtility.SetDirty(generator);
+            }
         }
         
         GUI.backgroundColor = new Color(0.8f, 0.4f, 0.4f);
         if (GUILayout.Button("Clear Wall", GUILayout.Height(30)))
         {
-            generator.ClearWall();
-            EditorUtility.SetDirty(generator);
+            foreach (var targetObj in targets)
+            {
+                SplineWallGenerator generator = (SplineWallGenerator)targetObj;
+                generator.ClearWall();
+                EditorUtility.SetDirty(generator);
+            }
         }
         
         GUI.backgroundColor = Color.white;

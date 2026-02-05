@@ -46,10 +46,14 @@ public class SplineWallGenerator : MonoBehaviour
     [SerializeField, Tooltip("Material for the wall mesh")]
     private Material wallMaterial;
 
-#if UNITY_EDITOR
+    private void Start()
+    {
+        GenerateWall();
+    }
+
     /// <summary>
     /// Generates the wall mesh and collider based on current settings.
-    /// EDITOR ONLY - called from custom inspector button.
+    /// Called automatically on Start() and exposed via context menu.
     /// </summary>
     [ContextMenu("Generate Wall")]
     public void GenerateWall()
@@ -58,7 +62,7 @@ public class SplineWallGenerator : MonoBehaviour
         
         if (splineContainer == null || splineContainer.Spline == null || splineContainer.Spline.Count < 2)
         {
-            Debug.LogWarning("[SplineWallGenerator] No valid spline found. Add at least 2 knots.");
+            // Debug.LogWarning("[SplineWallGenerator] No valid spline found. Add at least 2 knots.");
             return;
         }
         
@@ -110,10 +114,15 @@ public class SplineWallGenerator : MonoBehaviour
         meshCollider.isTrigger = isTrigger;
         meshCollider.convex = isTrigger; // Triggers require convex colliders
         
-        // Mark scene as dirty so changes are saved
-        UnityEditor.EditorUtility.SetDirty(gameObject);
+        #if UNITY_EDITOR
+        // Mark scene as dirty so changes are saved (only if run in editor)
+        if (!Application.isPlaying)
+        {
+            UnityEditor.EditorUtility.SetDirty(gameObject);
+        }
+        #endif
         
-        Debug.Log($"[SplineWallGenerator] Wall generated with {segments} segments. Collider tag: '{colliderTag}'");
+        // Debug.Log($"[SplineWallGenerator] Wall generated with {segments} segments. Collider tag: '{colliderTag}'");
     }
     
     /// <summary>
@@ -128,7 +137,14 @@ public class SplineWallGenerator : MonoBehaviour
             Transform child = transform.GetChild(i);
             if (child.name == "WallMesh" || child.name == "WallCollider")
             {
-                DestroyImmediate(child.gameObject);
+                if (Application.isPlaying)
+                {
+                    Destroy(child.gameObject);
+                }
+                else
+                {
+                    DestroyImmediate(child.gameObject);
+                }
             }
         }
     }
@@ -318,5 +334,4 @@ public class SplineWallGenerator : MonoBehaviour
             Gizmos.DrawLine(pos1 + Vector3.up * wallHeight, pos2 + Vector3.up * wallHeight);
         }
     }
-#endif
 }
