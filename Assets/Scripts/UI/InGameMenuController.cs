@@ -530,6 +530,12 @@ public class InGameMenuController : MonoBehaviour
         if (debugLog)
             Debug.Log($"[InGameMenuController] Loading {mainMenuSceneName}");
         
+        // Convert XP to coins BEFORE clearing talents/session
+        if (GameSessionManager.Instance != null)
+        {
+            GameSessionManager.Instance.ConvertXPToCoins();
+        }
+        
         // Reset talents so they don't persist to the next run
         // This is important because the registry is a ScriptableObject
         if (runTalentRegistry != null)

@@ -70,6 +70,26 @@ public class GameSessionManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Converts total XP earned this run to coins.
+    /// Called when returning to main menu via "Back to Menu" buttons.
+    /// </summary>
+    public void ConvertXPToCoins()
+    {
+        if (XPSystem.Instance == null)
+        {
+            Debug.LogWarning("[GameSessionManager] XPSystem not found, cannot convert XP to coins");
+            return;
+        }
+        
+        int totalXP = XPSystem.Instance.TotalXPEarned;
+        if (totalXP > 0 && PlayerCurrency.Instance != null)
+        {
+            PlayerCurrency.Instance.AddCoins(totalXP);
+            Debug.Log($"[GameSessionManager] Converted {totalXP} XP to coins. New total: {PlayerCurrency.Instance.Coins}");
+        }
+    }
+
+    /// <summary>
     /// Clears session data. Call when returning to Main Menu or starting a new run.
     /// </summary>
     public void ClearSession()

@@ -71,9 +71,11 @@ public class DeathPopupController : MonoBehaviour
         // Restore time before loading
         Time.timeScale = 1f;
         
-        // Clear session data (so next run starts fresh)
+        // Convert XP to coins and clear session data (so next run starts fresh)
         if (GameSessionManager.Instance != null)
         {
+            // Note: On player death, we do NOT convert XP to coins
+            // XP is only converted on successful run (boss defeat via InGameMenuController or TitanDeathPanel)
             GameSessionManager.Instance.ClearSession();
         }
         

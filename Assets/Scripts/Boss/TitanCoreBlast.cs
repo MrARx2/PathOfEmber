@@ -66,6 +66,51 @@ namespace Boss
         [Header("Debug")]
         [SerializeField] private bool debugLog = false;
         
+        private void Awake()
+        {
+            // Auto-find player if not assigned (important for spawned Titans)
+            if (playerTarget == null)
+            {
+                FindPlayer();
+            }
+        }
+        
+        private void Start()
+        {
+            // Second chance to find player in case Awake was too early
+            if (playerTarget == null)
+            {
+                FindPlayer();
+            }
+        }
+        
+        /// <summary>
+        /// Finds and caches the player reference.
+        /// Called automatically if playerTarget is not assigned.
+        /// </summary>
+        public void FindPlayer()
+        {
+            // Try to find player by tag first
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
+            {
+                playerTarget = playerObj.transform;
+                if (debugLog) Debug.Log($"[TitanCoreBlast] Found player: {playerTarget.name}");
+                return;
+            }
+            
+            // Fallback: look for PlayerHealth component
+            var playerHealth = FindObjectOfType<PlayerHealth>();
+            if (playerHealth != null)
+            {
+                playerTarget = playerHealth.transform;
+                if (debugLog) Debug.Log($"[TitanCoreBlast] Found player via PlayerHealth: {playerTarget.name}");
+                return;
+            }
+            
+            if (debugLog) Debug.LogWarning("[TitanCoreBlast] Could not find player!");
+        }
+        
         /// <summary>
         /// Executes the core blast attack.
         /// </summary>

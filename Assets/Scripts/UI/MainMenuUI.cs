@@ -43,6 +43,13 @@ public class MainMenuUI : MonoBehaviour
 
     // Currency display has been moved to CurrencyUIController (Persistent UI)
 
+    [Header("Currency Display")]
+    [SerializeField, Tooltip("Direct reference to coin count text - Updated directly from PlayerPrefs")]
+    private TextMeshProUGUI coinsText;
+    
+    [SerializeField, Tooltip("Direct reference to gem count text - Updated directly from PlayerPrefs")]
+    private TextMeshProUGUI gemsText;
+    
     [Header("Talent Display")]
     [SerializeField, Tooltip("Image on the roll button - shows cube initially, then talent icon after roll")]
     private Image talentIcon;
@@ -96,6 +103,7 @@ public class MainMenuUI : MonoBehaviour
         
         if (debugLog) Debug.Log("[MainMenuUI] ForceResetRoutine executing after delay");
         ResetTalentDisplay();
+        UpdateCurrencyDisplay(); // Also refresh currency after delay
     }
 
     private void Start()
@@ -103,7 +111,10 @@ public class MainMenuUI : MonoBehaviour
         if (debugLog) Debug.Log("[MainMenuUI] Start called");
         
         SetupButtons();
-        // Currency is now handled to CurrencyUIController (Persistent UI)
+        
+        // Force update currency display from PlayerPrefs
+        // This ensures the counters are accurate when returning to main menu
+        UpdateCurrencyDisplay();
         
         // Debug reference status
         if (debugLog) Debug.Log($"[MainMenuUI] defaultCubeSprite is null? {defaultCubeSprite == null}");
@@ -112,6 +123,38 @@ public class MainMenuUI : MonoBehaviour
         
         ResetTalentDisplay(); // Show cube initially, no talent selected
     }
+    
+    /// <summary>
+    /// Updates coin and gem display directly from PlayerPrefs.
+    /// </summary>
+    private void UpdateCurrencyDisplay()
+    {
+        int coins = PlayerPrefs.GetInt("PlayerCoins", 0);
+        int gems = PlayerPrefs.GetInt("PlayerGems", 0);
+        
+        // Update coins text
+        if (coinsText != null)
+        {
+            coinsText.text = coins.ToString();
+            if (debugLog) Debug.Log($"[MainMenuUI] Updated coinsText to: {coins}");
+        }
+        
+        // Update gems text
+        if (gemsText != null)
+        {
+            gemsText.text = gems.ToString();
+            if (debugLog) Debug.Log($"[MainMenuUI] Updated gemsText to: {gems}");
+        }
+        
+        // Also update via CurrencyUIController if available
+        var currencyUI = FindObjectOfType<CurrencyUIController>();
+        if (currencyUI != null)
+        {
+            currencyUI.RefreshDisplay();
+        }
+    }
+
+
     
     private void OnDestroy()
     {

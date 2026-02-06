@@ -15,8 +15,10 @@ public class HealthBarManager : MonoBehaviour
     [SerializeField] private GameObject healthBarPrefab;
     [Tooltip("The UI Prefab to spawn for the player (Optional - distinct style).")]
     [SerializeField] private GameObject playerHealthBarPrefab;
-    [Tooltip("The UI Prefab to spawn for Titan body parts (Optional - distinct style).")]
+    [Tooltip("The UI Prefab to spawn for Titan hands (Optional - distinct style).")]
     [SerializeField] private GameObject titanHealthBarPrefab;
+    [Tooltip("The UI Prefab to spawn for Titan core (Optional - distinct style).")]
+    [SerializeField] private GameObject titanCoreHealthBarPrefab;
     
     [Tooltip("Offset from the target's position (in World Space) to float the health bar")]
     [SerializeField] private Vector3 heightOffset = new Vector3(0, 2.0f, 0);
@@ -131,11 +133,15 @@ public class HealthBarManager : MonoBehaviour
 
     public void Register(Boss.TitanHealth titanPart)
     {
+        // Determine if this is a core or hand part
+        bool isCore = titanPart.BodyPart == Boss.TitanBodyPart.Core;
+        HealthBarType barType = isCore ? HealthBarType.TitanCore : HealthBarType.TitanHand;
+        
         RegisterInternal(titanPart, titanPart.HealthBarPoint, titanPart.CurrentHealth, titanPart.MaxHealth, 
-            titanPart.OnHealthChanged, titanPart.OnDeath, HealthBarType.Titan);
+            titanPart.OnHealthChanged, titanPart.OnDeath, barType);
     }
 
-    private enum HealthBarType { Enemy, Player, Titan }
+    private enum HealthBarType { Enemy, Player, TitanHand, TitanCore }
 
     private void RegisterInternal(Component owner, Transform point, int current, int max, 
         UnityEngine.Events.UnityEvent<float> healthEvent, UnityEngine.Events.UnityEvent deathEvent, HealthBarType barType)
@@ -144,7 +150,8 @@ public class HealthBarManager : MonoBehaviour
         GameObject prefabToUse = barType switch
         {
             HealthBarType.Player => playerHealthBarPrefab != null ? playerHealthBarPrefab : healthBarPrefab,
-            HealthBarType.Titan => titanHealthBarPrefab != null ? titanHealthBarPrefab : healthBarPrefab,
+            HealthBarType.TitanHand => titanHealthBarPrefab != null ? titanHealthBarPrefab : healthBarPrefab,
+            HealthBarType.TitanCore => titanCoreHealthBarPrefab != null ? titanCoreHealthBarPrefab : healthBarPrefab,
             _ => healthBarPrefab
         };
 
@@ -175,7 +182,7 @@ public class HealthBarManager : MonoBehaviour
             Rect = rect,
             FillImage = fill,
             GameObject = go,
-            IsTitanBar = (barType == HealthBarType.Titan),
+            IsTitanBar = (barType == HealthBarType.TitanHand || barType == HealthBarType.TitanCore),
             IsUserVisible = false
         };
 
@@ -184,7 +191,7 @@ public class HealthBarManager : MonoBehaviour
         
         // For Titan bars, don't remove on death (they regenerate) - just hide
         // For other types, remove on death
-        if (barType == HealthBarType.Titan)
+        if (barType == HealthBarType.TitanHand || barType == HealthBarType.TitanCore)
         {
             // Titan bars persist - TitanHealth handles showing/hiding
             // No death listener needed
@@ -199,7 +206,7 @@ public class HealthBarManager : MonoBehaviour
         UpdateFill(newBar, initialPct);
         
         // Titan bars start hidden (visibility controlled by TitanHealth)
-        if (barType == HealthBarType.Titan)
+        if (barType == HealthBarType.TitanHand || barType == HealthBarType.TitanCore)
         {
             go.SetActive(false);
         }

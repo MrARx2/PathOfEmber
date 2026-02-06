@@ -138,6 +138,8 @@ namespace Boss
             // Clear session data
             if (GameSessionManager.Instance != null)
             {
+                // Convert XP to coins when successfully defeating the boss
+                GameSessionManager.Instance.ConvertXPToCoins();
                 GameSessionManager.Instance.ClearSession();
             }
             
