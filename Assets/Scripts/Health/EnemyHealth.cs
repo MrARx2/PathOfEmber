@@ -688,38 +688,24 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         // Chance to spawn heart pickup (10% default)
         if (heartPickupPrefab != null && Random.value <= heartDropChance)
         {
-            Instantiate(heartPickupPrefab, VisualCenter, Quaternion.identity);
+            // Use pool for heart pickups
+            if (ObjectPoolManager.Instance != null)
+            {
+                ObjectPoolManager.Instance.Get(heartPickupPrefab, VisualCenter, Quaternion.identity);
+            }
+            else
+            {
+                Instantiate(heartPickupPrefab, VisualCenter, Quaternion.identity);
+            }
         }
         
         // Invoke death event (for external listeners like HealthBarManager)
         OnDeath?.Invoke();
         
-        // Spawn death VFX if assigned
+        // Spawn death VFX if assigned (not pooled - VFX self-destructs)
         if (deathVFXPrefab != null)
         {
-            GameObject vfx = ObjectPoolManager.Instance != null 
-                ? ObjectPoolManager.Instance.Get(deathVFXPrefab, VisualCenter, Quaternion.identity)
-                : Instantiate(deathVFXPrefab, VisualCenter, Quaternion.identity);
-                
-            // Handle VFX cleanup
-            if (ObjectPoolManager.Instance != null)
-            {
-                // Can't delay return easily without component - assumes VFX handles its own disable/return or we use a coroutine helper
-                // For now, let's stick to Instantiate/Destroy for VFX unless we modify them too, 
-                // OR assume the VFX has a helper to return itself. 
-                // Wait, plan said update VFX to pool. 
-                // Let's stick to Instantiate for DEATH VFX for now to minimize risk unless we touched it.
-                // Reverting VFX pooling in this specific block to match standard Instantiate until VFX script is ready.
-                // Actually, let's use Instantiate for now to be safe as requested.
-            }
-            // Revert VFX changes for safety in this step
-        }
-        
-        if (deathVFXPrefab != null)
-        {
-             Instantiate(deathVFXPrefab, VisualCenter, Quaternion.identity);
-             // Destroy handled by VFX prefab itself typically or we should Destroy(vfx, 3f)
-             // The original code had Destroy(vfx, 3f). We should keep that.
+            Instantiate(deathVFXPrefab, VisualCenter, Quaternion.identity);
         }
 
         // Return to pool (or Destroy)

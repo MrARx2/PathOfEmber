@@ -84,6 +84,22 @@ namespace Boss
                 hadEmissionEnabled = handMaterial.IsKeywordEnabled("_EMISSION");
             }
         }
+
+        private IEnumerator Start()
+        {
+            // Wait for ObjectPoolManager
+            while (ObjectPoolManager.Instance == null) yield return null;
+
+            // Pre-warm assets
+            if (chaserPrefab != null)
+                yield return ObjectPoolManager.Instance.PrewarmAsync(chaserPrefab, spawnCount * 2, 2);
+            
+            if (indicatorPrefab != null)
+                yield return ObjectPoolManager.Instance.PrewarmAsync(indicatorPrefab, spawnCount * 2, 2);
+            
+            if (spawnVFXPrefab != null)
+                yield return ObjectPoolManager.Instance.PrewarmAsync(spawnVFXPrefab, spawnCount * 2, 2);
+        }
         
         /// <summary>
         /// Executes the summon attack.

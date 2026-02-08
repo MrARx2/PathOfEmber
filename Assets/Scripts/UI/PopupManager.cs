@@ -114,8 +114,8 @@ public class PopupManager : MonoBehaviour
     }
 
     private List<ActivePopup> activePopups = new List<ActivePopup>();
-    private Queue<GameObject> damagePool = new Queue<GameObject>();
-    private Queue<GameObject> xpPool = new Queue<GameObject>();
+    // private Queue<GameObject> damagePool = new Queue<GameObject>(); // Removed in favor of ObjectPoolManager
+    // private Queue<GameObject> xpPool = new Queue<GameObject>(); // Removed in favor of ObjectPoolManager
     private Camera mainCam;
     private Canvas canvas;
     private RectTransform canvasRect;
@@ -332,14 +332,14 @@ public class PopupManager : MonoBehaviour
             return;
         }
 
-        GameObject go = GetFromPool(damagePool, damagePopupPrefab);
+        GameObject go = GetFromPool(damagePopupPrefab);
         RectTransform rect = go.GetComponent<RectTransform>();
         TextMeshProUGUI tmp = go.GetComponentInChildren<TextMeshProUGUI>();
         
         if (tmp == null)
         {
             Debug.LogError("[PopupManager] Damage prefab needs TextMeshProUGUI component!");
-            ReturnToPoolDirect(go, damagePool);
+            ReturnToPoolDirect(go);
             return;
         }
 
@@ -406,14 +406,14 @@ public class PopupManager : MonoBehaviour
             return;
         }
 
-        GameObject go = GetFromPool(xpPool, xpPopupPrefab);
+        GameObject go = GetFromPool(xpPopupPrefab);
         RectTransform rect = go.GetComponent<RectTransform>();
         TextMeshProUGUI tmp = go.GetComponentInChildren<TextMeshProUGUI>();
         
         if (tmp == null)
         {
             Debug.LogError("[PopupManager] XP prefab needs TextMeshProUGUI component!");
-            ReturnToPoolDirect(go, xpPool);
+            ReturnToPoolDirect(go);
             return;
         }
 
@@ -459,37 +459,46 @@ public class PopupManager : MonoBehaviour
 
     #region Pool Management
     
-    private GameObject GetFromPool(Queue<GameObject> pool, GameObject prefab)
+    private GameObject GetFromPool(GameObject prefab)
     {
-        if (pool.Count > 0)
+        // Ignore the local pool argument, use ObjectPoolManager
+        if (ObjectPoolManager.Instance != null)
         {
-            return pool.Dequeue();
+            return ObjectPoolManager.Instance.Get(prefab, Vector3.zero, Quaternion.identity);
         }
         
-        GameObject go = Instantiate(prefab, transform);
-        return go;
+        // Fallback if no pool manager
+        return Instantiate(prefab, transform);
     }
 
     private void ReturnToPool(ActivePopup popup)
     {
         if (popup.GameObject != null)
         {
-            popup.GameObject.SetActive(false);
-            
-            if (popup.IsXP)
-                xpPool.Enqueue(popup.GameObject);
+            if (ObjectPoolManager.Instance != null)
+            {
+                ObjectPoolManager.Instance.Return(popup.GameObject);
+            }
             else
-                damagePool.Enqueue(popup.GameObject);
+            {
+                Destroy(popup.GameObject);
+            }
         }
     }
 
-    private void ReturnToPoolDirect(GameObject go, Queue<GameObject> pool)
+    private void ReturnToPoolDirect(GameObject go)
     {
-        if (go != null)
-        {
-            go.SetActive(false);
-            pool.Enqueue(go);
-        }
+         if (go != null)
+         {
+             if (ObjectPoolManager.Instance != null)
+             {
+                 ObjectPoolManager.Instance.Return(go);
+             }
+             else
+             {
+                 Destroy(go);
+             }
+         }
     }
     
     #endregion

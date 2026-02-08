@@ -30,6 +30,11 @@ public class HeartPickup : MonoBehaviour
     [Header("Sound")]
     [SerializeField] private SoundEvent pickupSound;
     
+    // Cached player references (shared across all hearts)
+    private static Transform s_cachedPlayerTransform;
+    private static PlayerHealth s_cachedPlayerHealth;
+    private static bool s_playerCached = false;
+    
     // Runtime state
     private Transform playerTransform;
     private PlayerHealth playerHealth;
@@ -50,37 +55,62 @@ public class HeartPickup : MonoBehaviour
         originalScale = transform.localScale;
     }
     
-    private void Start()
+    private void OnEnable()
     {
-        // Find player
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        // Reset state for pooling
+        ResetState();
+    }
+    
+    private void ResetState()
+    {
+        isExploding = false;
+        isHovering = false;
+        isAttracting = false;
+        isCollecting = false;
+        isCollected = false;
+        velocity = Vector3.zero;
+        transform.localScale = originalScale;
+        currentSpeed = attractSpeed;
+        
+        // Use cached player if available
+        if (s_playerCached && s_cachedPlayerTransform != null)
         {
-            playerTransform = player.transform;
-            
-            // Find PlayerHealth - could be on root or in children
-            playerHealth = player.GetComponent<PlayerHealth>();
-            if (playerHealth == null)
-                playerHealth = player.GetComponentInChildren<PlayerHealth>();
-            if (playerHealth == null)
-                playerHealth = player.GetComponentInParent<PlayerHealth>();
-            
-            if (playerHealth == null)
-                Debug.LogWarning("[HeartPickup] PlayerHealth component not found on player!");
-            
-            // Try to find spine bone for better targeting
-            Transform spine = FindBoneRecursive(playerTransform, "mixamorig:Spine2");
-            if (spine != null)
-                playerTransform = spine;
+            playerTransform = s_cachedPlayerTransform;
+            playerHealth = s_cachedPlayerHealth;
         }
         else
         {
-            Debug.LogWarning("[HeartPickup] Player not found!");
+            CachePlayer();
         }
         
-        // Start explosion
+        // Start explosion animation
         StartExplosion();
     }
+    
+    private void CachePlayer()
+    {
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            s_cachedPlayerTransform = player.transform;
+            s_cachedPlayerHealth = player.GetComponent<PlayerHealth>();
+            if (s_cachedPlayerHealth == null)
+                s_cachedPlayerHealth = player.GetComponentInChildren<PlayerHealth>();
+            if (s_cachedPlayerHealth == null)
+                s_cachedPlayerHealth = player.GetComponentInParent<PlayerHealth>();
+            
+            // Find spine bone for better targeting
+            Transform spine = FindBoneRecursive(s_cachedPlayerTransform, "mixamorig:Spine2");
+            if (spine != null)
+                s_cachedPlayerTransform = spine;
+            
+            s_playerCached = true;
+            playerTransform = s_cachedPlayerTransform;
+            playerHealth = s_cachedPlayerHealth;
+        }
+    }
+    
+    // Start() is no longer needed - OnEnable handles initialization for pooling
     
     private Transform FindBoneRecursive(Transform parent, string boneName)
     {
@@ -224,7 +254,14 @@ public class HeartPickup : MonoBehaviour
             AudioManager.Instance.Play(pickupSound);
         }
         
-        // Destroy heart
-        Destroy(gameObject);
+        // Return to pool instead of destroying
+        if (ObjectPoolManager.Instance != null)
+        {
+            ObjectPoolManager.Instance.Return(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 }

@@ -16,6 +16,10 @@ public class AssetPreloader : MonoBehaviour
     [SerializeField] private List<PreloadItem> enemiesToPreload;
     [SerializeField] private List<PreloadItem> vfxToPreload;
     
+    [Header("Audio Preload")]
+    [SerializeField, Tooltip("Music clips to preload (prevents FPS drop when music switches)")]
+    private List<AudioClip> musicToPreload;
+    
     [Header("Settings")]
     // [SerializeField] private int chunkPrewarmCount = 3; // Removed: Chunks use Direct Instantiate now
     [SerializeField] private int itemsPerFrame = 5; // Low number to keep loading screen smooth
@@ -59,6 +63,10 @@ public class AssetPreloader : MonoBehaviour
         // Enemies
         if (enemiesToPreload != null)
             foreach (var item in enemiesToPreload) totalItems += item.count;
+            
+        // Audio clips (count each as 1 item)
+        if (musicToPreload != null)
+            totalItems += musicToPreload.Count;
 
         // Avoid divide by zero
         if (totalItems == 0) totalItems = 1;
@@ -112,7 +120,26 @@ public class AssetPreloader : MonoBehaviour
             }
         }
 
-        // 5. Force GC to clear temp lists
+        // 5. Preload Audio Clips (decode ahead of time to prevent FPS drops)
+        if (musicToPreload != null && musicToPreload.Count > 0)
+        {
+            Debug.Log($"[AssetPreloader] Preloading {musicToPreload.Count} audio clips...");
+            foreach (var clip in musicToPreload)
+            {
+                if (clip != null)
+                {
+                    // LoadAudioData() decompresses/decodes the clip into memory
+                    // This prevents the first-play stutter
+                    clip.LoadAudioData();
+                    processedItems++;
+                    ReportProgress(processedItems, totalItems);
+                    yield return null; // Spread over frames
+                }
+            }
+            Debug.Log("[AssetPreloader] Audio preloading complete.");
+        }
+
+        // 6. Force GC to clear temp lists
         System.GC.Collect();
         yield return null;
 

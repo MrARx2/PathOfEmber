@@ -29,6 +29,46 @@ namespace Hazards
         private float _elapsedTime;
         private bool _isInitialized;
         private bool _hasArrived;
+        
+        // Cached components for pooling
+        private TrailRenderer[] _trails;
+        private ParticleSystem[] _particles;
+        
+        private void Awake()
+        {
+            // Cache trail and particle components for pooling
+            _trails = GetComponentsInChildren<TrailRenderer>(true);
+            _particles = GetComponentsInChildren<ParticleSystem>(true);
+        }
+        
+        private void OnEnable()
+        {
+            // Reset state for pooling
+            _isInitialized = false;
+            _hasArrived = false;
+            _elapsedTime = 0f;
+            
+            // Clear all trails to prevent visual streaks from previous position
+            if (_trails != null)
+            {
+                foreach (var trail in _trails)
+                {
+                    if (trail != null) trail.Clear();
+                }
+            }
+            
+            // Stop and clear all particle systems
+            if (_particles != null)
+            {
+                foreach (var ps in _particles)
+                {
+                    if (ps != null)
+                    {
+                        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// Initialize the meteor with its target and travel time.
@@ -39,10 +79,28 @@ namespace Hazards
         {
             _startPosition = transform.position;
             _targetPosition = targetPosition;
-            _travelDuration = Mathf.Max(0.01f, travelDuration); // Prevent division by zero
+            _travelDuration = Mathf.Max(0.01f, travelDuration);
             _elapsedTime = 0f;
             _isInitialized = true;
             _hasArrived = false;
+
+            // Clear trails again after position is set (in case OnEnable ran before positioning)
+            if (_trails != null)
+            {
+                foreach (var trail in _trails)
+                {
+                    if (trail != null) trail.Clear();
+                }
+            }
+            
+            // Start particle systems (they were stopped in OnEnable)
+            if (_particles != null)
+            {
+                foreach (var ps in _particles)
+                {
+                    if (ps != null) ps.Play();
+                }
+            }
         }
 
         /// <summary>

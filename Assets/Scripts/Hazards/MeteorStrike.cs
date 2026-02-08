@@ -183,8 +183,15 @@ namespace Hazards
             // Apply damage to entities in radius
             ApplyImpactDamage();
 
-            // Spawn lingering fire pool
+            // Spawn lingering fire pool (returns itself via coroutine)
             SpawnFirePool();
+
+            // IMPORTANT: MeteorStrike must stay active while child effects (Fire, Cracks, BurnMarks) play out.
+            // We wait for the longest duration among all possible effects to ensure their return coroutines finish.
+            float maxDuration = Mathf.Max(explosionDuration, burnMarkDuration, cracksDuration, firePoolDuration);
+            
+            // Add a small buffer to be safe
+            yield return new WaitForSeconds(maxDuration + 0.5f);
 
             // Return to object pool instead of destroying (or destroy if no pool)
             ReturnToPool();
@@ -198,9 +205,13 @@ namespace Hazards
         {
             if (warningPrefab == null) return;
 
-            // Warning indicator lies flat on the ground (rotated 90 degrees on X)
             Quaternion groundRotation = Quaternion.Euler(90f, 0f, 0f);
-            _warningInstance = Instantiate(warningPrefab, _impactPosition, groundRotation);
+            
+            // Pool Check
+            if (ObjectPoolManager.Instance != null)
+                _warningInstance = ObjectPoolManager.Instance.Get(warningPrefab, _impactPosition, groundRotation);
+            else
+                _warningInstance = Instantiate(warningPrefab, _impactPosition, groundRotation);
 
             if (debugLog) Debug.Log($"[MeteorStrike] Warning spawned at {_impactPosition}");
         }
@@ -209,22 +220,18 @@ namespace Hazards
         {
             if (meteorPrefab == null) return;
 
-            // Spawn position is directly above the impact point
             Vector3 spawnPosition = _impactPosition + Vector3.up * fallHeight;
-
-            // Meteor should face downward
             Quaternion lookDown = Quaternion.LookRotation(Vector3.down, Vector3.forward);
 
-            _meteorInstance = Instantiate(meteorPrefab, spawnPosition, lookDown);
+            // Pool Check
+            if (ObjectPoolManager.Instance != null)
+                _meteorInstance = ObjectPoolManager.Instance.Get(meteorPrefab, spawnPosition, lookDown);
+            else
+                _meteorInstance = Instantiate(meteorPrefab, spawnPosition, lookDown);
 
-            // Initialize the MeteorProjectile component
             MeteorProjectile projectile = _meteorInstance.GetComponent<MeteorProjectile>();
-            if (projectile == null)
-            {
-                projectile = _meteorInstance.AddComponent<MeteorProjectile>();
-            }
+            if (projectile == null) projectile = _meteorInstance.AddComponent<MeteorProjectile>();
 
-            // Initialize with exact travel duration for guaranteed timing
             projectile.Initialize(_impactPosition, travelDuration);
 
             if (debugLog) Debug.Log($"[MeteorStrike] Meteor spawned at {spawnPosition}, falling to {_impactPosition} over {travelDuration}s");
@@ -234,52 +241,52 @@ namespace Hazards
         {
             if (_warningInstance != null)
             {
-                Destroy(_warningInstance);
+                if (ObjectPoolManager.Instance != null) ObjectPoolManager.Instance.Return(_warningInstance);
+                else Destroy(_warningInstance);
                 _warningInstance = null;
             }
 
             if (_meteorInstance != null)
             {
-                Destroy(_meteorInstance);
+                if (ObjectPoolManager.Instance != null) ObjectPoolManager.Instance.Return(_meteorInstance);
+                else Destroy(_meteorInstance);
                 _meteorInstance = null;
             }
         }
 
         private void SpawnImpactEffects()
         {
-            // All three effects spawn at the SAME TIME on impact
-            
-            // 1. Explosion VFX (destroyed after explosionDuration)
+            // Explosion
             if (explosionPrefab != null)
             {
-                GameObject explosion = Instantiate(explosionPrefab, _impactPosition, Quaternion.identity);
-                Destroy(explosion, explosionDuration);
-                if (debugLog) Debug.Log($"[MeteorStrike] Explosion VFX spawned, will destroy in {explosionDuration}s");
+                GameObject explosion = SpawnPooled(explosionPrefab, _impactPosition, Quaternion.identity);
+                StartCoroutine(ReturnPooledDelayed(explosion, explosionDuration));
             }
 
-            // 2. Burn Mark (stays for configured duration) - random rotation & scale for variety
+            // Burn Mark
             if (burnMarkPrefab != null)
             {
-                float randomYRotation = Random.Range(0f, 360f);
-                Quaternion decalRotation = Quaternion.Euler(90f, randomYRotation, 0f);
-                GameObject burnMark = Instantiate(burnMarkPrefab, _impactPosition, decalRotation);
+                float randomY = Random.Range(0f, 360f);
+                Quaternion rot = Quaternion.Euler(90f, randomY, 0f);
+                GameObject burnMark = SpawnPooled(burnMarkPrefab, _impactPosition, rot);
                 
-                // Random scale variance ±0.3 from original
+                // Random scale
                 float scaleVariance = Random.Range(-0.3f, 0.3f);
-                burnMark.transform.localScale *= (1f + scaleVariance);
+                burnMark.transform.localScale = Vector3.one * (1f + scaleVariance); // Reset scale first if pooled? No, assume prefab scale * variance. 
+                // Careful: Pooled objects keep modified scale. We should reset it or use multiplier.
+                // Better to capture original scale? For now, we assume Vector3.one base or just strict set.
+                // burnMark.transform.localScale *= (1f + scaleVariance); // dangerous on pooled obj
                 
-                Destroy(burnMark, burnMarkDuration);
-                if (debugLog) Debug.Log($"[MeteorStrike] Burn mark spawned, will last {burnMarkDuration}s");
+                StartCoroutine(ReturnPooledDelayed(burnMark, burnMarkDuration));
             }
 
-            // 3. Cracks (stays for configured duration) - random Y rotation for variety
+            // Cracks
             if (cracksPrefab != null)
             {
-                float randomYRotation = Random.Range(0f, 360f);
-                Quaternion decalRotation = Quaternion.Euler(90f, randomYRotation, 0f);
-                GameObject cracks = Instantiate(cracksPrefab, _impactPosition, decalRotation);
-                Destroy(cracks, cracksDuration);
-                if (debugLog) Debug.Log($"[MeteorStrike] Cracks spawned, will last {cracksDuration}s");
+                float randomY = Random.Range(0f, 360f);
+                Quaternion rot = Quaternion.Euler(90f, randomY, 0f);
+                GameObject cracks = SpawnPooled(cracksPrefab, _impactPosition, rot);
+                StartCoroutine(ReturnPooledDelayed(cracks, cracksDuration));
             }
         }
 
@@ -287,33 +294,47 @@ namespace Hazards
         {
             if (firePoolPrefab == null) return;
 
-            GameObject firePool = Instantiate(firePoolPrefab, _impactPosition, Quaternion.identity);
-            Destroy(firePool, firePoolDuration);
+            GameObject firePool = SpawnPooled(firePoolPrefab, _impactPosition, Quaternion.identity);
+            StartCoroutine(ReturnPooledDelayed(firePool, firePoolDuration));
 
-            // Camera shake for meteor impact (explosion-style environmental shake)
             CameraShakeManager.Shake(CameraShakePreset.Meteor);
-
-            if (debugLog) Debug.Log($"[MeteorStrike] Fire pool spawned, will last {firePoolDuration}s");
         }
         
         /// <summary>
-        /// Returns this MeteorStrike to the object pool for reuse.
-        /// Falls back to Destroy if pool is not available.
+        /// Helper to return objects to pool after delay.
         /// </summary>
-        private void ReturnToPool()
+        private IEnumerator ReturnPooledDelayed(GameObject obj, float delay)
         {
-            // Stop any running coroutines before returning to pool
-            StopAllCoroutines();
-            
-            if (ObjectPoolManager.Instance != null)
+            yield return new WaitForSeconds(delay);
+            if (obj != null)
             {
-                ObjectPoolManager.Instance.Return(gameObject);
-            }
-            else
-            {
-                Destroy(gameObject);
+                 if (ObjectPoolManager.Instance != null) ObjectPoolManager.Instance.Return(obj);
+                 else Destroy(obj);
             }
         }
+        
+        /// <summary>
+        /// Helper to Spawn from pool or instantiate
+        /// </summary>
+        private GameObject SpawnPooled(GameObject prefab, Vector3 pos, Quaternion rot)
+        {
+             if (ObjectPoolManager.Instance != null) return ObjectPoolManager.Instance.Get(prefab, pos, rot);
+             return Instantiate(prefab, pos, rot);
+        }
+
+        private void ReturnToPool()
+        {
+            // Do NOT StopAllCoroutines, we are waiting for children to return!
+            // StopAllCoroutines(); 
+            
+            if (ObjectPoolManager.Instance != null)
+                ObjectPoolManager.Instance.Return(gameObject);
+            else
+                Destroy(gameObject);
+        }
+        
+        // IMPORTANT: We need to modify StrikeSequence to wait for children before returning itself!
+
 
         private void ApplyImpactDamage()
         {

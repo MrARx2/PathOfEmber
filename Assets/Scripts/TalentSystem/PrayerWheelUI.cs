@@ -59,6 +59,15 @@ public class PrayerWheelUI : MonoBehaviour
     [Header("UI Position Offsets")]
     [SerializeField, Tooltip("Y offset for button positioning (positive = up)")]
     private float buttonYOffset = 100f;
+    
+    [SerializeField, Tooltip("Y offset for text label positioning (positive = up)")]
+    private float textYOffset = 200f;
+    
+    [SerializeField, Tooltip("Horizontal offset for LEFT talent name text (distance from center)")]
+    private float textLeftXOffset = 280f;
+    
+    [SerializeField, Tooltip("Horizontal offset for RIGHT talent name text (distance from center)")]
+    private float textRightXOffset = 280f;
 
     [Header("Other UI to Hide")]
     [SerializeField, Tooltip("Canvas to hide during prayer wheel (e.g., enemy health bars, damage numbers)")]
@@ -85,7 +94,13 @@ public class PrayerWheelUI : MonoBehaviour
     private RectTransform buttonRightRect;
     private RectTransform buttonLeftParentRect;
     private RectTransform buttonRightParentRect;
-
+    
+    // Cached text label RectTransforms for dynamic positioning
+    private RectTransform textLeftRect;
+    private RectTransform textRightRect;
+    private RectTransform textLeftParentRect;
+    private RectTransform textRightParentRect;
+    
     private void Awake()
     {
         // Cache RectTransforms for performance in LateUpdate
@@ -101,6 +116,18 @@ public class PrayerWheelUI : MonoBehaviour
              buttonRightRect = buttonRight.GetComponent<RectTransform>();
              buttonRightParentRect = buttonRight.transform.parent as RectTransform;
              buttonRight.onClick.AddListener(() => SelectTalent(currentTalent2));
+        }
+        
+        // Cache text label RectTransforms for dynamic positioning
+        if (talentNameLeft != null)
+        {
+            textLeftRect = talentNameLeft.GetComponent<RectTransform>();
+            textLeftParentRect = talentNameLeft.transform.parent as RectTransform;
+        }
+        if (talentNameRight != null)
+        {
+            textRightRect = talentNameRight.GetComponent<RectTransform>();
+            textRightParentRect = talentNameRight.transform.parent as RectTransform;
         }
 
         // Find wheel controller
@@ -266,9 +293,27 @@ public class PrayerWheelUI : MonoBehaviour
     {
         if (wheelController == null) return;
 
-        // Get winning positions from 3D world (for buttons)
+        // Get winning positions from 3D world (for buttons - these track the winning slot)
         Vector3 worldPosLeft = wheelController.GetWinningSocketPosition(1);
         Vector3 worldPosRight = wheelController.GetWinningSocketPosition(2);
+        
+        // CRITICAL FIX: Always use PrayerWheelDisplay for stability if available.
+        // The user's CenterPoint transform is static, but the wheels move with the camera (shake).
+        // Mixing static and camera-relative positions causes jitter/wobble.
+        // By locking to the Display, the text shakes WITH the wheels (staying stable relative to them).
+        
+        Vector3 textCenterWorldPos; // Declare variable
+        
+        if (prayerWheelDisplay != null)
+        {
+            textCenterWorldPos = prayerWheelDisplay.GetWheelCenterPosition();
+        }
+        else
+        {
+            // Fallback to legacy logic (buttons or center point)
+            // Use buttons as fallback to ensure they are at least on screen
+            textCenterWorldPos = (worldPosLeft + worldPosRight) / 2f;
+        }
         
         Camera mainCam = Camera.main;
         if (mainCam != null && mainCanvas != null)
@@ -278,12 +323,14 @@ public class PrayerWheelUI : MonoBehaviour
             // Get raw screen positions from camera
             Vector3 screenPosLeft = mainCam.WorldToScreenPoint(worldPosLeft);
             Vector3 screenPosRight = mainCam.WorldToScreenPoint(worldPosRight);
+            Vector3 textCenterScreenPos = mainCam.WorldToScreenPoint(textCenterWorldPos);
             
             // Fix: Adjust for camera viewport offset/scale (pillarboxing from ResolutionManager)
             // When viewport is full (Editor), this returns unchanged coordinates
             Rect viewport = mainCam.rect;
             screenPosLeft = ViewportToFullScreenPoint(screenPosLeft, viewport);
             screenPosRight = ViewportToFullScreenPoint(screenPosRight, viewport);
+            textCenterScreenPos = ViewportToFullScreenPoint(textCenterScreenPos, viewport);
             
             // Position Left Button using cached RectTransforms
             if (buttonLeft != null && buttonLeft.gameObject.activeSelf)
@@ -313,7 +360,35 @@ public class PrayerWheelUI : MonoBehaviour
                 }
             }
             
-            // Text stays in fixed canvas position (no dynamic tracking needed since game is paused)
+            // Position Left Text Label (center point, offset left)
+            if (talentNameLeft != null && talentNameLeft.gameObject.activeSelf)
+            {
+                if (textLeftParentRect != null && textLeftRect != null)
+                {
+                    Vector2 localPoint;
+                    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(textLeftParentRect, textCenterScreenPos, uiCam, out localPoint))
+                    {
+                        localPoint.x -= textLeftXOffset; // Move left using independent offset
+                        localPoint.y += textYOffset;
+                        textLeftRect.localPosition = localPoint;
+                    }
+                }
+            }
+            
+            // Position Right Text Label (center point, offset right)
+            if (talentNameRight != null && talentNameRight.gameObject.activeSelf)
+            {
+                if (textRightParentRect != null && textRightRect != null)
+                {
+                    Vector2 localPoint;
+                    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(textRightParentRect, textCenterScreenPos, uiCam, out localPoint))
+                    {
+                        localPoint.x += textRightXOffset; // Move right using independent offset
+                        localPoint.y += textYOffset;
+                        textRightRect.localPosition = localPoint;
+                    }
+                }
+            }
         }
     }
 

@@ -147,7 +147,7 @@ public class MainMenuUI : MonoBehaviour
         }
         
         // Also update via CurrencyUIController if available
-        var currencyUI = FindObjectOfType<CurrencyUIController>();
+        var currencyUI = FindFirstObjectByType<CurrencyUIController>();
         if (currencyUI != null)
         {
             currencyUI.RefreshDisplay();

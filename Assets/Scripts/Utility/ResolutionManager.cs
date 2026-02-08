@@ -23,6 +23,13 @@ public class ResolutionManager : MonoBehaviour
     [Header("Display Mode")]
     [SerializeField] private DisplayMode displayMode = DisplayMode.FullscreenPillarbox;
     
+    [Header("Frame Rate (PC)")]
+    [SerializeField, Tooltip("Uncap frame rate for PC (disables VSync, sets targetFrameRate to -1)")]
+    private bool uncapFrameRate = true;
+    
+    [SerializeField, Tooltip("If not uncapped, target this frame rate. Set to -1 for platform default.")]
+    private int targetFrameRate = 60;
+    
     [Header("Pillarbox Settings")]
     [SerializeField] private Color pillarboxColor = Color.black;
     
@@ -52,9 +59,31 @@ public class ResolutionManager : MonoBehaviour
         
         targetAspect = (float)designWidth / designHeight;
         
+        // Apply frame rate settings
+        ApplyFrameRateSettings();
+        
         ApplyDisplayMode();
         
         SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+    
+    private void ApplyFrameRateSettings()
+    {
+        if (uncapFrameRate)
+        {
+            // Disable VSync and uncap frame rate
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = -1;
+            Debug.Log("[ResolutionManager] Frame rate uncapped (VSync off)");
+        }
+        else if (targetFrameRate > 0)
+        {
+            // Cap to specified frame rate
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = targetFrameRate;
+            Debug.Log($"[ResolutionManager] Frame rate capped to {targetFrameRate}");
+        }
+        // else: leave at platform default
     }
     
     private void OnDestroy()

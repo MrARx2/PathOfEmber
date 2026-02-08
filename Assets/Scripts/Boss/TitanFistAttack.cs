@@ -50,6 +50,16 @@ namespace Boss
         [SerializeField] private bool debugLog = false;
         
         private GameObject currentCrack;
+
+        private IEnumerator Start()
+        {
+            // Wait for ObjectPoolManager
+            while (ObjectPoolManager.Instance == null) yield return null;
+            
+            // Pre-warm assets
+            if (crackPrefab != null)
+                yield return ObjectPoolManager.Instance.PrewarmAsync(crackPrefab, 5, 1);
+        }
         
         /// <summary>
         /// Executes the fist attack.

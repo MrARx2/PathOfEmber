@@ -3,6 +3,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System.Collections;
 using TMPro;
+using Audio;
 
 /// <summary>
 /// Persistent singleton that manages scene transitions and the loading screen UI.
@@ -21,6 +22,10 @@ public class LoadingScreenManager : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private float fadeDuration = 0.5f;
     [SerializeField] private float minLoadTime = 1.0f; // Minimum time to show loading screen (prevents flickering)
+    
+    [Header("Scene Detection")]
+    [SerializeField, Tooltip("Scene names that require asset preloading (have AssetPreloader)")]
+    private string[] gameScenes = new string[] { "GameScene", "Game_Scene", "GameScene (Updated)" };
 
     private bool isSceneReady = false;
 
@@ -49,6 +54,16 @@ public class LoadingScreenManager : MonoBehaviour
                 c.renderMode = RenderMode.ScreenSpaceOverlay;
             }
         }
+    }
+    
+    private bool IsGameScene(string sceneName)
+    {
+        if (string.IsNullOrEmpty(sceneName) || gameScenes == null) return false;
+        foreach (var s in gameScenes)
+        {
+            if (sceneName == s) return true;
+        }
+        return false;
     }
 
     /// <summary>
@@ -80,13 +95,22 @@ public class LoadingScreenManager : MonoBehaviour
 
     private IEnumerator LoadSceneRoutine(string sceneName)
     {
+        // Determine if this scene needs preloading
+        bool needsPreloading = IsGameScene(sceneName);
+        
         // Reset state BEFORE showing the screen
         if (progressBar != null) progressBar.fillAmount = 0f;
         if (loadingText != null) loadingText.text = "Loading Scene...";
         isSceneReady = false;
         externalProgress = 0f;
 
-        // 1. Show Loading Screen
+        // 1. Fade out current music during loading transition
+        if (AudioManager.Instance != null && AudioManager.Instance.IsBGMPlaying)
+        {
+            AudioManager.Instance.FadeOutBGM(fadeDuration);
+        }
+        
+        // 2. Show Loading Screen
         if (loadingCanvas != null) loadingCanvas.SetActive(true);
         if (canvasGroup != null)
         {
@@ -100,15 +124,19 @@ public class LoadingScreenManager : MonoBehaviour
 
         float startTime = Time.time;
 
-        // 2. Start Async Load (Phase 1: 0% -> 20%)
+        // 2. Start Async Load (Phase 1: 0% -> varies based on preloading need)
         AsyncOperation op = SceneManager.LoadSceneAsync(sceneName);
         op.allowSceneActivation = false;
+        
+        // If no preloading needed, scene load is 100% of progress
+        // If preloading needed, scene load is 20% of progress
+        float sceneLoadWeight = needsPreloading ? 0.2f : 1.0f;
 
         while (!op.isDone)
         {
-            // Map scene load (0.0-0.9) to UI (0.0-0.2)
+            // Map scene load (0.0-0.9) to UI (0.0-sceneLoadWeight)
             float sceneProgress = Mathf.Clamp01(op.progress / 0.9f);
-            float displayedProgress = sceneProgress * 0.2f;
+            float displayedProgress = sceneProgress * sceneLoadWeight;
             
             if (progressBar != null) 
                 progressBar.fillAmount = displayedProgress;
@@ -123,36 +151,44 @@ public class LoadingScreenManager : MonoBehaviour
             yield return null;
         }
         
-        // 3. Wait for Scene Logic / Preloading (Phase 2: 20% -> 100%)
-        // We are now in the new scene.
-        if (loadingText != null) loadingText.text = "Preparing Assets...";
-        
-        float waitStartTime = Time.time;
-        
-        while (!isSceneReady) 
+        // 3. Wait for Scene Logic / Preloading (Phase 2: 20% -> 100%) - ONLY FOR GAME SCENES
+        if (needsPreloading)
         {
-            // Map external progress (0.0-1.0) to UI (0.2-1.0)
-            float displayedProgress = 0.2f + (externalProgress * 0.8f);
+            if (loadingText != null) loadingText.text = "Preparing Assets...";
             
-            if (progressBar != null) 
-                progressBar.fillAmount = displayedProgress;
+            float waitStartTime = Time.time;
+            
+            while (!isSceneReady) 
+            {
+                // Map external progress (0.0-1.0) to UI (0.2-1.0)
+                float displayedProgress = 0.2f + (externalProgress * 0.8f);
                 
-            // Update text based on progress
-            if (loadingText != null)
-            {
-                if (externalProgress < 0.3f) loadingText.text = "Warming Chunks...";
-                else if (externalProgress < 0.6f) loadingText.text = "Preparing Projectiles...";
-                else loadingText.text = "Finalizing...";
-            }
+                if (progressBar != null) 
+                    progressBar.fillAmount = displayedProgress;
+                    
+                // Update text based on progress
+                if (loadingText != null)
+                {
+                    if (externalProgress < 0.3f) loadingText.text = "Warming Pools...";
+                    else if (externalProgress < 0.6f) loadingText.text = "Preparing Projectiles...";
+                    else if (externalProgress < 0.9f) loadingText.text = "Loading Audio...";
+                    else loadingText.text = "Finalizing...";
+                }
 
-            // Safety timeout (15s)
-            if (Time.time - waitStartTime > 15f)
-            {
-                Debug.LogWarning("[LoadingScreenManager] Timed out waiting for SceneReady!");
-                break;
-            }
+                // Safety timeout (15s)
+                if (Time.time - waitStartTime > 15f)
+                {
+                    Debug.LogWarning("[LoadingScreenManager] Timed out waiting for SceneReady!");
+                    break;
+                }
 
-            yield return null;
+                yield return null;
+            }
+        }
+        else
+        {
+            // Non-game scene (e.g. Main Menu) - no preloader to wait for
+            if (loadingText != null) loadingText.text = "Almost Ready...";
         }
 
         // Ensure we hit 100% visually

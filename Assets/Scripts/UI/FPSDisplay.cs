@@ -22,13 +22,21 @@ public class FPSDisplay : MonoBehaviour
     [SerializeField, Tooltip("Font size for the FPS text")]
     private float fontSize = 24f;
     
-    [SerializeField, Tooltip("Color for good FPS (60+)")]
+    [Header("FPS Thresholds (Mobile: 60fps cap)")]
+    [SerializeField, Tooltip("FPS at or above this value shows 'good' color (green). Set to 55 for 60fps cap.")]
+    private int goodFPSThreshold = 55;
+    
+    [SerializeField, Tooltip("FPS at or above this value shows 'medium' color (yellow). Below shows 'bad' color.")]
+    private int mediumFPSThreshold = 30;
+    
+    [Header("FPS Colors")]
+    [SerializeField, Tooltip("Color for good FPS (at or above good threshold)")]
     private Color goodColor = Color.green;
     
-    [SerializeField, Tooltip("Color for medium FPS (30-59)")]
+    [SerializeField, Tooltip("Color for medium FPS (between medium and good threshold)")]
     private Color mediumColor = Color.yellow;
     
-    [SerializeField, Tooltip("Color for bad FPS (<30)")]
+    [SerializeField, Tooltip("Color for bad FPS (below medium threshold)")]
     private Color badColor = Color.red;
     
     // Internal
@@ -74,6 +82,32 @@ public class FPSDisplay : MonoBehaviour
     }
     
     /// <summary>
+    /// Toggles FPS display and updates a button's text to reflect the state.
+    /// Call this from your button's OnClick event.
+    /// </summary>
+    public void ToggleWithButtonText(TMP_Text buttonText)
+    {
+        Toggle();
+        if (buttonText != null)
+        {
+            buttonText.text = isVisible ? "FPS: ON" : "FPS: OFF";
+            buttonText.color = isVisible ? Color.green : Color.gray;
+        }
+    }
+    
+    /// <summary>
+    /// Updates button text to match current FPS visibility state (for initializing on menu open).
+    /// </summary>
+    public void UpdateButtonText(TMP_Text buttonText)
+    {
+        if (buttonText != null)
+        {
+            buttonText.text = isVisible ? "FPS: ON" : "FPS: OFF";
+            buttonText.color = isVisible ? Color.green : Color.gray;
+        }
+    }
+    
+    /// <summary>
     /// Sets the FPS display visibility.
     /// </summary>
     public void SetVisible(bool visible)
@@ -109,10 +143,10 @@ public class FPSDisplay : MonoBehaviour
         
         fpsText.text = $"FPS: {fpsInt}";
         
-        // Color based on FPS
-        if (fps >= 60f)
+        // Color based on configurable thresholds
+        if (fpsInt >= goodFPSThreshold)
             fpsText.color = goodColor;
-        else if (fps >= 30f)
+        else if (fpsInt >= mediumFPSThreshold)
             fpsText.color = mediumColor;
         else
             fpsText.color = badColor;

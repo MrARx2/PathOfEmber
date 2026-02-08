@@ -60,8 +60,11 @@ namespace Audio
         [Range(0.3f, 0.8f)]
         private float minimumPitch = 0.5f;
         
-        // BGM source (separate, always available)
+        // BGM sources (two for crossfading)
         private AudioSource _bgmSource;
+        private AudioSource _bgmSource2;
+        private bool _useBgmSource1 = true;
+        private Coroutine _crossfadeCoroutine;
         
         // Pooled sources for SFX
         private List<AudioSource> _sourcePool;
@@ -107,10 +110,14 @@ namespace Audio
         {
             LoadVolumeSettings();
             
-            // Create BGM source
-            _bgmSource = CreateAudioSource("BGM");
+            // Create BGM sources (two for crossfading)
+            _bgmSource = CreateAudioSource("BGM_1");
             _bgmSource.loop = true;
             _bgmSource.outputAudioMixerGroup = defaultBGMGroup;
+            
+            _bgmSource2 = CreateAudioSource("BGM_2");
+            _bgmSource2.loop = true;
+            _bgmSource2.outputAudioMixerGroup = defaultBGMGroup;
             
             // Create source pool
             _sourcePool = new List<AudioSource>(poolSize);
@@ -510,20 +517,88 @@ namespace Audio
         
         #region BGM Methods
         
+        [Header("BGM Crossfade")]
+        [SerializeField, Tooltip("Duration of crossfade between BGM tracks (seconds)")]
+        private float bgmCrossfadeDuration = 1.0f;
+        
         /// <summary>
-        /// Plays background music from a SoundEvent.
+        /// Plays background music with crossfade from current track.
         /// </summary>
         public void PlayBGM(SoundEvent soundEvent)
         {
             if (soundEvent == null || !soundEvent.IsValid) return;
             
-            _bgmSource.clip = soundEvent.GetClip();
-            _bgmSource.volume = soundEvent.volume;
-            _bgmSource.pitch = soundEvent.GetPitch();
-            _bgmSource.outputAudioMixerGroup = soundEvent.mixerGroup != null ? soundEvent.mixerGroup : defaultBGMGroup;
-            _bgmSource.Play();
+            // Use crossfade if something is already playing
+            if (IsBGMPlaying && bgmCrossfadeDuration > 0.01f)
+            {
+                CrossfadeToBGM(soundEvent, bgmCrossfadeDuration);
+            }
+            else
+            {
+                // Direct play (nothing playing or crossfade disabled)
+                var source = _useBgmSource1 ? _bgmSource : _bgmSource2;
+                source.clip = soundEvent.GetClip();
+                source.volume = soundEvent.volume;
+                source.pitch = soundEvent.GetPitch();
+                source.outputAudioMixerGroup = soundEvent.mixerGroup != null ? soundEvent.mixerGroup : defaultBGMGroup;
+                source.Play();
+                
+                if (debugLog) Debug.Log($"[AudioManager] Playing BGM (direct): {soundEvent.name}");
+            }
+        }
+        
+        /// <summary>
+        /// Crossfades from current BGM to new track.
+        /// </summary>
+        public void CrossfadeToBGM(SoundEvent soundEvent, float duration)
+        {
+            if (soundEvent == null || !soundEvent.IsValid) return;
             
-            if (debugLog) Debug.Log($"[AudioManager] Playing BGM: {soundEvent.name}");
+            if (_crossfadeCoroutine != null)
+            {
+                StopCoroutine(_crossfadeCoroutine);
+            }
+            
+            _crossfadeCoroutine = StartCoroutine(CrossfadeRoutine(soundEvent, duration));
+        }
+        
+        private System.Collections.IEnumerator CrossfadeRoutine(SoundEvent newSound, float duration)
+        {
+            // Determine which sources to use
+            AudioSource fadeOutSource = _useBgmSource1 ? _bgmSource : _bgmSource2;
+            AudioSource fadeInSource = _useBgmSource1 ? _bgmSource2 : _bgmSource;
+            _useBgmSource1 = !_useBgmSource1;
+            
+            // Setup new source
+            fadeInSource.clip = newSound.GetClip();
+            fadeInSource.pitch = newSound.GetPitch();
+            fadeInSource.outputAudioMixerGroup = newSound.mixerGroup != null ? newSound.mixerGroup : defaultBGMGroup;
+            fadeInSource.volume = 0f;
+            fadeInSource.Play();
+            
+            float startVolume = fadeOutSource.volume;
+            float targetVolume = newSound.volume;
+            float elapsed = 0f;
+            
+            if (debugLog) Debug.Log($"[AudioManager] Crossfading to BGM: {newSound.name}");
+            
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = elapsed / duration;
+                
+                fadeOutSource.volume = Mathf.Lerp(startVolume, 0f, t);
+                fadeInSource.volume = Mathf.Lerp(0f, targetVolume, t);
+                
+                yield return null;
+            }
+            
+            // Ensure final state
+            fadeOutSource.volume = 0f;
+            fadeOutSource.Stop();
+            fadeInSource.volume = targetVolume;
+            
+            _crossfadeCoroutine = null;
         }
         
         /// <summary>
@@ -539,10 +614,73 @@ namespace Audio
             _bgmSource.Play();
         }
         
-        public void StopBGM() => _bgmSource.Stop();
-        public void PauseBGM() => _bgmSource.Pause();
-        public void ResumeBGM() => _bgmSource.UnPause();
-        public bool IsBGMPlaying => _bgmSource.isPlaying;
+        public void StopBGM()
+        {
+            if (_crossfadeCoroutine != null)
+            {
+                StopCoroutine(_crossfadeCoroutine);
+                _crossfadeCoroutine = null;
+            }
+            _bgmSource.Stop();
+            _bgmSource2.Stop();
+        }
+        
+        public void PauseBGM()
+        {
+            _bgmSource.Pause();
+            _bgmSource2.Pause();
+        }
+        
+        public void ResumeBGM()
+        {
+            _bgmSource.UnPause();
+            _bgmSource2.UnPause();
+        }
+        
+        public bool IsBGMPlaying => _bgmSource.isPlaying || _bgmSource2.isPlaying;
+        
+        private Coroutine _fadeOutCoroutine;
+        
+        /// <summary>
+        /// Fades out current BGM over specified duration, then stops it.
+        /// Used for smooth transitions during loading.
+        /// </summary>
+        public void FadeOutBGM(float duration = 1f)
+        {
+            if (_fadeOutCoroutine != null)
+            {
+                StopCoroutine(_fadeOutCoroutine);
+            }
+            _fadeOutCoroutine = StartCoroutine(FadeOutBGMRoutine(duration));
+        }
+        
+        private System.Collections.IEnumerator FadeOutBGMRoutine(float duration)
+        {
+            float startVolume1 = _bgmSource.volume;
+            float startVolume2 = _bgmSource2.volume;
+            float elapsed = 0f;
+            
+            if (debugLog) Debug.Log("[AudioManager] Fading out BGM...");
+            
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = elapsed / duration;
+                
+                _bgmSource.volume = Mathf.Lerp(startVolume1, 0f, t);
+                _bgmSource2.volume = Mathf.Lerp(startVolume2, 0f, t);
+                
+                yield return null;
+            }
+            
+            _bgmSource.volume = 0f;
+            _bgmSource2.volume = 0f;
+            _bgmSource.Stop();
+            _bgmSource2.Stop();
+            
+            _fadeOutCoroutine = null;
+            if (debugLog) Debug.Log("[AudioManager] BGM fade out complete");
+        }
         
         #endregion
         

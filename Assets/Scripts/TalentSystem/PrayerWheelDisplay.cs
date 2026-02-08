@@ -43,6 +43,19 @@ public class PrayerWheelDisplay : MonoBehaviour
     
     [SerializeField, Tooltip("Vertical offset (positive = up)")]
     private float verticalOffset = 0f;
+    
+    [Header("Mobile Aspect Ratio Compensation")]
+    [SerializeField, Tooltip("Enable automatic vertical adjustment for taller screens (mobile)")]
+    private bool compensateForAspectRatio = true;
+    
+    [SerializeField, Tooltip("Reference aspect ratio (width/height). 1080/1920 = 0.5625 for portrait")]
+    private float referenceAspectRatio = 0.5625f;
+    
+    [SerializeField, Tooltip("Vertical offset per unit of aspect ratio difference (positive = move down on taller screens)")]
+    private float aspectRatioVerticalMultiplier = 2.0f;
+    
+    [SerializeField, Tooltip("Z (forward) offset per unit of aspect ratio difference (positive = move closer on taller screens)")]
+    private float aspectRatioZMultiplier = 1.0f;
 
     [Header("Smoothing (Jitter Fix)")]
     [SerializeField, Tooltip("Smooth time for position following (0.05 = tight, 0.2 = loose). Uses unscaled time to fix slow-mo jitter.")]
@@ -90,6 +103,9 @@ public class PrayerWheelDisplay : MonoBehaviour
     private Vector3 wheel2Velocity;
     private Vector3 baseVelocity;
     private float baseRotationVelocity; // For SmoothDampAngle
+    
+    // Cached center position for UI
+    private Vector3 lastCalculatedBasePosition;
 
     /// <summary>
     /// Returns whether the prayer wheels are currently visible.
@@ -107,6 +123,24 @@ public class PrayerWheelDisplay : MonoBehaviour
 
     private void Awake()
     {
+        // Auto-configure Aspect Ratio Compensation based on active Resolution Manager
+        // If MobileResolutionManager is active, we need compensation because it likely scales FOV while keeping width constant.
+        // If PC ResolutionManager is active, it likely enforces a fixed viewport (pillarbox), so we don't need logic to compensate.
+        
+        var mobileResManager = FindFirstObjectByType<MobileResolutionManager>();
+        var pcResManager = FindFirstObjectByType<ResolutionManager>();
+        
+        if (mobileResManager != null && mobileResManager.enabled)
+        {
+            compensateForAspectRatio = true;
+            if (debugLog) Debug.Log("[PrayerWheelDisplay] Auto-Enabling Aspect Ratio Compensation (MobileResolutionManager detected).");
+        }
+        else if (pcResManager != null && pcResManager.enabled)
+        {
+            compensateForAspectRatio = false;
+            if (debugLog) Debug.Log("[PrayerWheelDisplay] Auto-Disabling Aspect Ratio Compensation (ResolutionManager detected - fixed viewport).");
+        }
+
         // Try to find main camera if not assigned
         if (cameraTransform == null)
         {
@@ -329,10 +363,22 @@ public class PrayerWheelDisplay : MonoBehaviour
         }
 
         // Calculate base position in front of camera
-        Vector3 basePosition = cameraTransform.position + cameraTransform.forward * forwardOffset;
+        float adjustedForwardOffset = forwardOffset;
+        float totalVerticalOffset = verticalOffset;
         
-        // Add vertical offset (using world up, not camera up, for stability)
-        basePosition += Vector3.up * verticalOffset;
+        // Compensate for different aspect ratios (mobile screens are taller)
+        if (compensateForAspectRatio)
+        {
+            float currentAspect = (float)Screen.width / Screen.height;
+            float aspectDifference = currentAspect - referenceAspectRatio;
+            // Positive multiplier moves down when aspect is smaller (taller screen)
+            totalVerticalOffset += aspectDifference * aspectRatioVerticalMultiplier;
+            // Positive Z multiplier moves closer (reduce forward offset) on taller screens
+            adjustedForwardOffset += aspectDifference * aspectRatioZMultiplier;
+        }
+        
+        Vector3 basePosition = cameraTransform.position + cameraTransform.forward * adjustedForwardOffset;
+        basePosition += Vector3.up * totalVerticalOffset;
         
         // Apply horizontal shift (moves both wheels together)
         basePosition += cameraTransform.right * horizontalShift;
@@ -340,6 +386,9 @@ public class PrayerWheelDisplay : MonoBehaviour
         // Update base position to stay centered between wheels
         // Note: UpdateBasePosition handles its own smoothing now
         UpdateBasePosition(basePosition);
+        
+        // Cache for UI access
+        lastCalculatedBasePosition = basePosition;
 
         // --- Smooth Follow Implementation ---
         // We use SmoothDamp with Time.unscaledDeltaTime to ensure smooth movement 
@@ -648,4 +697,20 @@ public class PrayerWheelDisplay : MonoBehaviour
         Time.fixedDeltaTime = originalFixedDelta * Mathf.Max(targetTimeScale, 0.01f);
     }
     #endregion
+
+    /// <summary>
+    /// Returns the calculated center position between the two wheels (world space).
+    /// Used by PrayerWheelUI for stable text positioning regardless of wheel rotation.
+    /// </summary>
+    public Vector3 GetWheelCenterPosition()
+    {
+        // If position hasn't been calculated yet, return default logic
+        if (lastCalculatedBasePosition == Vector3.zero && cameraTransform != null)
+        {
+             Vector3 basePos = cameraTransform.position + cameraTransform.forward * forwardOffset;
+             basePos += Vector3.up * verticalOffset;
+             return basePos;
+        }
+        return lastCalculatedBasePosition;
+    }
 }

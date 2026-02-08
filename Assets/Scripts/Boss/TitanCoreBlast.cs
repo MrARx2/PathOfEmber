@@ -75,13 +75,23 @@ namespace Boss
             }
         }
         
-        private void Start()
+        private IEnumerator Start()
         {
             // Second chance to find player in case Awake was too early
             if (playerTarget == null)
             {
                 FindPlayer();
             }
+
+            // Wait for ObjectPoolManager
+            while (ObjectPoolManager.Instance == null) yield return null;
+            
+            // Pre-warm assets
+            if (launchMeteorPrefab != null)
+                yield return ObjectPoolManager.Instance.PrewarmAsync(launchMeteorPrefab, meteorCount, 2);
+            
+            if (meteorStrikePrefab != null)
+                yield return ObjectPoolManager.Instance.PrewarmAsync(meteorStrikePrefab, meteorCount, 2);
         }
         
         /// <summary>
@@ -100,7 +110,7 @@ namespace Boss
             }
             
             // Fallback: look for PlayerHealth component
-            var playerHealth = FindObjectOfType<PlayerHealth>();
+            var playerHealth = FindFirstObjectByType<PlayerHealth>();
             if (playerHealth != null)
             {
                 playerTarget = playerHealth.transform;

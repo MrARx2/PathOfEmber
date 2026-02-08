@@ -61,7 +61,25 @@ public class VFXSpawner : MonoBehaviour
     private void SpawnVFX(GameObject prefab, Vector3 offset)
     {
         Vector3 spawnPos = transform.position + offset;
-        GameObject vfx = Instantiate(prefab, spawnPos, Quaternion.identity);
-        Destroy(vfx, vfxLifetime);
+        
+        if (ObjectPoolManager.Instance != null)
+        {
+            GameObject vfx = ObjectPoolManager.Instance.Get(prefab, spawnPos, Quaternion.identity);
+            StartCoroutine(ReturnVFXDelayed(vfx, vfxLifetime));
+        }
+        else
+        {
+            GameObject vfx = Instantiate(prefab, spawnPos, Quaternion.identity);
+            Destroy(vfx, vfxLifetime);
+        }
+    }
+    
+    private System.Collections.IEnumerator ReturnVFXDelayed(GameObject vfx, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (vfx != null && ObjectPoolManager.Instance != null)
+        {
+            ObjectPoolManager.Instance.Return(vfx);
+        }
     }
 }

@@ -62,11 +62,9 @@ public class PrayerWheelController : MonoBehaviour
     [Header("Talent Database")]
     [SerializeField] private TalentDatabase talentDatabase;
 
-    [Header("Text Panel Positions (for UI tracking)")]
-    [SerializeField, Tooltip("Transform at the center of wheel 1's text panel (wooden box at top)")]
-    private Transform textPanelPosition1;
-    [SerializeField, Tooltip("Transform at the center of wheel 2's text panel (wooden box at top)")]
-    private Transform textPanelPosition2;
+    [Header("Text Panel Center (for UI tracking)")]
+    [SerializeField, Tooltip("Transform at the center between both wheels (used to position talent name text)")]
+    private Transform wheelCenterPoint;
 
     [Header("Spin Configuration")]
     [SerializeField, Tooltip("Total duration of the spin animation in seconds")]
@@ -832,14 +830,19 @@ public class PrayerWheelController : MonoBehaviour
     }
 
     /// <summary>
-    /// Returns the world position of the text panel (wooden box at top) for the specified wheel (1 or 2).
-    /// Used by UI to position talent name text over the 3D panels.
+    /// Returns the world position of the wheel center point.
+    /// Used by UI to position talent name text over the 3D wheels.
+    /// Wheel number parameter is kept for API compatibility but returns same center point.
     /// </summary>
     public Vector3 GetTextPanelPosition(int wheelNum)
     {
-        Transform panel = (wheelNum == 1) ? textPanelPosition1 : textPanelPosition2;
-        return panel != null ? panel.position : Vector3.zero;
+        return wheelCenterPoint != null ? wheelCenterPoint.position : Vector3.zero;
     }
+    
+    /// <summary>
+    /// Returns the wheel center point transform (for UI to calculate offsets).
+    /// </summary>
+    public Transform GetWheelCenterPoint() => wheelCenterPoint;
 
     #region Layered Audio
     /// <summary>
@@ -936,4 +939,29 @@ public class PrayerWheelController : MonoBehaviour
     [ContextMenu("Debug: Start Spin")]
     public void DebugStartSpin() => StartSpin();
     #endregion
+    
+    private void Start()
+    {
+        if (wheelCenterPoint == null)
+        {
+            Debug.LogWarning($"[PrayerWheelController] <b>Wheel Center Point is NOT ASSIGNED on {gameObject.name}!</b> Text positioning will be incorrect.");
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (wheelCenterPoint != null)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawSphere(wheelCenterPoint.position, 0.2f);
+            Gizmos.DrawWireSphere(wheelCenterPoint.position, 0.5f);
+        }
+        else
+        {
+             // Draw warning gizmo at controller position
+             Gizmos.color = Color.red;
+             Gizmos.DrawWireSphere(transform.position, 0.5f);
+             // Unity Gizmo text is editor only, so we skip it to keep code clean
+        }
+    }
 }

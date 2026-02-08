@@ -96,7 +96,15 @@ namespace EnemyAI
         {
             if (warningInstance != null)
             {
-                Destroy(warningInstance);
+                // Return to pool instead of destroying
+                if (ObjectPoolManager.Instance != null)
+                {
+                    ObjectPoolManager.Instance.Return(warningInstance);
+                }
+                else
+                {
+                    Destroy(warningInstance);
+                }
                 warningInstance = null;
             }
         }
@@ -199,10 +207,18 @@ namespace EnemyAI
             
             // Rotated to lie flat on ground
             Quaternion groundRot = Quaternion.Euler(90f, 0f, 0f);
-            warningInstance = Instantiate(warningPrefab, groundPos, groundRot);
             
-            // Safety timer: auto-destroy decal after detonation + buffer in case bomber dies
-            Destroy(warningInstance, detonationDelay + 0.5f);
+            // Use pool for warning indicator
+            if (ObjectPoolManager.Instance != null)
+            {
+                warningInstance = ObjectPoolManager.Instance.Get(warningPrefab, groundPos, groundRot);
+            }
+            else
+            {
+                warningInstance = Instantiate(warningPrefab, groundPos, groundRot);
+                // Safety timer only for non-pooled
+                Destroy(warningInstance, detonationDelay + 0.5f);
+            }
         }
 
         private void SetEmissionIntensity(float intensity)
@@ -226,11 +242,20 @@ namespace EnemyAI
             if (hasExploded) return;
             hasExploded = true;
 
-            // Spawn VFX
+            // Spawn VFX via pool
             if (explosionVFX != null)
             {
-                GameObject vfx = Instantiate(explosionVFX, transform.position, Quaternion.identity);
-                Destroy(vfx, 3f);
+                if (ObjectPoolManager.Instance != null)
+                {
+                    GameObject vfx = ObjectPoolManager.Instance.Get(explosionVFX, transform.position, Quaternion.identity);
+                    // Return to pool after 3 seconds
+                    StartCoroutine(ReturnToPoolDelayed(vfx, 3f));
+                }
+                else
+                {
+                    GameObject vfx = Instantiate(explosionVFX, transform.position, Quaternion.identity);
+                    Destroy(vfx, 3f);
+                }
             }
 
             // Camera shake for explosion impact (even if player not hit)
@@ -270,8 +295,24 @@ namespace EnemyAI
                 }
             }
 
-            // Destroy self
-            Destroy(gameObject);
+            // Return self to pool or destroy
+            if (ObjectPoolManager.Instance != null)
+            {
+                ObjectPoolManager.Instance.Return(gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+        
+        private System.Collections.IEnumerator ReturnToPoolDelayed(GameObject obj, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (obj != null && ObjectPoolManager.Instance != null)
+            {
+                ObjectPoolManager.Instance.Return(obj);
+            }
         }
 
         protected override void OnAttack() { } // Not used
