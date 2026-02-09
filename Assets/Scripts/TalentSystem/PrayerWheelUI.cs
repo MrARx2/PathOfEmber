@@ -69,6 +69,31 @@ public class PrayerWheelUI : MonoBehaviour
     [SerializeField, Tooltip("Horizontal offset for RIGHT talent name text (distance from center)")]
     private float textRightXOffset = 280f;
 
+    [Header("Highlight Progress Bar")]
+    [SerializeField, Tooltip("Prefab for the highlight progress bar (spawned on spin complete, covers both buttons)")]
+    private GameObject highlightBarPrefab;
+    
+    [SerializeField, Tooltip("Duration for highlight bar fill animation")]
+    private float highlightFillDuration = 1.5f;
+    
+    [SerializeField, Tooltip("Base position offset for the highlight bar (Common tier)")]
+    private Vector2 highlightBarOffset = Vector2.zero;
+    
+    [SerializeField, Tooltip("Additional Y offset for Rare tier")]
+    private float highlightRareYOffset = 100f;
+    
+    [SerializeField, Tooltip("Additional Y offset for Legendary tier")]
+    private float highlightLegendaryYOffset = 200f;
+    
+    [SerializeField, Tooltip("Highlight bar color for Common tier")]
+    private Color highlightCommonColor = new Color(0.8f, 0.8f, 0.8f, 1f); // Light gray
+    
+    [SerializeField, Tooltip("Highlight bar color for Rare tier")]
+    private Color highlightRareColor = new Color(0.2f, 0.6f, 1f, 1f); // Blue
+    
+    [SerializeField, Tooltip("Highlight bar color for Legendary tier")]
+    private Color highlightLegendaryColor = new Color(1f, 0.8f, 0.2f, 1f); // Gold
+
     [Header("Other UI to Hide")]
     [SerializeField, Tooltip("Canvas to hide during prayer wheel (e.g., enemy health bars, damage numbers)")]
     private Canvas systemsCanvasToHide;
@@ -100,6 +125,9 @@ public class PrayerWheelUI : MonoBehaviour
     private RectTransform textRightRect;
     private RectTransform textLeftParentRect;
     private RectTransform textRightParentRect;
+    
+    // Active highlight bar instance (single bar covers both buttons)
+    private GameObject highlightBarInstance;
     
     private void Awake()
     {
@@ -239,6 +267,9 @@ public class PrayerWheelUI : MonoBehaviour
 
     private void OnSpinComplete(TalentData talent1, TalentData talent2)
     {
+        // FORCED DEBUG - verify this method is being called
+        Debug.Log("[PrayerWheelUI] OnSpinComplete CALLED!");
+        
         currentTalent1 = talent1;
         currentTalent2 = talent2;
 
@@ -282,7 +313,116 @@ public class PrayerWheelUI : MonoBehaviour
         // Initial position update
         UpdateButtonPositions();
         
+        // Spawn highlight progress bars at button positions
+        SpawnHighlightBars();
+        
         if (debugLog) Debug.Log("[PrayerWheelUI] UI Updated and Elements Positioned");
+    }
+    
+    /// <summary>
+    /// Spawns the highlight progress bar (single bar covers both buttons).
+    /// </summary>
+    private void SpawnHighlightBars()
+    {
+        // FORCED DEBUG - always log to diagnose issue
+        Debug.Log($"[PrayerWheelUI] SpawnHighlightBars called! Prefab assigned: {highlightBarPrefab != null}");
+        
+        if (highlightBarPrefab == null)
+        {
+            Debug.LogWarning("[PrayerWheelUI] highlightBarPrefab is null! Cannot spawn.");
+            return;
+        }
+        
+        // Clean up any existing bar first
+        DestroyHighlightBars();
+        
+        // Use mainCanvas as parent (the canvas that contains our UI)
+        Transform barParent = mainCanvas != null ? mainCanvas.transform : transform;
+        
+        Debug.Log($"[PrayerWheelUI] Spawning highlight bar under parent: {barParent.name}");
+        
+        // Spawn single highlight bar
+        highlightBarInstance = Instantiate(highlightBarPrefab, barParent);
+        highlightBarInstance.name = "HighlightBar_Runtime";
+        
+        // Put bar at the BACK so buttons remain clickable (behind other UI)
+        highlightBarInstance.transform.SetSiblingIndex(0);
+        
+        RectTransform barRect = highlightBarInstance.GetComponent<RectTransform>();
+        if (barRect != null)
+        {
+            // Reset transform completely
+            barRect.localRotation = Quaternion.identity;
+            barRect.localScale = Vector3.one;
+            
+            // Center anchor the bar
+            barRect.anchorMin = new Vector2(0.5f, 0.5f);
+            barRect.anchorMax = new Vector2(0.5f, 0.5f);
+            barRect.pivot = new Vector2(0.5f, 0.5f);
+            
+            // Calculate final position with tier-based Y offset
+            Vector2 finalPos = highlightBarOffset;
+            if (currentTalent1 != null)
+            {
+                switch (currentTalent1.rarity)
+                {
+                    case TalentData.TalentRarity.Rare:
+                        finalPos.y += highlightRareYOffset;
+                        break;
+                    case TalentData.TalentRarity.Legendary:
+                        finalPos.y += highlightLegendaryYOffset;
+                        break;
+                }
+            }
+            barRect.anchoredPosition = finalPos;
+            
+            Debug.Log($"[PrayerWheelUI] Bar anchored at: {barRect.anchoredPosition}, tier: {currentTalent1?.rarity}");
+        }
+        
+        // Set duration
+        var progressBar = highlightBarInstance.GetComponent<HighlightProgressBar>();
+        if (progressBar != null)
+        {
+            progressBar.SetDuration(highlightFillDuration);
+            if (debugLog) Debug.Log($"[PrayerWheelUI] Highlight bar duration set to: {highlightFillDuration}");
+        }
+        else
+        {
+            if (debugLog) Debug.LogWarning("[PrayerWheelUI] HighlightProgressBar component not found on prefab!");
+        }
+        
+        // Apply tier-based color tint (search children in case Image is on child object)
+        var barImage = highlightBarInstance.GetComponentInChildren<UnityEngine.UI.Image>();
+        if (barImage != null && currentTalent1 != null)
+        {
+            Color tierColor = currentTalent1.rarity switch
+            {
+                TalentData.TalentRarity.Common => highlightCommonColor,
+                TalentData.TalentRarity.Rare => highlightRareColor,
+                TalentData.TalentRarity.Legendary => highlightLegendaryColor,
+                _ => highlightCommonColor
+            };
+            barImage.color = tierColor;
+            if (debugLog) Debug.Log($"[PrayerWheelUI] Highlight bar tinted: {tierColor} for tier {currentTalent1.rarity}");
+        }
+        else
+        {
+            Debug.LogWarning($"[PrayerWheelUI] Could not tint bar - Image: {barImage != null}, Talent: {currentTalent1 != null}");
+        }
+        
+        if (debugLog) Debug.Log($"[PrayerWheelUI] Highlight bar spawned and active: {highlightBarInstance.activeInHierarchy}");
+    }
+    
+    /// <summary>
+    /// Destroys the active highlight bar.
+    /// </summary>
+    private void DestroyHighlightBars()
+    {
+        if (highlightBarInstance != null)
+        {
+            Destroy(highlightBarInstance);
+            highlightBarInstance = null;
+        }
     }
 
     /// <summary>
@@ -490,6 +630,9 @@ public class PrayerWheelUI : MonoBehaviour
     {
         // Stop continuous position updates
         isInSelectionMode = false;
+        
+        // Destroy highlight bars
+        DestroyHighlightBars();
         
         SetButtonsActive(false); // Explicitly hide separate buttons
         

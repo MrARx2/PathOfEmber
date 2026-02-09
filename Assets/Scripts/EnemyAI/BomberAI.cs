@@ -295,6 +295,12 @@ namespace EnemyAI
                 }
             }
 
+            // Clean up health bar before destroying/returning to pool
+            if (health != null && HealthBarManager.Instance != null)
+            {
+                HealthBarManager.Instance.Unregister(health);
+            }
+
             // Return self to pool or destroy
             if (ObjectPoolManager.Instance != null)
             {
