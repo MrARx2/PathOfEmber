@@ -6910,7 +6910,7 @@ PrefabInstance:
       insertIndex: 1
       addedObject: {fileID: 1246689978}
     - targetCorrespondingSourceObject: {fileID: 2450694894809666419, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
-      insertIndex: -1
+      insertIndex: 2
       addedObject: {fileID: 1246689979}
   m_SourcePrefab: {fileID: 100100000, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
 --- !u!1 &264402349
@@ -19122,9 +19122,9 @@ MonoBehaviour:
       m_Calls: []
   prayerWheelDisplay: {fileID: 1246689979}
   buttonYOffset: 0
-  textYOffset: 1325
-  textLeftXOffset: 300
-  textRightXOffset: 250
+  textYOffset: 1345
+  textLeftXOffset: 322
+  textRightXOffset: 269
   highlightBarPrefab: {fileID: 7347255719304158546, guid: 07fa89cf4aab3ac40845ddd6ca5f9287, type: 3}
   highlightFillDuration: 0.5
   highlightBarOffset: {x: 0, y: 0}
@@ -19156,14 +19156,14 @@ MonoBehaviour:
   basePositionOffset: {x: 0, y: 1.38, z: 1.25}
   baseRotationOffset: {x: -1.1, y: -88.55, z: -57}
   forwardOffset: 5
-  wheel1HorizontalOffset: 0.31
+  wheel1HorizontalOffset: 0.3125
   wheel2HorizontalOffset: 0.28
   horizontalShift: 0
   verticalOffset: -1.3
   compensateForAspectRatio: 0
   referenceAspectRatio: 0.5625
   aspectRatioVerticalMultiplier: 0
-  aspectRatioZMultiplier: -17.8
+  aspectRatioZMultiplier: -12
   positionSmoothTime: 0.02
   rotationSmoothTime: 0.1
   snapDistanceThreshold: 0.5
