@@ -1337,7 +1337,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 526352885760292508, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.17297363
+      value: 0.1729736
       objectReference: {fileID: 0}
     - target: {fileID: 526352885760292508, guid: 1a918b963b48b0d47acaa16fcd0fe849, type: 3}
       propertyPath: m_LocalPosition.z
@@ -3492,7 +3492,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 295, y: 630}
+  m_AnchoredPosition: {x: 300, y: 630}
   m_SizeDelta: {x: 300, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &228951312
@@ -4232,7 +4232,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1681347285293982752, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
       propertyPath: spinDuration
-      value: 7
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 1681347285293982752, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
       propertyPath: spinEndSound
@@ -4248,7 +4248,7 @@ PrefabInstance:
       objectReference: {fileID: 11400000, guid: d46861f8d7abe9b499fa1111a4f46d98, type: 2}
     - target: {fileID: 1681347285293982752, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
       propertyPath: useDebugRarity
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1681347285293982752, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
       propertyPath: rareTintColor.b
@@ -4296,7 +4296,7 @@ PrefabInstance:
       objectReference: {fileID: 1988001347}
     - target: {fileID: 1681347285293982752, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
       propertyPath: debugRarityOverride
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1681347285293982752, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
       propertyPath: legendaryTintColor.b
@@ -4669,6 +4669,10 @@ PrefabInstance:
     - target: {fileID: 2450694894809666419, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
       propertyPath: m_Layer
       value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 2450694894809666419, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2522323112203032905, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
       propertyPath: m_Layer
@@ -19122,9 +19126,9 @@ MonoBehaviour:
       m_Calls: []
   prayerWheelDisplay: {fileID: 1246689979}
   buttonYOffset: 0
-  textYOffset: 1325
-  textLeftXOffset: 300
-  textRightXOffset: 250
+  textYOffset: 1330
+  textLeftXOffset: 325
+  textRightXOffset: 265
   highlightBarPrefab: {fileID: 7347255719304158546, guid: 07fa89cf4aab3ac40845ddd6ca5f9287, type: 3}
   highlightFillDuration: 0.5
   highlightBarOffset: {x: 0, y: 0}
@@ -19133,6 +19137,10 @@ MonoBehaviour:
   highlightCommonColor: {r: 0.21176471, g: 0.23921569, b: 0.21960784, a: 1}
   highlightRareColor: {r: 0.2, g: 0.1882353, b: 0.3019608, a: 1}
   highlightLegendaryColor: {r: 0.63529414, g: 0.03137255, b: 0, a: 1}
+  highlightTitlePrefab: {fileID: 7347255719304158546, guid: b9e7e5d664278bb47b6a98888bbee41d, type: 3}
+  highlightTitleYOffset: 840
+  highlightTitleLeftXOffset: -290
+  highlightTitleRightXOffset: 285
   systemsCanvasToHide: {fileID: 1381894438}
   activeSortOrder: 100
   selectionSound: {fileID: 11400000, guid: 72f4a55d49ea3324394badf05657b9ac, type: 2}
@@ -26181,7 +26189,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -295, y: 630}
+  m_AnchoredPosition: {x: -300, y: 630}
   m_SizeDelta: {x: 300, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1773529640
@@ -29820,6 +29828,63 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6054988125881097463, guid: cba52ce69fe09fd4893d60f90480ccd1, type: 3}
   m_PrefabInstance: {fileID: 241913751}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2134706206
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1128248337074749415, guid: 97a10adefcd12f046b6ebd25cc6e2c90, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 11.523
+      objectReference: {fileID: 0}
+    - target: {fileID: 1128248337074749415, guid: 97a10adefcd12f046b6ebd25cc6e2c90, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1128248337074749415, guid: 97a10adefcd12f046b6ebd25cc6e2c90, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 7.37947
+      objectReference: {fileID: 0}
+    - target: {fileID: 1128248337074749415, guid: 97a10adefcd12f046b6ebd25cc6e2c90, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1128248337074749415, guid: 97a10adefcd12f046b6ebd25cc6e2c90, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1128248337074749415, guid: 97a10adefcd12f046b6ebd25cc6e2c90, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1128248337074749415, guid: 97a10adefcd12f046b6ebd25cc6e2c90, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1128248337074749415, guid: 97a10adefcd12f046b6ebd25cc6e2c90, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1128248337074749415, guid: 97a10adefcd12f046b6ebd25cc6e2c90, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1128248337074749415, guid: 97a10adefcd12f046b6ebd25cc6e2c90, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2150418299929881690, guid: 97a10adefcd12f046b6ebd25cc6e2c90, type: 3}
+      propertyPath: m_Name
+      value: FinalGrass05
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 97a10adefcd12f046b6ebd25cc6e2c90, type: 3}
 --- !u!1 &2136445646
 GameObject:
   m_ObjectHideFlags: 0
@@ -31114,3 +31179,4 @@ SceneRoots:
   - {fileID: 652319655}
   - {fileID: 1795724689}
   - {fileID: 128780241}
+  - {fileID: 2134706206}
