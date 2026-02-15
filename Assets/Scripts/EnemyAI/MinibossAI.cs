@@ -45,8 +45,8 @@ namespace EnemyAI
         [SerializeField] private Transform projectileSpawnPoint;
         [SerializeField] private float fireballSpeed = 15f;
         [SerializeField] private int fireballDamage = 30;
-        [SerializeField, Tooltip("Fixed Y height for fireball spawn (0 = use spawn point height)")]
-        private float fireballSpawnHeight = 1.5f;
+        [SerializeField, Tooltip("Y offset relative to spawn point for fireball spawn (0 = spawn point height)")]
+        private float fireballSpawnHeight = 0f;
         [SerializeField] private float fireballCooldown = 2f;
         
         [Header("=== METEOR ATTACK ===")]
@@ -85,8 +85,8 @@ namespace EnemyAI
         private float rageFireballSpeed = 5f;
         [SerializeField, Tooltip("Number of wall bounces for rage fireballs")]
         private int rageFireballBounces = 1;
-        [SerializeField, Tooltip("Fixed Y height for rage fireball spawn")]
-        private float rageFireballSpawnHeight = 0.2f;
+        [SerializeField, Tooltip("Y offset relative to spawn point for rage fireball spawn (0 = spawn point height)")]
+        private float rageFireballSpawnHeight = 0f;
         [SerializeField, Tooltip("Duration of charge animation (invulnerable during this)")]
         private float rageChargeDuration = 2f;
         [SerializeField, Tooltip("Optional VFX for invulnerability shield")]
@@ -624,11 +624,8 @@ namespace EnemyAI
             
             Vector3 spawnPos = projectileSpawnPoint != null ? projectileSpawnPoint.position : transform.position;
             
-            // Override Y with configurable spawn height (if set)
-            if (fireballSpawnHeight > 0)
-            {
-                spawnPos.y = fireballSpawnHeight;
-            }
+            // Apply spawn height as offset relative to spawn point
+            spawnPos.y += fireballSpawnHeight;
             
             // Keep trajectory flat (horizontal only)
             Vector3 targetPos = target.position;
@@ -1153,8 +1150,8 @@ namespace EnemyAI
                 direction.y = 0;
                 direction.Normalize();
                 
-                // Use fixed spawn height for rage fireballs
-                Vector3 fixedSpawnPos = new Vector3(spawnPos.x, rageFireballSpawnHeight, spawnPos.z);
+                // Apply rage spawn height as offset relative to spawn point
+                Vector3 fixedSpawnPos = new Vector3(spawnPos.x, spawnPos.y + rageFireballSpawnHeight, spawnPos.z);
                 
                 // Use object pool for zero-allocation spawning
                 GameObject proj = ObjectPoolManager.Instance != null

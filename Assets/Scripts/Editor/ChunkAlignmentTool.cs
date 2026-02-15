@@ -143,9 +143,11 @@ public class ChunkAlignmentTool : EditorWindow
         {
             Transform chunk = allChunksParent.GetChild(chunkIndex);
             
-            // Calculate position along Z-axis (same as ChunkManager.LoadChunk)
+            // Calculate position along Z-axis (continuation), preserving prefab's original Y as height
+            // (same as ChunkManager.LoadChunk)
             float zOffset = chunkIndex * (chunkLength + chunkGap);
-            Vector3 position = startPosition + new Vector3(0, 0, zOffset);
+            float heightFromPrefab = chunk.position.y;
+            Vector3 position = startPosition + new Vector3(0, heightFromPrefab, zOffset);
             
             // Set position
             chunk.position = position;

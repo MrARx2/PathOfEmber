@@ -186,9 +186,10 @@ public class ChunkManager : MonoBehaviour
 
         GameObject prefabToUse = chunkSequence[chunkIndex];
 
-        // Calculate position along Z-axis
+        // Calculate position along Z-axis (continuation), preserving prefab's original Y as height
         float zOffset = chunkIndex * (chunkLength + chunkGap);
-        Vector3 position = firstChunkPosition + new Vector3(0, 0, zOffset);
+        float heightFromPrefab = prefabToUse.transform.position.y;
+        Vector3 position = firstChunkPosition + new Vector3(0, heightFromPrefab, zOffset);
 
         // --- PARANOID INSTANTIATION ---
         
