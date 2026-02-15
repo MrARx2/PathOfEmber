@@ -93,6 +93,19 @@ public class PrayerWheelUI : MonoBehaviour
     
     [SerializeField, Tooltip("Highlight bar color for Legendary tier")]
     private Color highlightLegendaryColor = new Color(1f, 0.8f, 0.2f, 1f); // Gold
+    
+    [Header("Title Highlight")]
+    [SerializeField, Tooltip("Prefab for the title highlight (same grow animation, no tier Y shift)")]
+    private GameObject highlightTitlePrefab;
+    
+    [SerializeField, Tooltip("Y offset for title highlight positioning")]
+    private float highlightTitleYOffset = 0f;
+    
+    [SerializeField, Tooltip("X offset for the LEFT title highlight")]
+    private float highlightTitleLeftXOffset = -280f;
+    
+    [SerializeField, Tooltip("X offset for the RIGHT title highlight")]
+    private float highlightTitleRightXOffset = 280f;
 
     [Header("Other UI to Hide")]
     [SerializeField, Tooltip("Canvas to hide during prayer wheel (e.g., enemy health bars, damage numbers)")]
@@ -128,6 +141,10 @@ public class PrayerWheelUI : MonoBehaviour
     
     // Active highlight bar instance (single bar covers both buttons)
     private GameObject highlightBarInstance;
+    
+    // Active title highlight instances (left & right, fixed position across tiers)
+    private GameObject highlightTitleLeftInstance;
+    private GameObject highlightTitleRightInstance;
     
     private void Awake()
     {
@@ -411,6 +428,62 @@ public class PrayerWheelUI : MonoBehaviour
         }
         
         if (debugLog) Debug.Log($"[PrayerWheelUI] Highlight bar spawned and active: {highlightBarInstance.activeInHierarchy}");
+        
+        // --- Spawn left & right title highlights (same animation & tint, no tier Y shift) ---
+        if (highlightTitlePrefab != null)
+        {
+            Color titleTierColor = highlightCommonColor;
+            if (currentTalent1 != null)
+            {
+                titleTierColor = currentTalent1.rarity switch
+                {
+                    TalentData.TalentRarity.Common => highlightCommonColor,
+                    TalentData.TalentRarity.Rare => highlightRareColor,
+                    TalentData.TalentRarity.Legendary => highlightLegendaryColor,
+                    _ => highlightCommonColor
+                };
+            }
+            
+            highlightTitleLeftInstance = SpawnTitleHighlight(barParent, "HighlightTitle_Left", highlightTitleLeftXOffset, titleTierColor);
+            highlightTitleRightInstance = SpawnTitleHighlight(barParent, "HighlightTitle_Right", highlightTitleRightXOffset, titleTierColor);
+            
+            if (debugLog) Debug.Log($"[PrayerWheelUI] Title highlights spawned (L/R) at Y={highlightTitleYOffset}");
+        }
+    }
+    
+    /// <summary>
+    /// Spawns a single title highlight instance at the given X offset with the given tint.
+    /// </summary>
+    private GameObject SpawnTitleHighlight(Transform parent, string name, float xOffset, Color tintColor)
+    {
+        var instance = Instantiate(highlightTitlePrefab, parent);
+        instance.name = name;
+        instance.transform.SetSiblingIndex(0);
+        
+        RectTransform rect = instance.GetComponent<RectTransform>();
+        if (rect != null)
+        {
+            rect.localRotation = Quaternion.identity;
+            rect.localScale = Vector3.one;
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(xOffset, highlightTitleYOffset);
+        }
+        
+        var progress = instance.GetComponent<HighlightProgressBar>();
+        if (progress != null)
+        {
+            progress.SetDuration(highlightFillDuration);
+        }
+        
+        var image = instance.GetComponentInChildren<UnityEngine.UI.Image>();
+        if (image != null)
+        {
+            image.color = tintColor;
+        }
+        
+        return instance;
     }
     
     /// <summary>
@@ -422,6 +495,16 @@ public class PrayerWheelUI : MonoBehaviour
         {
             Destroy(highlightBarInstance);
             highlightBarInstance = null;
+        }
+        if (highlightTitleLeftInstance != null)
+        {
+            Destroy(highlightTitleLeftInstance);
+            highlightTitleLeftInstance = null;
+        }
+        if (highlightTitleRightInstance != null)
+        {
+            Destroy(highlightTitleRightInstance);
+            highlightTitleRightInstance = null;
         }
     }
 
