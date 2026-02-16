@@ -63,11 +63,11 @@ public class PrayerWheelUI : MonoBehaviour
     [SerializeField, Tooltip("Y offset for text label positioning (positive = up)")]
     private float textYOffset = 200f;
     
-    [SerializeField, Tooltip("Horizontal offset for LEFT talent name text (distance from center)")]
-    private float textLeftXOffset = 280f;
+    [SerializeField, Tooltip("X nudge for LEFT text label (positive = move left/outward)")]
+    private float textLeftXNudge = 0f;
     
-    [SerializeField, Tooltip("Horizontal offset for RIGHT talent name text (distance from center)")]
-    private float textRightXOffset = 280f;
+    [SerializeField, Tooltip("X nudge for RIGHT text label (positive = move right/outward)")]
+    private float textRightXNudge = 0f;
 
     [Header("Highlight Progress Bar")]
     [SerializeField, Tooltip("Prefab for the highlight progress bar (spawned on spin complete, covers both buttons)")]
@@ -98,14 +98,14 @@ public class PrayerWheelUI : MonoBehaviour
     [SerializeField, Tooltip("Prefab for the title highlight (same grow animation, no tier Y shift)")]
     private GameObject highlightTitlePrefab;
     
-    [SerializeField, Tooltip("Y offset for title highlight positioning")]
+    [SerializeField, Tooltip("Y offset for title highlight positioning (relative to center point)")]
     private float highlightTitleYOffset = 0f;
     
-    [SerializeField, Tooltip("X offset for the LEFT title highlight")]
-    private float highlightTitleLeftXOffset = -280f;
+    [SerializeField, Tooltip("X nudge for LEFT title highlight (positive = move left/outward)")]
+    private float highlightTitleLeftXNudge = 0f;
     
-    [SerializeField, Tooltip("X offset for the RIGHT title highlight")]
-    private float highlightTitleRightXOffset = 280f;
+    [SerializeField, Tooltip("X nudge for RIGHT title highlight (positive = move right/outward)")]
+    private float highlightTitleRightXNudge = 0f;
 
     [Header("Other UI to Hide")]
     [SerializeField, Tooltip("Canvas to hide during prayer wheel (e.g., enemy health bars, damage numbers)")]
@@ -142,9 +142,13 @@ public class PrayerWheelUI : MonoBehaviour
     // Active highlight bar instance (single bar covers both buttons)
     private GameObject highlightBarInstance;
     
-    // Active title highlight instances (left & right, fixed position across tiers)
+    // Active title highlight instances (left & right, dynamically positioned)
     private GameObject highlightTitleLeftInstance;
     private GameObject highlightTitleRightInstance;
+    
+    // Cached RectTransforms for title highlights (for dynamic positioning in LateUpdate)
+    private RectTransform highlightTitleLeftRect;
+    private RectTransform highlightTitleRightRect;
     
     private void Awake()
     {
@@ -444,8 +448,12 @@ public class PrayerWheelUI : MonoBehaviour
                 };
             }
             
-            highlightTitleLeftInstance = SpawnTitleHighlight(barParent, "HighlightTitle_Left", highlightTitleLeftXOffset, titleTierColor);
-            highlightTitleRightInstance = SpawnTitleHighlight(barParent, "HighlightTitle_Right", highlightTitleRightXOffset, titleTierColor);
+            highlightTitleLeftInstance = SpawnTitleHighlight(barParent, "HighlightTitle_Left", titleTierColor);
+            highlightTitleRightInstance = SpawnTitleHighlight(barParent, "HighlightTitle_Right", titleTierColor);
+            
+            // Cache RectTransforms for dynamic positioning in UpdateButtonPositions
+            highlightTitleLeftRect = highlightTitleLeftInstance.GetComponent<RectTransform>();
+            highlightTitleRightRect = highlightTitleRightInstance.GetComponent<RectTransform>();
             
             if (debugLog) Debug.Log($"[PrayerWheelUI] Title highlights spawned (L/R) at Y={highlightTitleYOffset}");
         }
@@ -454,7 +462,7 @@ public class PrayerWheelUI : MonoBehaviour
     /// <summary>
     /// Spawns a single title highlight instance at the given X offset with the given tint.
     /// </summary>
-    private GameObject SpawnTitleHighlight(Transform parent, string name, float xOffset, Color tintColor)
+    private GameObject SpawnTitleHighlight(Transform parent, string name, Color tintColor)
     {
         var instance = Instantiate(highlightTitlePrefab, parent);
         instance.name = name;
@@ -468,7 +476,8 @@ public class PrayerWheelUI : MonoBehaviour
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = new Vector2(xOffset, highlightTitleYOffset);
+            // Position will be set dynamically in UpdateButtonPositions
+            rect.anchoredPosition = Vector2.zero;
         }
         
         var progress = instance.GetComponent<HighlightProgressBar>();
@@ -583,34 +592,68 @@ public class PrayerWheelUI : MonoBehaviour
                 }
             }
             
-            // Position Left Text Label (center point, offset left)
+            // Position Left Text Label
+            // X = tracks wheel 1 screen position (inherits mobile compensation from PrayerWheelDisplay)
+            // Y = stable center point + fixed offset (no rarity-dependent shift)
             if (talentNameLeft != null && talentNameLeft.gameObject.activeSelf)
             {
                 if (textLeftParentRect != null && textLeftRect != null)
                 {
-                    Vector2 localPoint;
-                    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(textLeftParentRect, textCenterScreenPos, uiCam, out localPoint))
+                    Vector2 wheelLocal;
+                    Vector2 centerLocal;
+                    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(textLeftParentRect, screenPosLeft, uiCam, out wheelLocal) &&
+                        RectTransformUtility.ScreenPointToLocalPointInRectangle(textLeftParentRect, textCenterScreenPos, uiCam, out centerLocal))
                     {
-                        localPoint.x -= textLeftXOffset; // Move left using independent offset
-                        localPoint.y += textYOffset;
-                        textLeftRect.localPosition = localPoint;
+                        textLeftRect.localPosition = new Vector2(
+                            wheelLocal.x - textLeftXNudge,   // X from wheel position, nudge outward
+                            centerLocal.y + textYOffset   // Y from stable center point
+                        );
                     }
                 }
             }
             
-            // Position Right Text Label (center point, offset right)
+            // Position Right Text Label (same approach, mirrored)
             if (talentNameRight != null && talentNameRight.gameObject.activeSelf)
             {
                 if (textRightParentRect != null && textRightRect != null)
                 {
-                    Vector2 localPoint;
-                    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(textRightParentRect, textCenterScreenPos, uiCam, out localPoint))
+                    Vector2 wheelLocal;
+                    Vector2 centerLocal;
+                    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(textRightParentRect, screenPosRight, uiCam, out wheelLocal) &&
+                        RectTransformUtility.ScreenPointToLocalPointInRectangle(textRightParentRect, textCenterScreenPos, uiCam, out centerLocal))
                     {
-                        localPoint.x += textRightXOffset; // Move right using independent offset
-                        localPoint.y += textYOffset;
-                        textRightRect.localPosition = localPoint;
+                        textRightRect.localPosition = new Vector2(
+                            wheelLocal.x + textRightXNudge,   // X from wheel position, nudge outward
+                            centerLocal.y + textYOffset   // Y from stable center point
+                        );
                     }
                 }
+            }
+            
+            // Position Left Title Highlight — anchor to text label position (guaranteed stable)
+            if (highlightTitleLeftRect != null && highlightTitleLeftInstance != null && highlightTitleLeftInstance.activeSelf
+                && textLeftRect != null)
+            {
+                // Copy the text label's world position (already correctly positioned above)
+                highlightTitleLeftRect.position = textLeftRect.position;
+                // Apply nudge offsets in local space
+                Vector2 pos = highlightTitleLeftRect.anchoredPosition;
+                pos.x -= highlightTitleLeftXNudge;
+                pos.y += highlightTitleYOffset;
+                highlightTitleLeftRect.anchoredPosition = pos;
+            }
+            
+            // Position Right Title Highlight — anchor to text label position (guaranteed stable)
+            if (highlightTitleRightRect != null && highlightTitleRightInstance != null && highlightTitleRightInstance.activeSelf
+                && textRightRect != null)
+            {
+                // Copy the text label's world position (already correctly positioned above)
+                highlightTitleRightRect.position = textRightRect.position;
+                // Apply nudge offsets in local space
+                Vector2 pos = highlightTitleRightRect.anchoredPosition;
+                pos.x += highlightTitleRightXNudge;
+                pos.y += highlightTitleYOffset;
+                highlightTitleRightRect.anchoredPosition = pos;
             }
         }
     }
