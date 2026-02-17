@@ -6,6 +6,7 @@ using System.Collections.Generic;
 /// Manages screen-space health bars for enemies globally.
 /// More performant than having a World Space Canvas on every enemy.
 /// </summary>
+[DefaultExecutionOrder(-100)] // Ensure singleton is ready before consumers register in Start()
 public class HealthBarManager : MonoBehaviour
 {
     public static HealthBarManager Instance { get; private set; }
@@ -146,6 +147,12 @@ public class HealthBarManager : MonoBehaviour
     private void RegisterInternal(Component owner, Transform point, int current, int max, 
         UnityEngine.Events.UnityEvent<float> healthEvent, UnityEngine.Events.UnityEvent deathEvent, HealthBarType barType)
     {
+        // Prevent duplicate registration (e.g., OnEnable after OnDisable cycle)
+        for (int i = 0; i < activeBars.Count; i++)
+        {
+            if (activeBars[i].Owner == owner)
+                return; // Already registered
+        }
         // Select prefab based on type
         GameObject prefabToUse = barType switch
         {
@@ -237,7 +244,7 @@ public class HealthBarManager : MonoBehaviour
                 return;
             }
         }
-        // Debug.LogWarning($"[HealthBarManager] ShowBar: No bar found for {owner.gameObject.name}");
+        Debug.LogWarning($"[HealthBarManager] ShowBar: No bar found for {owner.gameObject.name}. ActiveBars count: {activeBars.Count}");
     }
     
     /// <summary>

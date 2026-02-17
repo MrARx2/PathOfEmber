@@ -168,6 +168,10 @@ namespace Boss
             {
                 HealthBarManager.Instance.Register(this);
             }
+            else
+            {
+                Debug.LogWarning($"[TitanHealth] {bodyPart} - HealthBarManager.Instance is NULL at Start()! Health bar will not show.");
+            }
             
             // Enforce initial healthy state emission
             SetEmissionColor(minEmission);
@@ -181,6 +185,19 @@ namespace Boss
             if (HealthBarManager.Instance != null)
             {
                 HealthBarManager.Instance.Unregister(this);
+            }
+        }
+        
+        private void OnEnable()
+        {
+            // Re-register with HealthBarManager after disable/enable cycles
+            // (OnDisable unregisters and destroys the bar, so we must re-register)
+            // Note: OnEnable runs before Start on first activation, but HealthBarManager
+            // may not have its Instance set yet, so Start() handles the initial registration.
+            // This handles subsequent enable cycles (e.g., chunk toggling).
+            if (HealthBarManager.Instance != null)
+            {
+                HealthBarManager.Instance.Register(this);
             }
         }
 
@@ -494,6 +511,11 @@ namespace Boss
             if (HealthBarManager.Instance != null)
             {
                 HealthBarManager.Instance.ShowBar(this);
+                if (debugLog) Debug.Log($"[TitanHealth] {bodyPart} ShowHealthBar called - requested bar visible");
+            }
+            else
+            {
+                Debug.LogWarning($"[TitanHealth] {bodyPart} ShowHealthBar - HealthBarManager.Instance is NULL!");
             }
             
             // Reset hide timer (no GC allocation)
