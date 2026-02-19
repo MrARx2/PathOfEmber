@@ -56,6 +56,7 @@ public class MagneticPotion : MonoBehaviour
     
     private Transform playerTransform;
     private Transform magnetTarget; // The actual target for magnetism (bone or player root)
+    private PlayerHealth playerHealth; // Cached to detect player death
     private bool isMovingToPlayer = false;
     private bool isCollected = false;
     
@@ -69,6 +70,11 @@ public class MagneticPotion : MonoBehaviour
         if (player != null)
         {
             playerTransform = player.transform;
+            
+            // Cache PlayerHealth to detect death
+            playerHealth = player.GetComponent<PlayerHealth>();
+            if (playerHealth == null)
+                playerHealth = player.GetComponentInChildren<PlayerHealth>();
             
             // Try to find the target bone (like CoinManager does)
             magnetTarget = FindBoneRecursive(playerTransform, targetBoneName);
@@ -169,6 +175,15 @@ public class MagneticPotion : MonoBehaviour
     private void Update()
     {
         if (magnetTarget == null || isCollected) return;
+        
+        // If the player is dead, destroy the potion (colliders are disabled so OnTriggerEnter won't fire)
+        if (playerHealth != null && playerHealth.IsDead)
+        {
+            if (debugLog)
+                Debug.Log($"[MagneticPotion] Player is dead, destroying {potionType} potion");
+            Destroy(gameObject);
+            return;
+        }
         
         if (isMovingToPlayer)
         {

@@ -554,9 +554,18 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         // Disable player controls
         DisablePlayerControls();
 
+        // Destroy all potions in the scene immediately
+        // (colliders are disabled so potions can never be collected normally)
+        DestroyAllPotions();
+
         // Play death sound
         if (deathSound != null && AudioManager.Instance != null)
             AudioManager.Instance.Play(deathSound);
+
+        // Force-clear shooting state before death animation
+        // This ensures upper body layer doesn't keep playing the shooting pose
+        if (animator != null)
+            animator.SetBool("IsShooting", false);
 
         // Trigger death animation
         if (animator != null && !string.IsNullOrEmpty(deathTrigger))
@@ -620,6 +629,24 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             rb.linearVelocity = Vector3.zero;
             rb.isKinematic = true;
         }
+    }
+
+    /// <summary>
+    /// Destroys all MagneticPotion instances in the scene.
+    /// Called on death to prevent potions from spinning in place
+    /// (since player colliders are disabled and can't trigger collection).
+    /// </summary>
+    private void DestroyAllPotions()
+    {
+        MagneticPotion[] potions = Object.FindObjectsByType<MagneticPotion>(FindObjectsSortMode.None);
+        for (int i = 0; i < potions.Length; i++)
+        {
+            if (potions[i] != null)
+                Destroy(potions[i].gameObject);
+        }
+        
+        if (debugLog && potions.Length > 0)
+            Debug.Log($"[PlayerHealth] Destroyed {potions.Length} potions on death");
     }
 
     private void NotifyHealthChanged()

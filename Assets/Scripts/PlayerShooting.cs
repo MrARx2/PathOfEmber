@@ -728,7 +728,17 @@ public class PlayerShooting : MonoBehaviour
         forceStopped = true;
         awaitingRelease = false;
         currentTarget = null;
-        SetShootingState(false);
+        isShooting = false;
+        
+        // Force-reset animator shooting state (bypass SetShootingState guard)
+        if (animator != null && isShootingHash != 0)
+            animator.SetBool(isShootingHash, false);
+        if (bowAnimator != null && bowShootHash != 0)
+            bowAnimator.SetBool(bowShootHash, false);
+        
+        // Immediately zero out upper layer weight so shooting pose stops instantly
+        if (controlUpperLayer && animator != null && resolvedUpperLayerIndex >= 0 && resolvedUpperLayerIndex < animator.layerCount)
+            animator.SetLayerWeight(resolvedUpperLayerIndex, 0f);
         
         // Stop any ongoing multishot coroutines
         StopAllCoroutines();
