@@ -275,14 +275,14 @@ namespace Audio
             // Initialize keepSync tracks (they start at volume 0 but need to be playing)
             foreach (var track in gameMusicTracks)
             {
-                if (track.keepSync && track.music != null && track.music.IsValid)
+                if (track.music != null && track.music.IsValid)
                 {
                     track.source = AudioManager.Instance.PlayAndGetSource(track.music, 0f);
                     if (track.source != null)
                     {
                         track.source.loop = true;
                         track.source.volume = 0f;
-                        if (showDebug) Debug.Log($"[MusicManager] Initialized keepSync track: {track.music.name}");
+                        if (showDebug) Debug.Log($"[MusicManager] Pre-initialized track: {track.music.name} (keepSync={track.keepSync})");
                     }
                 }
             }

@@ -213,6 +213,7 @@ namespace Audio
         {
             foreach (var kvp in _activeInstances)
             {
+                if (kvp.Key == null || kvp.Value == null) continue;
                 kvp.Value.RemoveAll(s => s == null || !s.isPlaying);
             }
         }

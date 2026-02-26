@@ -63,6 +63,7 @@ MonoBehaviour:
   freezePickupSound: {fileID: 0}
   venomPickupSound: {fileID: 0}
   debugLog: 0
+  targetBoneName: mixamorig:Spine2
 --- !u!65 &2898226192066288601
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -261,7 +262,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3263120597425508711, guid: 5451a036b021777489fb706809e0fc59, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.0543
+      value: -0.01
       objectReference: {fileID: 0}
     - target: {fileID: 3263120597425508711, guid: 5451a036b021777489fb706809e0fc59, type: 3}
       propertyPath: m_LocalPosition.z

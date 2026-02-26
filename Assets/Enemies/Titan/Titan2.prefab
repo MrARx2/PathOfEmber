@@ -176,6 +176,8 @@ MonoBehaviour:
   minEmission: {r: 1, g: 1, b: 1, a: 1}
   maxEmission: {r: 0, g: 0, b: 0, a: 1}
   tintFadeDuration: 4
+  startInvulnerable: 1
+  debugLog: 0
 --- !u!1 &2041120679431050939
 GameObject:
   m_ObjectHideFlags: 0
@@ -383,6 +385,8 @@ MonoBehaviour:
   minEmission: {r: 1, g: 1, b: 1, a: 1}
   maxEmission: {r: 0, g: 0, b: 0, a: 1}
   tintFadeDuration: 4
+  startInvulnerable: 1
+  debugLog: 0
 --- !u!1 &5433105438527417161
 GameObject:
   m_ObjectHideFlags: 0
@@ -528,6 +532,8 @@ MonoBehaviour:
   minEmission: {r: 1, g: 1, b: 1, a: 1}
   maxEmission: {r: 1, g: 1, b: 1, a: 1}
   tintFadeDuration: 4
+  startInvulnerable: 1
+  debugLog: 0
 --- !u!1 &5897453260060520928
 GameObject:
   m_ObjectHideFlags: 0
@@ -1972,8 +1978,15 @@ MonoBehaviour:
   leftWellParam: LeftWell
   deathParam: Death
   arenaCenterPoint: {fileID: 1647397460515831830}
+  hazardZone: {fileID: 0}
+  bossZoneSpeed: 0
+  normalZoneSpeed: 0.55
+  bossArenaBoundary: {fileID: 0}
+  boundaryActivationDelay: 1
   debugLog: 1
   currentState: 0
+  deathPanel: {fileID: 0}
+  deathPanelDelay: 2
 --- !u!95 &5717876093787346878
 Animator:
   serializedVersion: 7
@@ -2094,7 +2107,7 @@ MonoBehaviour:
   spawnCount: 5
   spawnDelay: 0.3
   useSpawnIndicator: 1
-  indicatorPrefab: {fileID: 6270883829170812278, guid: e29d07466e93316459fbe430a227c5cc, type: 3}
+  indicatorPrefab: {fileID: 2007081276863176460, guid: 15c90b2cbb9825547808b0d2ca1fcce2, type: 3}
   indicatorDuration: 1.5
   indicatorPositionOffset: {x: 0, y: 0.05, z: 0}
   indicatorRotationOffset: {x: 90, y: 0, z: 0}
@@ -2172,6 +2185,7 @@ MonoBehaviour:
   meteorStrikePrefab: {fileID: 7353491111950365648, guid: fb65813de51e74e4ab351404c4c61c8b, type: 3}
   returnDelay: 1
   returnInterval: 0.4
+  meteorDamage: -1
   arenaCenter: {fileID: 1647397460515831830}
   arenaRadius: 8
   playerTarget: {fileID: 0}

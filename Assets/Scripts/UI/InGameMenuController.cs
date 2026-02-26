@@ -374,20 +374,13 @@ public class InGameMenuController : MonoBehaviour
             var stacksTransform = FindChildRecursive(iconGO.transform, "StacksNumber");
             if (stacksTransform != null)
             {
+                stacksTransform.gameObject.SetActive(true);
                 var stacksText = stacksTransform.GetComponent<TMPro.TMP_Text>();
                 if (stacksText != null)
                 {
-                    if (stacks > 1)
-                    {
-                        stacksText.text = $"x{stacks}";
-                        stacksText.gameObject.SetActive(true);
-                        if (debugLog) Debug.Log($"[InGameMenuController] Set stacks text: x{stacks}");
-                    }
-                    else
-                    {
-                        // Hide stacks badge if only 1 stack
-                        stacksText.gameObject.SetActive(false);
-                    }
+                    stacksText.text = $"x{stacks}";
+                    stacksText.maskable = stacks <= 1;
+                    stacksText.enabled = true;
                 }
             }
         }

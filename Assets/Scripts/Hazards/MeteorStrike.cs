@@ -89,6 +89,15 @@ namespace Hazards
 
         #region Unity Lifecycle
 
+        /// <summary>
+        /// Allows external scripts to override the impact damage for this instance.
+        /// Call this immediately after spawning, before the impact occurs.
+        /// </summary>
+        public void SetImpactDamage(int damage)
+        {
+            impactDamage = damage;
+        }
+
         private void Start()
         {
             StartStrike();

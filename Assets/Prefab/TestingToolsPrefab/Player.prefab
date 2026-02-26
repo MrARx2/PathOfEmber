@@ -1186,15 +1186,15 @@ MonoBehaviour:
   hasOneTimeShield: 0
   maxHpPlusStacks: 0
   hazardResistanceStacks: 0
-  hasPiercing: 0
+  piercingStacks: 0
   bouncingArrowsStacks: 0
-  hasFreezeShot: 0
-  hasVenomShot: 0
+  freezeShotStacks: 0
+  venomShotStacks: 0
   maximumFreezeStacks: 0
   maximumVenomStacks: 0
-  hasFreezePotionTalent: 0
-  hasVenomPotionTalent: 0
-  hasInvulnerabilityPotionTalent: 0
+  freezePotionStacks: 0
+  venomPotionStacks: 0
+  invulnerabilityPotionStacks: 0
   multishotStacks: 0
   tripleshotStacks: 0
   maxHpPlusPlusStacks: 0
@@ -1205,6 +1205,9 @@ MonoBehaviour:
   venomDamagePerStack: 100
   venomDuration: 3
   tripleShotAngle: 12
+  freezeParticleScale: 1
+  venomParticleScale: 1
+  debugLog: 0
   currentMoveSpeedMultiplier: 1
   currentAttackSpeedMultiplier: 1
   currentFreezeDuration: 2
@@ -1303,6 +1306,8 @@ MonoBehaviour:
   healTrigger: Heal
   hitTrigger: Hit
   deathTrigger: Death
+  deathAnimationDuration: 4
+  deathPopup: {fileID: 0}
   enableHitFlash: 1
   hitFlashEmissionColor: {r: 1, g: 0.3, b: 0.3, a: 1}
   hitFlashEmissionIntensity: 1.2
@@ -1312,6 +1317,8 @@ MonoBehaviour:
   fireHurtSound: {fileID: 11400000, guid: 24f0f976ab45d844bb2384bfe5d8bd6f, type: 2}
   healSound: {fileID: 11400000, guid: 100b4ac10ec148d4f85cb5167db72bda, type: 2}
   deathSound: {fileID: 11400000, guid: 1ad48ca8a3a87b246a3b2ae11794b791, type: 2}
+  invulnerabilitySound: {fileID: 0}
+  debugLog: 0
   OnDamage:
     m_PersistentCalls:
       m_Calls: []
@@ -1336,18 +1343,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e354e569acea27c44beee6e7b2521fb2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PotionSpawner
-  freezePotionEnabled: 0
   freezePotionPrefab: {fileID: 3498488311820036920, guid: 52f2ceb751dcb6241a1b4b466c0d386a, type: 3}
   freezeSpawnInterval: 8
-  venomPotionEnabled: 0
   venomPotionPrefab: {fileID: 5828422131497855360, guid: 0392801b67d98bd40ace75fb92fbcd81, type: 3}
   venomSpawnInterval: 8
-  invulnerabilityPotionEnabled: 0
   invulnerabilityPotionPrefab: {fileID: 7084567425040047138, guid: 81af4b2f5551e484193721a995acb61d, type: 3}
   invulnerabilitySpawnInterval: 12
   spawnRadius: 2.5
   spawnHeight: 0.5
   spawnTimeVariance: 3
+  freezeSpawnSound: {fileID: 0}
+  venomSpawnSound: {fileID: 0}
+  invulnerabilitySpawnSound: {fileID: 0}
   debugLog: 0
 --- !u!114 &5135571382558382557
 MonoBehaviour:
@@ -1959,41 +1966,81 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7733303460961341282, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -7733303460961341282, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c869c708ff380aa4682e3a7c07c82ebc, type: 2}
+    - target: {fileID: -7351890725064758261, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: -7351890725064758261, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c869c708ff380aa4682e3a7c07c82ebc, type: 2}
     - target: {fileID: -6940515498492113823, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -6940515498492113823, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c869c708ff380aa4682e3a7c07c82ebc, type: 2}
+    - target: {fileID: -4338194071191176167, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: -4338194071191176167, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c869c708ff380aa4682e3a7c07c82ebc, type: 2}
     - target: {fileID: -3780381464135144869, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -3780381464135144869, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c869c708ff380aa4682e3a7c07c82ebc, type: 2}
+    - target: {fileID: -2761423854629731366, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: -2761423854629731366, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c869c708ff380aa4682e3a7c07c82ebc, type: 2}
     - target: {fileID: -1824014963472552281, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -1824014963472552281, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c869c708ff380aa4682e3a7c07c82ebc, type: 2}
+    - target: {fileID: -1578444296140453417, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: -1578444296140453417, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c869c708ff380aa4682e3a7c07c82ebc, type: 2}
     - target: {fileID: -1155148998700280648, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: -1155148998700280648, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c869c708ff380aa4682e3a7c07c82ebc, type: 2}
+    - target: {fileID: -329340364626206919, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: m_Name
       value: Main Character
@@ -2003,13 +2050,25 @@ PrefabInstance:
       value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 1989515907741761845, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1989515907741761845, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c869c708ff380aa4682e3a7c07c82ebc, type: 2}
     - target: {fileID: 3628275842724981581, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3628275842724981581, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c869c708ff380aa4682e3a7c07c82ebc, type: 2}
+    - target: {fileID: 4418834999246775707, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 4418834999246775707, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -2023,17 +2082,33 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6316661801115329813, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6316661801115329813, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c869c708ff380aa4682e3a7c07c82ebc, type: 2}
+    - target: {fileID: 7018585455399731059, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 7018585455399731059, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c869c708ff380aa4682e3a7c07c82ebc, type: 2}
     - target: {fileID: 8355850933822209689, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8355850933822209689, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c869c708ff380aa4682e3a7c07c82ebc, type: 2}
+    - target: {fileID: 8416536936033435989, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
+      propertyPath: m_RenderingLayerMask
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 8416536936033435989, guid: a039103ce29ecf64193097d0ac6650be, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 

@@ -42,6 +42,9 @@ namespace Boss
         [SerializeField, Tooltip("Delay between each returning meteor")]
         private float returnInterval = 0.3f;
         
+        [SerializeField, Tooltip("Damage override for each meteor strike. Set to -1 to use the MeteorStrike prefab's default damage.")]
+        private int meteorDamage = -1;
+        
         [SerializeField, Tooltip("Center of the arena for meteor targeting (fallback if no player)")]
         private Transform arenaCenter;
         
@@ -228,13 +231,24 @@ namespace Boss
             targetPos.y = 0; // Ground level
             
             // Spawn meteor strike (uses existing MeteorStrike system)
+            GameObject strikeObj;
             if (ObjectPoolManager.Instance != null)
             {
-                ObjectPoolManager.Instance.Get(meteorStrikePrefab, targetPos, Quaternion.identity);
+                strikeObj = ObjectPoolManager.Instance.Get(meteorStrikePrefab, targetPos, Quaternion.identity);
             }
             else
             {
-                Instantiate(meteorStrikePrefab, targetPos, Quaternion.identity);
+                strikeObj = Instantiate(meteorStrikePrefab, targetPos, Quaternion.identity);
+            }
+            
+            // Apply damage override if set
+            if (meteorDamage >= 0 && strikeObj != null)
+            {
+                MeteorStrike strike = strikeObj.GetComponent<MeteorStrike>();
+                if (strike != null)
+                {
+                    strike.SetImpactDamage(meteorDamage);
+                }
             }
             
             if (debugLog)
