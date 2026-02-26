@@ -213,6 +213,32 @@ namespace EnemyAI
             isAttacking = false;
             _hasDestination = false;
             hasAlternateWaypoint = false;
+            
+            // Reset stuck detection
+            lastPosition = transform.position;
+            stuckCheckTimer = 0f;
+            
+            // Clear route memory from previous life
+            routeMemory.Clear();
+            
+            // Reset cached target
+            _cachedTargetDamageable = null;
+            
+            // Reset NavMeshAgent so it doesn't spawn in a stopped/stale state
+            if (agent != null)
+            {
+                agent.speed = moveSpeed;
+                
+                // Agent needs to be on NavMesh before we can control it
+                // It gets placed on NavMesh by ObjectPoolManager.Get() setting position
+                // We use a coroutine-free approach: just reset what we can
+                if (agent.isOnNavMesh)
+                {
+                    agent.isStopped = false;
+                    agent.ResetPath();
+                    agent.velocity = Vector3.zero;
+                }
+            }
         }
 
         protected virtual void Update()

@@ -80,6 +80,32 @@ namespace EnemyAI
                     damageLayer = 1 << playerLayer;
             }
         }
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            // Reset all bomber-specific state for pool reuse
+            hasExploded = false;
+            isDetonating = false;
+            
+            // Restore original scale (may have been modified by swell effect)
+            if (initialScale != Vector3.zero)
+            {
+                transform.localScale = initialScale;
+            }
+            
+            // Reset emission back to zero
+            SetEmissionIntensity(0f);
+            
+            // Re-cache renderers in case they were invalidated
+            renderers = GetComponentsInChildren<Renderer>();
+            
+            // Ensure NavMeshAgent speed is correct (base OnEnable resets agent)
+            if (agent != null)
+            {
+                agent.speed = moveSpeed * speedMultiplier;
+            }
+        }
         
         private void OnDestroy()
         {
@@ -187,12 +213,8 @@ namespace EnemyAI
                 yield return null;
             }
 
-            // Clean up warning before explosion
-            if (warningInstance != null)
-            {
-                Destroy(warningInstance);
-                warningInstance = null;
-            }
+            // Clean up warning before explosion (use pool-aware cleanup)
+            CleanupWarningDecal();
             
             Explode();
         }
@@ -243,13 +265,18 @@ namespace EnemyAI
             hasExploded = true;
 
             // Spawn VFX via pool
+            // NOTE: Do NOT use StartCoroutine on this bomber for VFX cleanup!
+            // Die() calls StopAllCoroutines, which would kill the cleanup coroutine
+            // and leak the VFX object. Use a standalone auto-destroy approach instead.
             if (explosionVFX != null)
             {
                 if (ObjectPoolManager.Instance != null)
                 {
                     GameObject vfx = ObjectPoolManager.Instance.Get(explosionVFX, transform.position, Quaternion.identity);
-                    // Return to pool after 3 seconds
-                    StartCoroutine(ReturnToPoolDelayed(vfx, 3f));
+                    // Use a lightweight auto-return component instead of coroutine on this object
+                    var autoReturn = vfx.GetComponent<AutoReturnToPool>();
+                    if (autoReturn == null) autoReturn = vfx.AddComponent<AutoReturnToPool>();
+                    autoReturn.ReturnAfter(3f);
                 }
                 else
                 {

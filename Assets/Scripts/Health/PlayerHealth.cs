@@ -100,16 +100,19 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private bool[] hadEmissionEnabled;
     private bool hasHitTrigger = false;
     private bool hasHealTrigger = false;
+    private int baseMaxHealth; // Original max HP before any talent increases
 
     public bool IsInvulnerable => isInvulnerable;
     public bool IsDead => isDead;
     public bool IsOnFire => isOnFire;
     public int CurrentHealth => currentHealth;
     public int MaxHealth => maxHealth;
+    public int BaseMaxHealth => baseMaxHealth;
 
     private void Awake()
     {
         currentHealth = maxHealth;
+        baseMaxHealth = maxHealth; // Capture before any talents modify it
         if (invulnerabilityEffect != null)
             invulnerabilityEffect.SetActive(false);
         if (fireEffect != null)
@@ -296,6 +299,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             currentHealth += increase;
             UpdateHealthBar();
             NotifyHealthChanged();
+            
+            // Scale the health bar width to reflect increased max HP
+            if (HealthBarManager.Instance != null)
+            {
+                HealthBarManager.Instance.UpdatePlayerBarWidth(maxHealth, baseMaxHealth);
+            }
         }
     }
 

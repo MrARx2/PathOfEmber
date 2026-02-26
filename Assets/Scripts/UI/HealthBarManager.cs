@@ -34,7 +34,14 @@ public class HealthBarManager : MonoBehaviour
         public GameObject GameObject;
         public bool IsTitanBar; // Titan bars have user-controlled visibility
         public bool IsUserVisible; // For Titan bars: tracks if user wants it visible
+        public bool IsPlayerBar;
+        public float BaseWidth; // Original prefab width, for scaling
+        public float BaseHeight; // Original prefab height, for scaling
     }
+
+    // Player health bar scaling caps
+    private const float MAX_WIDTH_MULTIPLIER = 1.5f; // Cap: 1.5x base width
+    private const float MAX_HEIGHT_MULTIPLIER = 1.3f; // Cap: 1.3x base height
 
     private List<ActiveBar> activeBars = new List<ActiveBar>();
     private Camera mainCam;
@@ -190,7 +197,10 @@ public class HealthBarManager : MonoBehaviour
             FillImage = fill,
             GameObject = go,
             IsTitanBar = (barType == HealthBarType.TitanHand || barType == HealthBarType.TitanCore),
-            IsUserVisible = false
+            IsUserVisible = false,
+            IsPlayerBar = (barType == HealthBarType.Player),
+            BaseWidth = rect.sizeDelta.x, // Capture the prefab's original width
+            BaseHeight = rect.sizeDelta.y // Capture the prefab's original height
         };
 
         // Callbacks
@@ -219,6 +229,18 @@ public class HealthBarManager : MonoBehaviour
         }
 
         activeBars.Add(newBar);
+        
+        // If this is the player bar, check if max HP was already increased
+        // (e.g., starting talent applied before bar was created due to Start() order)
+        if (barType == HealthBarType.Player)
+        {
+            var playerHealth = owner as PlayerHealth;
+            if (playerHealth != null && playerHealth.BaseMaxHealth > 0 
+                && playerHealth.MaxHealth > playerHealth.BaseMaxHealth)
+            {
+                UpdatePlayerBarWidth(playerHealth.MaxHealth, playerHealth.BaseMaxHealth);
+            }
+        }
     }
 
     public void Unregister(Component owner)
@@ -261,6 +283,55 @@ public class HealthBarManager : MonoBehaviour
                     activeBars[i].GameObject.SetActive(false);
                 return;
             }
+        }
+    }
+
+    /// <summary>
+    /// Scales the player health bar size based on how much max HP has increased.
+    /// Width: grows up to 1.5x at +100% HP. Height: grows up to 1.3x at +100% HP.
+    /// </summary>
+    public void UpdatePlayerBarWidth(int currentMaxHP, int baseMaxHP)
+    {
+        if (baseMaxHP <= 0) return;
+        
+        for (int i = 0; i < activeBars.Count; i++)
+        {
+            if (!activeBars[i].IsPlayerBar) continue;
+            
+            float hpRatio = (float)currentMaxHP / baseMaxHP; // e.g. 2.0 at +100% HP
+            float extraHpPercent = hpRatio - 1f; // e.g. 1.0 at +100% HP
+            
+            // Width: each 100% extra HP = 0.5x extra width (so +100% HP = 1.5x width)
+            float widthMultiplier = 1f + (extraHpPercent * 0.5f);
+            widthMultiplier = Mathf.Clamp(widthMultiplier, 1f, MAX_WIDTH_MULTIPLIER);
+            
+            // Height: each 100% extra HP = 0.3x extra height (so +100% HP = 1.3x height)
+            float heightMultiplier = 1f + (extraHpPercent * 0.3f);
+            heightMultiplier = Mathf.Clamp(heightMultiplier, 1f, MAX_HEIGHT_MULTIPLIER);
+            
+            float newWidth = activeBars[i].BaseWidth * widthMultiplier;
+            float newHeight = activeBars[i].BaseHeight * heightMultiplier;
+            
+            Debug.Log($"[HealthBarManager] UpdatePlayerBarWidth: maxHP={currentMaxHP}, baseHP={baseMaxHP}, wMul={widthMultiplier:F2}, hMul={heightMultiplier:F2}, size={newWidth:F0}x{newHeight:F0}");
+            
+            activeBars[i].Rect.sizeDelta = new Vector2(newWidth, newHeight);
+            
+            return;
+        }
+    }
+
+    /// <summary>
+    /// Resets the player health bar to its base (prefab) size.
+    /// Call on game restart / scene reload.
+    /// </summary>
+    public void ResetPlayerBarWidth()
+    {
+        for (int i = 0; i < activeBars.Count; i++)
+        {
+            if (!activeBars[i].IsPlayerBar) continue;
+            
+            activeBars[i].Rect.sizeDelta = new Vector2(activeBars[i].BaseWidth, activeBars[i].BaseHeight);
+            return;
         }
     }
 
